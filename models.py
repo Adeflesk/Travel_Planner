@@ -1,8 +1,7 @@
 # models.py
 from sqlalchemy import Column, Integer, String, Text, Date, Time, Boolean, DateTime, ForeignKey, Numeric
-from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
-from datetime import datetime
+from sqlalchemy.orm import relationship, declarative_base
+from datetime import datetime, timezone
 
 Base = declarative_base()
 
@@ -16,8 +15,8 @@ class Trip(Base):
     end_date = Column(Date, nullable=False)
     budget = Column(Numeric(10, 2))
     status = Column(String(50), default="planning")  # planning, booked, ongoing, completed
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     # Relationships
     destinations = relationship("Destination", back_populates="trip", cascade="all, delete-orphan")
