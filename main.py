@@ -14,7 +14,7 @@ app = FastAPI(title="Travel Planner API", version="1.0.0")
 # Enable CORS (optional, adjust origins as needed)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -80,8 +80,7 @@ def create_destination(
     destination: schemas.DestinationCreate, db: Session = Depends(get_db)
 ):
     # Verify trip exists
-    trip = db.query(models.Trip).filter(
-        models.Trip.id == destination.trip_id).first()
+    trip = db.query(models.Trip).filter(models.Trip.id == destination.trip_id).first()
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found")
 
@@ -193,8 +192,7 @@ def update_activity(
     db: Session = Depends(get_db),
 ):
     activity = (
-        db.query(models.Activity).filter(
-            models.Activity.id == activity_id).first()
+        db.query(models.Activity).filter(models.Activity.id == activity_id).first()
     )
     if not activity:
         raise HTTPException(status_code=404, detail="Activity not found")
@@ -210,8 +208,7 @@ def update_activity(
 @app.delete("/activities/{activity_id}", status_code=204)
 def delete_activity(activity_id: int, db: Session = Depends(get_db)):
     activity = (
-        db.query(models.Activity).filter(
-            models.Activity.id == activity_id).first()
+        db.query(models.Activity).filter(models.Activity.id == activity_id).first()
     )
     if not activity:
         raise HTTPException(status_code=404, detail="Activity not found")
@@ -227,8 +224,7 @@ def delete_activity(activity_id: int, db: Session = Depends(get_db)):
 @app.post("/expenses/", response_model=schemas.Expense, status_code=201)
 def create_expense(expense: schemas.ExpenseCreate, db: Session = Depends(get_db)):
     # Verify trip exists
-    trip = db.query(models.Trip).filter(
-        models.Trip.id == expense.trip_id).first()
+    trip = db.query(models.Trip).filter(models.Trip.id == expense.trip_id).first()
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found")
 
@@ -252,8 +248,7 @@ def get_trip_expenses(trip_id: int, db: Session = Depends(get_db)):
 
 @app.delete("/expenses/{expense_id}", status_code=204)
 def delete_expense(expense_id: int, db: Session = Depends(get_db)):
-    expense = db.query(models.Expense).filter(
-        models.Expense.id == expense_id).first()
+    expense = db.query(models.Expense).filter(models.Expense.id == expense_id).first()
     if not expense:
         raise HTTPException(status_code=404, detail="Expense not found")
 
@@ -294,8 +289,7 @@ def get_trip_packing_items(trip_id: int, db: Session = Depends(get_db)):
 def update_packing_item(
     item_id: int, item_update: schemas.PackingItemUpdate, db: Session = Depends(get_db)
 ):
-    item = db.query(models.PackingItem).filter(
-        models.PackingItem.id == item_id).first()
+    item = db.query(models.PackingItem).filter(models.PackingItem.id == item_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Packing item not found")
 
@@ -309,8 +303,7 @@ def update_packing_item(
 
 @app.delete("/packing-items/{item_id}", status_code=204)
 def delete_packing_item(item_id: int, db: Session = Depends(get_db)):
-    item = db.query(models.PackingItem).filter(
-        models.PackingItem.id == item_id).first()
+    item = db.query(models.PackingItem).filter(models.PackingItem.id == item_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Packing item not found")
 
