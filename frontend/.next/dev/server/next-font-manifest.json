@@ -1,0 +1,16 @@
+{
+  "app": {
+    "[project]/Documents/playground/Travel_Planner/frontend/app/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
+    ],
+    "[project]/Documents/playground/Travel_Planner/frontend/app/trips/[id]/edit/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
+    ],
+    "[project]/Documents/playground/Travel_Planner/frontend/app/trips/[id]/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
+    ]
+  },
+  "appUsingSizeAdjust": true,
+  "pages": {},
+  "pagesUsingSizeAdjust": false
+}
