@@ -25,17 +25,17 @@ jobs:
     
     - name: Check code formatting with black
       run: |
-        black --check --diff .
+        black --check --diff . --exclude 'frontend|node_modules|.next'
       continue-on-error: true
-    
+
     - name: Check import sorting with isort
       run: |
-        isort --check-only --diff .
+        isort --check-only --diff . --skip-glob 'frontend/*' --skip-glob 'node_modules/*'
       continue-on-error: true
-    
+
     - name: Lint with flake8
       run: |
-        flake8 . --count --show-source --statistics --max-line-length=127
+        flake8 . --count --show-source --statistics --max-line-length=127 
       continue-on-error: true
   
   security-scan:
@@ -63,7 +63,7 @@ jobs:
     
     - name: Run bandit security linter
       run: |
-        bandit -r . -f json -o bandit-report.json
+        bandit -r . -f json -o bandit-report.json --exclude ./frontend,./node_modules,./.next
       continue-on-error: true
     
     - name: Upload security reports

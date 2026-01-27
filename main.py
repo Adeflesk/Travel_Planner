@@ -14,7 +14,12 @@ app = FastAPI(title="Travel Planner API", version="1.0.0")
 # Enable CORS (optional, adjust origins as needed)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://192.168.86.57:3000",  # Your network IP
+        "http://192.168.86.57:8080",  # If using port 8080
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -246,6 +251,24 @@ def get_trip_expenses(trip_id: int, db: Session = Depends(get_db)):
     return expenses
 
 
+@app.put("/expenses/{expense_id}", response_model=schemas.Expense)
+def update_expense(
+    expense_id: int,
+    expense_update: schemas.ExpenseUpdate,
+    db: Session = Depends(get_db),
+):
+    expense = db.query(models.Expense).filter(models.Expense.id == expense_id).first()
+    if not expense:
+        raise HTTPException(status_code=404, detail="Expense not found")
+
+    for key, value in expense_update.model_dump(exclude_unset=True).items():
+        setattr(expense, key, value)
+
+    db.commit()
+    db.refresh(expense)
+    return expense
+
+
 @app.delete("/expenses/{expense_id}", status_code=204)
 def delete_expense(expense_id: int, db: Session = Depends(get_db)):
     expense = db.query(models.Expense).filter(models.Expense.id == expense_id).first()
@@ -308,6 +331,116 @@ def delete_packing_item(item_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Packing item not found")
 
     db.delete(item)
+    db.commit()
+    return None
+
+
+# ==================== JOURNEY ENDPOINTS ====================
+
+
+@app.post("/journeys/", response_model=schemas.Journey, status_code=201)
+def create_journey(journey: schemas.JourneyCreate, db: Session = Depends(get_db)):
+    # Verify trip exists
+    trip = db.query(models.Trip).filter(models.Trip.id == journey.trip_id).first()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    # Verify origin destination exists if provided
+    if journey.origin_id:
+        origin = (
+            db.query(models.Destination)
+            .filter(models.Destination.id == journey.origin_id)
+            .first()
+        )
+        if not origin:
+            raise HTTPException(status_code=404, detail="Origin destination not found")
+
+    # Verify destination exists if provided
+    if journey.destination_id:
+        destination = (
+            db.query(models.Destination)
+            .filter(models.Destination.id == journey.destination_id)
+            .first()
+        )
+        if not destination:
+            raise HTTPException(
+                status_code=404, detail="Destination destination not found"
+            )
+
+    db_journey = models.Journey(**journey.model_dump())
+    db.add(db_journey)
+    db.commit()
+    db.refresh(db_journey)
+    return db_journey
+
+
+@app.get("/trips/{trip_id}/journeys/", response_model=List[schemas.Journey])
+def get_trip_journeys(trip_id: int, db: Session = Depends(get_db)):
+    journeys = (
+        db.query(models.Journey)
+        .filter(models.Journey.trip_id == trip_id)
+        .order_by(models.Journey.order, models.Journey.departure_datetime)
+        .all()
+    )
+    return journeys
+
+
+@app.get("/journeys/{journey_id}", response_model=schemas.Journey)
+def get_journey(journey_id: int, db: Session = Depends(get_db)):
+    journey = db.query(models.Journey).filter(models.Journey.id == journey_id).first()
+    if not journey:
+        raise HTTPException(status_code=404, detail="Journey not found")
+    return journey
+
+
+@app.put("/journeys/{journey_id}", response_model=schemas.Journey)
+def update_journey(
+    journey_id: int,
+    journey_update: schemas.JourneyUpdate,
+    db: Session = Depends(get_db),
+):
+    journey = db.query(models.Journey).filter(models.Journey.id == journey_id).first()
+    if not journey:
+        raise HTTPException(status_code=404, detail="Journey not found")
+
+    # Verify origin destination exists if being updated
+    update_data = journey_update.model_dump(exclude_unset=True)
+    if "origin_id" in update_data and update_data["origin_id"]:
+        origin = (
+            db.query(models.Destination)
+            .filter(models.Destination.id == update_data["origin_id"])
+            .first()
+        )
+        if not origin:
+            raise HTTPException(status_code=404, detail="Origin destination not found")
+
+    # Verify destination exists if being updated
+    if "destination_id" in update_data and update_data["destination_id"]:
+        destination = (
+            db.query(models.Destination)
+            .filter(models.Destination.id == update_data["destination_id"])
+            .first()
+        )
+        if not destination:
+            raise HTTPException(
+                status_code=404, detail="Destination destination not found"
+            )
+
+    for key, value in update_data.items():
+        setattr(journey, key, value)
+
+    db.commit()
+    db.refresh(journey)
+    return journey
+
+
+@app.delete("/journeys/{journey_id}", status_code=204)
+def delete_journey(journey_id: int, db: Session = Depends(get_db)):
+    journey = db.query(models.Journey).filter(models.Journey.id == journey_id).first()
+    if not journey:
+        raise HTTPException(status_code=404, detail="Journey not found")
+
+    db.delete(journey)
     db.commit()
     return None
 

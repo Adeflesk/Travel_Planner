@@ -6,11 +6,13 @@ import {
   Activity,
   Expense,
   PackingItem,
+  Journey,
   TripFormData,
   DestinationFormData,
   ExpenseFormData,
   PackingItemFormData,
   ActivityFormData,
+  JourneyFormData,
 } from './types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -37,10 +39,26 @@ export const destinationApi = {
   getByTripId: (tripId: number) =>
     api.get<Destination[]>(`/trips/${tripId}/destinations/`),
   getById: (id: number) => api.get<Destination>(`/destinations/${id}`),
-  create: (data: DestinationFormData) =>
-    api.post<Destination>('/destinations/', data),
-  update: (id: number, data: Partial<DestinationFormData>) =>
-    api.put<Destination>(`/destinations/${id}`, data),
+  create: (data: DestinationFormData) => {
+    const cleanedData: Partial<DestinationFormData> = {};
+    (Object.keys(data) as Array<keyof DestinationFormData>).forEach((key) => {
+      const value = data[key];
+      if (value !== '' && value !== undefined) {
+        cleanedData[key] = value as never;
+      }
+    });
+    return api.post<Destination>('/destinations/', cleanedData);
+  },
+  update: (id: number, data: Partial<DestinationFormData>) => {
+    const cleanedData: Partial<DestinationFormData> = {};
+    (Object.keys(data) as Array<keyof DestinationFormData>).forEach((key) => {
+      const value = data[key];
+      if (value !== '' && value !== undefined) {
+        cleanedData[key] = value as never;
+      }
+    });
+    return api.put<Destination>(`/destinations/${id}`, cleanedData);
+  },
   delete: (id: number) => api.delete(`/destinations/${id}`),
 };
 
@@ -58,10 +76,41 @@ export const activityApi = {
 export const expenseApi = {
   getByTripId: (tripId: number) =>
     api.get<Expense[]>(`/trips/${tripId}/expenses/`),
-  create: (data: ExpenseFormData) =>
-    api.post<Expense>('/expenses/', data),
-  update: (id: number, data: Partial<ExpenseFormData>) =>
-    api.put<Expense>(`/expenses/${id}`, data),
+  create: (data: ExpenseFormData) => {
+    const cleanedData: Partial<ExpenseFormData> = {};
+    (Object.keys(data) as Array<keyof ExpenseFormData>).forEach((key) => {
+      const value = data[key];
+      if (value !== '' && value !== undefined) {
+        // Ensure amount is a number
+        if (key === 'amount' && typeof value === 'string') {
+          cleanedData[key] = parseFloat(value) as never;
+        } else {
+          cleanedData[key] = value as never;
+        }
+      }
+    });
+    console.log('Expense create payload:', cleanedData);
+    return api.post<Expense>('/expenses/', cleanedData);
+  },
+  update: (id: number, data: Partial<ExpenseFormData>) => {
+    const cleanedData: Partial<ExpenseFormData> = {};
+    (Object.keys(data) as Array<keyof ExpenseFormData>).forEach((key) => {
+      const value = data[key];
+      // Skip trip_id and date - they shouldn't be updated
+      if (key === 'trip_id' || key === 'date') return;
+
+      if (value !== '' && value !== undefined) {
+        // Ensure amount is a number
+        if (key === 'amount' && typeof value === 'string') {
+          cleanedData[key] = parseFloat(value) as never;
+        } else {
+          cleanedData[key] = value as never;
+        }
+      }
+    });
+    console.log('Expense update payload:', cleanedData);
+    return api.put<Expense>(`/expenses/${id}`, cleanedData);
+  },
   delete: (id: number) => api.delete(`/expenses/${id}`),
 };
 
@@ -74,6 +123,43 @@ export const packingApi = {
   update: (id: number, data: Partial<Omit<PackingItem, 'id'>>) =>
     api.put<PackingItem>(`/packing-items/${id}`, data),
   delete: (id: number) => api.delete(`/packing-items/${id}`),
+};
+
+// Journey API
+export const journeyApi = {
+  getByTripId: (tripId: number) =>
+    api.get<Journey[]>(`/trips/${tripId}/journeys/`),
+  getById: (id: number) => api.get<Journey>(`/journeys/${id}`),
+  create: (data: JourneyFormData) => {
+    const cleanedData: Partial<JourneyFormData> = {};
+    (Object.keys(data) as Array<keyof JourneyFormData>).forEach((key) => {
+      const value = data[key];
+      if (value !== '' && value !== undefined && value !== null) {
+        if (key === 'cost' && typeof value === 'string') {
+          cleanedData[key] = parseFloat(value) as never;
+        } else {
+          cleanedData[key] = value as never;
+        }
+      }
+    });
+    return api.post<Journey>('/journeys/', cleanedData);
+  },
+  update: (id: number, data: Partial<JourneyFormData>) => {
+    const cleanedData: Partial<JourneyFormData> = {};
+    (Object.keys(data) as Array<keyof JourneyFormData>).forEach((key) => {
+      const value = data[key];
+      if (key === 'trip_id') return; // Don't update trip_id
+      if (value !== '' && value !== undefined && value !== null) {
+        if (key === 'cost' && typeof value === 'string') {
+          cleanedData[key] = parseFloat(value) as never;
+        } else {
+          cleanedData[key] = value as never;
+        }
+      }
+    });
+    return api.put<Journey>(`/journeys/${id}`, cleanedData);
+  },
+  delete: (id: number) => api.delete(`/journeys/${id}`),
 };
 
 export default api;

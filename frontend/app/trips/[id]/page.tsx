@@ -5,9 +5,12 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Trip } from '@/lib/types';
 import { tripApi } from '@/lib/api';
-import { ArrowLeft, Calendar, DollarSign, Edit, MapPin, Receipt, Package } from 'lucide-react';
+import { ArrowLeft, Calendar, DollarSign, Edit, MapPin, Receipt, Package, Compass, Route, Clock } from 'lucide-react';
 import DestinationList from '@/components/DestinationList';
 import ExpenseList from '@/components/ExpenseList';
+import TripActivityList from '@/components/TripActivityList';
+import JourneyList from '@/components/JourneyList';
+import TripTimeline from '@/components/TripTimeline';
 import PackingList from '@/components/PackingList';
 
 export default function TripDetailPage() {
@@ -17,7 +20,7 @@ export default function TripDetailPage() {
 
   const [trip, setTrip] = useState<Trip | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'destinations' | 'expenses' | 'packing'>('destinations');
+  const [activeTab, setActiveTab] = useState<'destinations' | 'journeys' | 'timeline' | 'expenses' | 'activities' | 'packing'>('destinations');
 
   useEffect(() => {
     const loadTrip = async () => {
@@ -147,6 +150,32 @@ export default function TripDetailPage() {
           </div>
         </button>
         <button
+          onClick={() => setActiveTab('journeys')}
+          className={`px-6 py-3 rounded-lg font-medium transition ${
+            activeTab === 'journeys'
+              ? 'bg-blue-600 text-white'
+              : 'bg-white text-gray-700 hover:bg-gray-50'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <Route className="w-4 h-4" />
+            Journeys
+          </div>
+        </button>
+        <button
+          onClick={() => setActiveTab('timeline')}
+          className={`px-6 py-3 rounded-lg font-medium transition ${
+            activeTab === 'timeline'
+              ? 'bg-blue-600 text-white'
+              : 'bg-white text-gray-700 hover:bg-gray-50'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4" />
+            Timeline
+          </div>
+        </button>
+        <button
           onClick={() => setActiveTab('expenses')}
           className={`px-6 py-3 rounded-lg font-medium transition ${
             activeTab === 'expenses'
@@ -157,6 +186,19 @@ export default function TripDetailPage() {
           <div className="flex items-center gap-2">
             <Receipt className="w-4 h-4" />
             Expenses
+          </div>
+        </button>
+        <button
+          onClick={() => setActiveTab('activities')}
+          className={`px-6 py-3 rounded-lg font-medium transition ${
+            activeTab === 'activities'
+              ? 'bg-blue-600 text-white'
+              : 'bg-white text-gray-700 hover:bg-gray-50'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <Compass className="w-4 h-4" />
+            Activities
           </div>
         </button>
         <button
@@ -177,7 +219,10 @@ export default function TripDetailPage() {
       {/* Tab Content */}
       <div className="bg-white rounded-lg shadow-md p-6">
         {activeTab === 'destinations' && <DestinationList tripId={tripId} />}
+        {activeTab === 'journeys' && <JourneyList tripId={tripId} />}
+        {activeTab === 'timeline' && <TripTimeline tripId={tripId} />}
         {activeTab === 'expenses' && <ExpenseList tripId={tripId} />}
+        {activeTab === 'activities' && <TripActivityList tripId={tripId} />}
         {activeTab === 'packing' && <PackingList tripId={tripId} />}
       </div>
     </div>

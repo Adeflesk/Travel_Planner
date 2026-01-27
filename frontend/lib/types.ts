@@ -16,10 +16,9 @@ export interface Destination {
   trip_id: number;
   name: string;
   country?: string;
+  region?: string;
   arrival_date?: string;
   departure_date?: string;
-  accommodation_name?: string;
-  accommodation_address?: string;
   notes?: string;
   order: number;
 }
@@ -37,6 +36,8 @@ export interface Activity {
   booking_reference?: string;
   status: 'planned' | 'booked' | 'completed';
   priority?: number;
+  is_todo: boolean;
+  is_completed: boolean;
 }
 
 export interface Expense {
@@ -49,7 +50,9 @@ export interface Expense {
   currency: string;
   description?: string;
   date: string;
-  paid_by?: string;
+  booked: boolean;
+  paid: boolean;
+  cancel_by_date?: string;
 }
 
 export interface PackingItem {
@@ -59,6 +62,23 @@ export interface PackingItem {
   category?: string;
   quantity: number;
   is_packed: boolean;
+}
+
+export interface Journey {
+  id: number;
+  trip_id: number;
+  origin_id?: number;
+  destination_id?: number;
+  transport_mode: string;
+  departure_datetime?: string;
+  arrival_datetime?: string;
+  carrier?: string;
+  booking_reference?: string;
+  cost?: number;
+  currency: string;
+  notes?: string;
+  status: 'planned' | 'booked' | 'completed';
+  order: number;
 }
 
 export interface TripFormData {
@@ -74,6 +94,7 @@ export interface DestinationFormData {
   trip_id: number;
   name: string;
   country?: string;
+  region?: string;
   arrival_date?: string;
   departure_date?: string;
 }
@@ -85,6 +106,9 @@ export interface ExpenseFormData {
   description?: string;
   date: string;
   currency?: string;
+  booked?: boolean;
+  paid?: boolean;
+  cancel_by_date?: string;
 }
 
 export interface PackingItemFormData {
@@ -106,4 +130,22 @@ export interface ActivityFormData {
   booking_reference?: string;
   status?: string;
   priority?: number;
+  is_todo?: boolean;
+  is_completed?: boolean;
+}
+
+export interface JourneyFormData {
+  trip_id: number;
+  origin_id?: number;
+  destination_id?: number;
+  transport_mode: string;
+  departure_datetime?: string;
+  arrival_datetime?: string;
+  carrier?: string;
+  booking_reference?: string;
+  cost?: number;
+  currency?: string;
+  notes?: string;
+  status?: string;
+  order?: number;
 }

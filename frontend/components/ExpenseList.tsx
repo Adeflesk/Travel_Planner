@@ -31,6 +31,9 @@ export default function ExpenseList({ tripId }: ExpenseListProps) {
     description: '',
     date: new Date().toISOString().split('T')[0],
     currency: 'USD',
+    booked: false,
+    paid: false,
+    cancel_by_date: '',
   });
 
   const loadExpenses = useCallback(async () => {
@@ -64,6 +67,9 @@ export default function ExpenseList({ tripId }: ExpenseListProps) {
         description: '',
         date: new Date().toISOString().split('T')[0],
         currency: 'USD',
+        booked: false,
+        paid: false,
+        cancel_by_date: '',
       });
       loadExpenses();
     } catch (error) {
@@ -77,10 +83,13 @@ export default function ExpenseList({ tripId }: ExpenseListProps) {
     setFormData({
       trip_id: tripId,
       category: expense.category,
-      amount: parseFloat(expense.amount.toString()),
+      amount: expense.amount,
       description: expense.description,
       date: expense.date,
       currency: expense.currency,
+      booked: expense.booked,
+      paid: expense.paid,
+      cancel_by_date: expense.cancel_by_date || '',
     });
   };
 
@@ -93,6 +102,9 @@ export default function ExpenseList({ tripId }: ExpenseListProps) {
       description: '',
       date: new Date().toISOString().split('T')[0],
       currency: 'USD',
+      booked: false,
+      paid: false,
+      cancel_by_date: '',
     });
   };
 
@@ -129,58 +141,121 @@ export default function ExpenseList({ tripId }: ExpenseListProps) {
     return icons[category] || '💰';
   };
 
+  const getCancelStatus = (cancelByDate: string) => {
+    const today = new Date();
+    const cancelDate = new Date(cancelByDate);
+    const daysUntilCancel = Math.ceil((cancelDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (daysUntilCancel < 0) {
+      return { color: 'text-red-600', label: 'Past cancel date', icon: '🚫' };
+    } else if (daysUntilCancel <= 7) {
+      return { color: 'text-orange-600', label: `Cancel by ${format(cancelDate, 'MMM dd')}`, icon: '⚠️' };
+    } else {
+      return { color: 'text-gray-600', label: `Cancel by ${format(cancelDate, 'MMM dd')}`, icon: '📅' };
+    }
+  };
+
   return (
     <div>
       <form onSubmit={handleSubmit} className="bg-gray-50 p-4 rounded-lg mb-4">
         <h3 className="font-semibold mb-3">
           {editingId ? 'Edit Expense' : 'Add Expense'}
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <input
-            type="text"
-            value={formData.description}
-            onChange={(e) =>
-              setFormData({ ...formData, description: e.target.value })
-            }
-            placeholder="Description"
-            required
-            className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
-          />
-          <input
-            type="number"
-            value={formData.amount}
-            onChange={(e) =>
-              setFormData({ ...formData, amount: parseFloat(e.target.value) })
-            }
-            placeholder="Amount"
-            step="0.01"
-            required
-            className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
-          />
-          <select
-            value={formData.category}
-            onChange={(e) =>
-              setFormData({ ...formData, category: e.target.value })
-            }
-            required
-            className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs"
-          >
-            <option value="">Select Category</option>
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat.charAt(0).toUpperCase() + cat.slice(1)}
-              </option>
-            ))}
-          </select>
-          <input
-            type="date"
-            value={formData.date}
-            onChange={(e) =>
-              setFormData({ ...formData, date: e.target.value })
-            }
-            required
-            className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">Description</label>
+            <input
+              type="text"
+              value={formData.description}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
+              placeholder="e.g., Hotel booking, Dinner"
+              required
+              className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">Amount</label>
+            <input
+              type="number"
+              value={formData.amount}
+              onChange={(e) =>
+                setFormData({ ...formData, amount: parseFloat(e.target.value)|| 0 })
+              }
+              placeholder="0.00"
+              step="0.01"
+              required
+              className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">Category</label>
+            <select
+              value={formData.category}
+              onChange={(e) =>
+                setFormData({ ...formData, category: e.target.value })
+              }
+              required
+              className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs"
+            >
+              <option value="">Select Category</option>
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">Expense Date</label>
+            <input
+              type="date"
+              value={formData.date}
+              onChange={(e) =>
+                setFormData({ ...formData, date: e.target.value })
+              }
+              required
+              className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">
+              Cancel By Date <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <input
+              type="date"
+              value={formData.cancel_by_date || ''}
+              onChange={(e) =>
+                setFormData({ ...formData, cancel_by_date: e.target.value })
+              }
+              className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+            />
+          </div>
+        </div>
+        <div className="mt-3 flex gap-4 items-center">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={formData.booked || false}
+              onChange={(e) =>
+                setFormData({ ...formData, booked: e.target.checked })
+              }
+              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+            />
+            <span className="text-sm font-medium text-gray-700">Booked</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={formData.paid || false}
+              onChange={(e) =>
+                setFormData({ ...formData, paid: e.target.checked })
+              }
+              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+            />
+            <span className="text-sm font-medium text-gray-700">Paid</span>
+          </label>
         </div>
         <div className="mt-3 flex gap-2">
           <button
@@ -254,7 +329,7 @@ export default function ExpenseList({ tripId }: ExpenseListProps) {
                   </span>
                   <div>
                     <p className="font-medium">{expense.description}</p>
-                    <div className="flex items-center gap-3 text-sm 
+                    <div className="flex items-center gap-3 text-sm
                                   text-gray-500 mt-1">
                       <span className="capitalize">
                         {expense.category}
@@ -263,6 +338,30 @@ export default function ExpenseList({ tripId }: ExpenseListProps) {
                       <span>
                         {format(new Date(expense.date), 'MMM dd, yyyy')}
                       </span>
+                      {expense.booked && (
+                        <>
+                          <span>•</span>
+                          <span className="text-blue-600 font-medium">
+                            📅 Booked
+                          </span>
+                        </>
+                      )}
+                      {expense.paid && (
+                        <>
+                          <span>•</span>
+                          <span className="text-green-600 font-medium">
+                            ✓ Paid
+                          </span>
+                        </>
+                      )}
+                      {expense.cancel_by_date && !expense.paid && (
+                        <>
+                          <span>•</span>
+                          <span className={`font-medium ${getCancelStatus(expense.cancel_by_date).color}`}>
+                            {getCancelStatus(expense.cancel_by_date).icon} {getCancelStatus(expense.cancel_by_date).label}
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
