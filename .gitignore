@@ -91,6 +91,13 @@ next-env.d.ts
 htmlcov/
 
 # =========================
+# Playwright
+# =========================
+playwright-report/
+test-results/
+playwright/.cache/
+
+# =========================
 # Project-specific temp files
 # =========================
 Plans.txt
