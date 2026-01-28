@@ -8,7 +8,7 @@ import { tripApi } from '@/lib/api';
 import { format } from 'date-fns';
 import { ArrowLeft, Calendar, DollarSign } from 'lucide-react';
 import { DestinationList } from '@/components/destinations';
-import ExpenseList from '@/components/ExpenseList';
+import { ExpenseList } from '@/components/expenses';
 import PackingList from '@/components/PackingList';
 
 type TabType = 'destinations' | 'expenses' | 'packing';
