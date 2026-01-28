@@ -9,7 +9,7 @@ import { ArrowLeft, Calendar, DollarSign, Edit, MapPin, Receipt, Package, Compas
 import { DestinationList } from '@/components/destinations';
 import { ExpenseList } from '@/components/expenses';
 import TripActivityList from '@/components/TripActivityList';
-import JourneyList from '@/components/JourneyList';
+import { JourneyList } from '@/components/journeys';
 import TripTimeline from '@/components/TripTimeline';
 import PackingList from '@/components/PackingList';
 
