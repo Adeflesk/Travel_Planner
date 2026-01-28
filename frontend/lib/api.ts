@@ -17,6 +17,8 @@ import {
   PackingSummary,
   TripProgress,
   DestinationWithActivities,
+  TimelineItem,
+  DestinationAccommodation,
 } from './types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -41,6 +43,12 @@ export const tripApi = {
   getDestinationsWithActivities: (tripId: number) =>
     api.get<DestinationWithActivities[]>(
       `/trips/${tripId}/destinations-with-activities/`
+    ),
+  getTimeline: (tripId: number) =>
+    api.get<TimelineItem[]>(`/trips/${tripId}/timeline/`),
+  getAccommodationExpenses: (tripId: number) =>
+    api.get<DestinationAccommodation[]>(
+      `/trips/${tripId}/accommodation-expenses/`
     ),
 };
 

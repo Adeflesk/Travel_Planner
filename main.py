@@ -370,6 +370,102 @@ def get_destinations_with_activities(trip_id: int, db: Session = Depends(get_db)
     return result
 
 
+@app.get("/trips/{trip_id}/timeline/", response_model=List[schemas.TimelineItem])
+def get_trip_timeline(trip_id: int, db: Session = Depends(get_db)):
+    """Get merged and sorted timeline of destinations and journeys for a trip"""
+    trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    destinations = (
+        db.query(models.Destination).filter(models.Destination.trip_id == trip_id).all()
+    )
+
+    journeys = db.query(models.Journey).filter(models.Journey.trip_id == trip_id).all()
+
+    timeline = []
+
+    # Add destinations to timeline
+    for dest in destinations:
+        sort_date = None
+        if dest.arrival_date:
+            from datetime import datetime, time
+
+            sort_date = datetime.combine(dest.arrival_date, time.min)
+        timeline.append(
+            {"type": "destination", "sort_date": sort_date, "destination": dest}
+        )
+
+    # Add journeys to timeline
+    for journey in journeys:
+        timeline.append(
+            {
+                "type": "journey",
+                "sort_date": journey.departure_datetime,
+                "journey": journey,
+            }
+        )
+
+    # Sort by date (items without dates go to the beginning)
+    from datetime import datetime as dt
+
+    timeline.sort(
+        key=lambda x: x["sort_date"] if x["sort_date"] is not None else dt.min
+    )
+
+    return timeline
+
+
+@app.get(
+    "/trips/{trip_id}/accommodation-expenses/",
+    response_model=List[schemas.DestinationAccommodation],
+)
+def get_accommodation_expenses(trip_id: int, db: Session = Depends(get_db)):
+    """Get accommodation expenses grouped by destination for a trip"""
+    trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    destinations = (
+        db.query(models.Destination)
+        .filter(models.Destination.trip_id == trip_id)
+        .order_by(models.Destination.order)
+        .all()
+    )
+
+    # Get all accommodation expenses for this trip
+    accommodation_expenses = (
+        db.query(models.Expense)
+        .filter(
+            models.Expense.trip_id == trip_id,
+            models.Expense.category == "accommodation",
+        )
+        .all()
+    )
+
+    result = []
+    for dest in destinations:
+        # Find expenses for this destination
+        dest_expenses = []
+        for exp in accommodation_expenses:
+            # Manual link takes priority
+            if exp.destination_id == dest.id:
+                dest_expenses.append(exp)
+            # Auto-link by date if no manual link
+            elif (
+                exp.destination_id is None and dest.arrival_date and dest.departure_date
+            ):
+                if dest.arrival_date <= exp.date < dest.departure_date:
+                    dest_expenses.append(exp)
+
+        total = sum(float(e.amount) for e in dest_expenses)
+        result.append(
+            {"destination": dest, "expenses": dest_expenses, "total": round(total, 2)}
+        )
+
+    return result
+
+
 # ==================== PACKING ITEM ENDPOINTS ====================
 
 

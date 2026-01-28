@@ -881,6 +881,263 @@ def test_destinations_with_activities_nonexistent_trip(test_db):
     assert response.json()["detail"] == "Trip not found"
 
 
+# ==================== TIMELINE TESTS ====================
+
+
+def test_timeline_empty(test_db, created_trip):
+    """Test timeline with no destinations or journeys"""
+    response = client.get(f"/trips/{created_trip['id']}/timeline/")
+    assert response.status_code == 200
+    data = response.json()
+    assert data == []
+
+
+def test_timeline_with_data(test_db, created_trip):
+    """Test timeline merges and sorts destinations and journeys"""
+    # Create destinations with dates
+    dest1 = client.post(
+        "/destinations/",
+        json={
+            "trip_id": created_trip["id"],
+            "name": "Paris",
+            "arrival_date": created_trip["start_date"],
+        },
+    ).json()
+
+    dest2 = client.post(
+        "/destinations/",
+        json={
+            "trip_id": created_trip["id"],
+            "name": "London",
+            "arrival_date": created_trip["end_date"],
+        },
+    ).json()
+
+    # Create journey between them (mid-trip date)
+    journey_date = (
+        datetime.strptime(created_trip["start_date"], "%Y-%m-%d") + timedelta(days=3)
+    ).strftime("%Y-%m-%d")
+    client.post(
+        "/journeys/",
+        json={
+            "trip_id": created_trip["id"],
+            "origin_id": dest1["id"],
+            "destination_id": dest2["id"],
+            "transport_mode": "train",
+            "departure_datetime": f"{journey_date}T10:00:00",
+        },
+    )
+
+    response = client.get(f"/trips/{created_trip['id']}/timeline/")
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 3
+
+    # Verify sorting: Paris (start_date) -> Journey (mid) -> London (end_date)
+    assert data[0]["type"] == "destination"
+    assert data[0]["destination"]["name"] == "Paris"
+    assert data[1]["type"] == "journey"
+    assert data[1]["journey"]["transport_mode"] == "train"
+    assert data[2]["type"] == "destination"
+    assert data[2]["destination"]["name"] == "London"
+
+
+def test_timeline_items_without_dates(test_db, created_trip):
+    """Test timeline handles items without dates"""
+    # Create destination without date
+    client.post(
+        "/destinations/",
+        json={"trip_id": created_trip["id"], "name": "Undated City"},
+    )
+
+    # Create destination with date
+    client.post(
+        "/destinations/",
+        json={
+            "trip_id": created_trip["id"],
+            "name": "Dated City",
+            "arrival_date": created_trip["start_date"],
+        },
+    )
+
+    response = client.get(f"/trips/{created_trip['id']}/timeline/")
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 2
+    # Items without dates should come first
+    assert data[0]["destination"]["name"] == "Undated City"
+    assert data[1]["destination"]["name"] == "Dated City"
+
+
+def test_timeline_nonexistent_trip(test_db):
+    """Test timeline for nonexistent trip"""
+    response = client.get("/trips/99999/timeline/")
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Trip not found"
+
+
+# ==================== ACCOMMODATION EXPENSES TESTS ====================
+
+
+def test_accommodation_expenses_empty(test_db, created_trip):
+    """Test accommodation expenses with no destinations"""
+    response = client.get(f"/trips/{created_trip['id']}/accommodation-expenses/")
+    assert response.status_code == 200
+    data = response.json()
+    assert data == []
+
+
+def test_accommodation_expenses_manual_link(test_db, created_trip):
+    """Test accommodation expenses with manual destination link"""
+    # Create destination
+    dest = client.post(
+        "/destinations/",
+        json={
+            "trip_id": created_trip["id"],
+            "name": "Paris",
+            "arrival_date": created_trip["start_date"],
+            "departure_date": created_trip["end_date"],
+        },
+    ).json()
+
+    # Create accommodation expense linked to destination
+    client.post(
+        "/expenses/",
+        json={
+            "trip_id": created_trip["id"],
+            "destination_id": dest["id"],
+            "category": "accommodation",
+            "amount": 150.00,
+            "date": created_trip["start_date"],
+            "description": "Hotel Paris",
+        },
+    )
+
+    response = client.get(f"/trips/{created_trip['id']}/accommodation-expenses/")
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 1
+    assert data[0]["destination"]["name"] == "Paris"
+    assert len(data[0]["expenses"]) == 1
+    assert float(data[0]["expenses"][0]["amount"]) == 150.00
+    assert data[0]["total"] == 150.00
+
+
+def test_accommodation_expenses_auto_link_by_date(test_db, created_trip):
+    """Test accommodation expenses auto-linked by date range"""
+    # Create destination with date range
+    client.post(
+        "/destinations/",
+        json={
+            "trip_id": created_trip["id"],
+            "name": "London",
+            "arrival_date": created_trip["start_date"],
+            "departure_date": created_trip["end_date"],
+        },
+    )
+
+    # Create accommodation expense without destination_id but within date range
+    exp_date = (
+        datetime.strptime(created_trip["start_date"], "%Y-%m-%d") + timedelta(days=1)
+    ).strftime("%Y-%m-%d")
+    client.post(
+        "/expenses/",
+        json={
+            "trip_id": created_trip["id"],
+            "category": "accommodation",
+            "amount": 200.00,
+            "date": exp_date,
+            "description": "Airbnb London",
+        },
+    )
+
+    response = client.get(f"/trips/{created_trip['id']}/accommodation-expenses/")
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 1
+    assert data[0]["destination"]["name"] == "London"
+    assert len(data[0]["expenses"]) == 1
+    assert data[0]["total"] == 200.00
+
+
+def test_accommodation_expenses_multiple_destinations(test_db, created_trip):
+    """Test accommodation expenses across multiple destinations"""
+    # Create two destinations
+    dest1 = client.post(
+        "/destinations/",
+        json={
+            "trip_id": created_trip["id"],
+            "name": "Paris",
+            "arrival_date": created_trip["start_date"],
+            "departure_date": (
+                datetime.strptime(created_trip["start_date"], "%Y-%m-%d")
+                + timedelta(days=3)
+            ).strftime("%Y-%m-%d"),
+            "order": 0,
+        },
+    ).json()
+
+    dest2 = client.post(
+        "/destinations/",
+        json={
+            "trip_id": created_trip["id"],
+            "name": "London",
+            "arrival_date": (
+                datetime.strptime(created_trip["start_date"], "%Y-%m-%d")
+                + timedelta(days=3)
+            ).strftime("%Y-%m-%d"),
+            "departure_date": created_trip["end_date"],
+            "order": 1,
+        },
+    ).json()
+
+    # Create expenses for each destination
+    client.post(
+        "/expenses/",
+        json={
+            "trip_id": created_trip["id"],
+            "destination_id": dest1["id"],
+            "category": "accommodation",
+            "amount": 100.00,
+            "date": created_trip["start_date"],
+        },
+    )
+    client.post(
+        "/expenses/",
+        json={
+            "trip_id": created_trip["id"],
+            "destination_id": dest2["id"],
+            "category": "accommodation",
+            "amount": 150.00,
+            "date": (
+                datetime.strptime(created_trip["start_date"], "%Y-%m-%d")
+                + timedelta(days=4)
+            ).strftime("%Y-%m-%d"),
+        },
+    )
+
+    response = client.get(f"/trips/{created_trip['id']}/accommodation-expenses/")
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 2
+    assert data[0]["destination"]["name"] == "Paris"
+    assert data[0]["total"] == 100.00
+    assert data[1]["destination"]["name"] == "London"
+    assert data[1]["total"] == 150.00
+
+
+def test_accommodation_expenses_nonexistent_trip(test_db):
+    """Test accommodation expenses for nonexistent trip"""
+    response = client.get("/trips/99999/accommodation-expenses/")
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Trip not found"
+
+
 # ==================== INTEGRATION TESTS ====================
 
 

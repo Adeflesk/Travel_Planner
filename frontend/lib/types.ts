@@ -182,3 +182,16 @@ export interface DestinationWithActivities {
   destination: Destination;
   activities: Activity[];
 }
+
+export interface TimelineItem {
+  type: 'destination' | 'journey';
+  sort_date: string | null;
+  destination?: Destination;
+  journey?: Journey;
+}
+
+export interface DestinationAccommodation {
+  destination: Destination;
+  expenses: Expense[];
+  total: number;
+}

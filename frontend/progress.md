@@ -282,8 +282,60 @@ Moving business logic calculations from Next.js frontend hooks to FastAPI backen
 
 ---
 
-## Remaining Phases
+## Phase 3: Timeline & Accommodation (Completed)
 
-### Phase 3: Timeline & Accommodation
-- `GET /trips/{id}/timeline/` - Merged/sorted destinations and journeys
-- `GET /trips/{id}/accommodation-expenses/` - Accommodation expenses by destination
+### New Backend Endpoints
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /trips/{id}/timeline/` | Merged/sorted destinations and journeys for timeline view |
+| `GET /trips/{id}/accommodation-expenses/` | Accommodation expenses grouped by destination |
+
+### Backend Changes
+
+**schemas.py** - Added Pydantic response models:
+- `TimelineItem` - Generic timeline item with type, sort_date, destination/journey
+- `DestinationAccommodation` - Destination with linked accommodation expenses and total
+
+**main.py** - Added 2 new endpoints:
+- `get_trip_timeline()` - Merges destinations and journeys, sorts by date
+- `get_accommodation_expenses()` - Groups accommodation expenses by destination (manual link or auto-link by date)
+
+**test_main.py** - Added 9 unit tests:
+- Empty data cases for both endpoints
+- Timeline sorting with and without dates
+- Accommodation expenses with manual and auto-link by date
+- Multiple destinations with expenses
+- Nonexistent trip (404) cases
+
+### Frontend Changes
+
+**lib/types.ts** - Added TypeScript types:
+- `TimelineItem`
+- `DestinationAccommodation`
+
+**lib/api.ts** - Added API functions:
+- `tripApi.getTimeline(tripId)`
+- `tripApi.getAccommodationExpenses(tripId)`
+
+**useTimeline.ts** - Simplified hook:
+- Now makes single API call to timeline endpoint
+- Removed local `buildTimeline()` logic (merge + sort)
+- Backend handles merging destinations and journeys
+
+**useDestinations.ts** - Simplified hook:
+- Replaced expense filtering with accommodation-expenses endpoint
+- Removed local `getAccommodationExpenses` filter logic
+- Uses Map for O(1) accommodation lookup
+
+### Code Reduction
+
+| Hook | Before | After | Improvement |
+|------|--------|-------|-------------|
+| useTimeline.ts | 97 lines, 2 calls | 83 lines, 1 call | Timeline logic moved to backend |
+| useDestinations.ts | 77 lines | 66 lines | Expense filtering moved to backend |
+
+### Tests
+
+- Backend: 63/63 pytest tests pass
+- Frontend: TypeScript builds successfully

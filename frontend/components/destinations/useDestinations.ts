@@ -1,23 +1,34 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Destination, Expense } from '@/lib/types';
-import { destinationApi, expenseApi } from '@/lib/api';
+import { Destination, Expense, DestinationAccommodation } from '@/lib/types';
+import { destinationApi, tripApi } from '@/lib/api';
 
 export function useDestinations(tripId: number) {
   const [destinations, setDestinations] = useState<Destination[]>([]);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [accommodationMap, setAccommodationMap] = useState<
+    Map<number, { expenses: Expense[]; total: number }>
+  >(new Map());
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   const reload = useCallback(async () => {
     try {
-      const [destResponse, expResponse] = await Promise.all([
+      const [destResponse, accommResponse] = await Promise.all([
         destinationApi.getByTripId(tripId),
-        expenseApi.getByTripId(tripId),
+        tripApi.getAccommodationExpenses(tripId),
       ]);
       setDestinations(destResponse.data);
-      setExpenses(expResponse.data);
+
+      // Build accommodation map for quick lookup
+      const map = new Map<number, { expenses: Expense[]; total: number }>();
+      accommResponse.data.forEach((item: DestinationAccommodation) => {
+        map.set(item.destination.id, {
+          expenses: item.expenses,
+          total: item.total,
+        });
+      });
+      setAccommodationMap(map);
     } catch (error) {
       console.error('Error loading destinations:', error);
     } finally {
@@ -40,25 +51,9 @@ export function useDestinations(tripId: number) {
 
   const getAccommodationExpenses = useCallback(
     (dest: Destination) => {
-      return expenses.filter((exp) => {
-        if (exp.category !== 'accommodation') return false;
-
-        // Manual link takes priority
-        if (exp.destination_id === dest.id) return true;
-
-        // Auto-link by date if no manual link
-        // Exclude departure date since you check out that day
-        if (!exp.destination_id && dest.arrival_date && dest.departure_date) {
-          const expDate = new Date(exp.date);
-          const arrival = new Date(dest.arrival_date);
-          const departure = new Date(dest.departure_date);
-          return expDate >= arrival && expDate < departure;
-        }
-
-        return false;
-      });
+      return accommodationMap.get(dest.id)?.expenses || [];
     },
-    [expenses]
+    [accommodationMap]
   );
 
   const toggleExpanded = (id: number) => {
