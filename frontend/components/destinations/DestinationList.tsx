@@ -1,0 +1,69 @@
+'use client';
+
+import { useDestinations } from './useDestinations';
+import { useDestinationForm } from './useDestinationForm';
+import { DestinationForm } from './DestinationForm';
+import { DestinationItem } from './DestinationItem';
+
+interface DestinationListProps {
+  tripId: number;
+}
+
+export default function DestinationList({ tripId }: DestinationListProps) {
+  const {
+    destinations,
+    loading,
+    expandedId,
+    reload,
+    deleteDestination,
+    getAccommodationExpenses,
+    toggleExpanded,
+  } = useDestinations(tripId);
+
+  const {
+    formData,
+    isEditing,
+    handleSubmit,
+    startEdit,
+    resetForm,
+    updateField,
+  } = useDestinationForm(tripId, reload);
+
+  const handleDelete = async (id: number) => {
+    if (confirm('Delete this destination?')) {
+      await deleteDestination(id);
+    }
+  };
+
+  return (
+    <div>
+      <DestinationForm
+        formData={formData}
+        isEditing={isEditing}
+        onSubmit={handleSubmit}
+        onCancel={resetForm}
+        updateField={updateField}
+      />
+
+      {loading ? (
+        <p className="text-center text-gray-500">Loading...</p>
+      ) : destinations.length === 0 ? (
+        <p className="text-center text-gray-500 py-4">No destinations yet</p>
+      ) : (
+        <div className="space-y-3">
+          {destinations.map((dest) => (
+            <DestinationItem
+              key={dest.id}
+              destination={dest}
+              accommodationExpenses={getAccommodationExpenses(dest)}
+              isExpanded={expandedId === dest.id}
+              onEdit={startEdit}
+              onDelete={handleDelete}
+              onToggleExpanded={toggleExpanded}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

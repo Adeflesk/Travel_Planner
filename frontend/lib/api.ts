@@ -66,9 +66,27 @@ export const destinationApi = {
 export const activityApi = {
   getByDestinationId: (destinationId: number) =>
     api.get<Activity[]>(`/destinations/${destinationId}/activities/`),
-  create: (data: ActivityFormData) => api.post<Activity>('/activities/', data),
-  update: (id: number, data: Partial<ActivityFormData>) =>
-    api.put<Activity>(`/activities/${id}`, data),
+  create: (data: ActivityFormData) => {
+    const cleanedData: Partial<ActivityFormData> = {};
+    (Object.keys(data) as Array<keyof ActivityFormData>).forEach((key) => {
+      const value = data[key];
+      if (value !== '' && value !== undefined) {
+        cleanedData[key] = value as never;
+      }
+    });
+    return api.post<Activity>('/activities/', cleanedData);
+  },
+  update: (id: number, data: Partial<ActivityFormData>) => {
+    const cleanedData: Partial<ActivityFormData> = {};
+    (Object.keys(data) as Array<keyof ActivityFormData>).forEach((key) => {
+      const value = data[key];
+      if (key === 'destination_id') return; // Don't update destination_id
+      if (value !== '' && value !== undefined) {
+        cleanedData[key] = value as never;
+      }
+    });
+    return api.put<Activity>(`/activities/${id}`, cleanedData);
+  },
   delete: (id: number) => api.delete(`/activities/${id}`),
 };
 

@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Trip } from '@/lib/types';
 import { tripApi } from '@/lib/api';
 import { ArrowLeft, Calendar, DollarSign, Edit, MapPin, Receipt, Package, Compass, Route, Clock } from 'lucide-react';
-import DestinationList from '@/components/DestinationList';
+import { DestinationList } from '@/components/destinations';
 import ExpenseList from '@/components/ExpenseList';
 import TripActivityList from '@/components/TripActivityList';
 import JourneyList from '@/components/JourneyList';

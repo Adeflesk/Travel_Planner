@@ -7,7 +7,7 @@ import { Trip } from '@/lib/types';
 import { tripApi } from '@/lib/api';
 import { format } from 'date-fns';
 import { ArrowLeft, Calendar, DollarSign } from 'lucide-react';
-import DestinationList from '@/components/DestinationList';
+import { DestinationList } from '@/components/destinations';
 import ExpenseList from '@/components/ExpenseList';
 import PackingList from '@/components/PackingList';
 
