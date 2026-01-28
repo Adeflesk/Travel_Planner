@@ -171,3 +171,14 @@ export interface PackingSummary {
   progress_percent: number;
   by_category: Record<string, PackingCategoryDetail>;
 }
+
+export interface TripProgress {
+  total_activities: number;
+  completed_activities: number;
+  progress_percent: number;
+}
+
+export interface DestinationWithActivities {
+  destination: Destination;
+  activities: Activity[];
+}

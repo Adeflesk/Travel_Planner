@@ -314,6 +314,62 @@ def get_expense_summary(trip_id: int, db: Session = Depends(get_db)):
     }
 
 
+@app.get("/trips/{trip_id}/progress/", response_model=schemas.TripProgress)
+def get_trip_progress(trip_id: int, db: Session = Depends(get_db)):
+    """Get activity completion progress for a trip"""
+    trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    # Get all activities for this trip through destinations
+    activities = (
+        db.query(models.Activity)
+        .join(models.Destination)
+        .filter(models.Destination.trip_id == trip_id)
+        .all()
+    )
+
+    total = len(activities)
+    completed = sum(1 for a in activities if a.is_completed)
+    progress = round(completed / total * 100) if total > 0 else 0
+
+    return {
+        "total_activities": total,
+        "completed_activities": completed,
+        "progress_percent": progress,
+    }
+
+
+@app.get(
+    "/trips/{trip_id}/destinations-with-activities/",
+    response_model=List[schemas.DestinationWithActivities],
+)
+def get_destinations_with_activities(trip_id: int, db: Session = Depends(get_db)):
+    """Get all destinations with their activities for a trip (eliminates N+1)"""
+    trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    destinations = (
+        db.query(models.Destination)
+        .filter(models.Destination.trip_id == trip_id)
+        .order_by(models.Destination.order)
+        .all()
+    )
+
+    result = []
+    for dest in destinations:
+        activities = (
+            db.query(models.Activity)
+            .filter(models.Activity.destination_id == dest.id)
+            .order_by(models.Activity.scheduled_date, models.Activity.scheduled_time)
+            .all()
+        )
+        result.append({"destination": dest, "activities": activities})
+
+    return result
+
+
 # ==================== PACKING ITEM ENDPOINTS ====================
 
 

@@ -15,6 +15,8 @@ import {
   JourneyFormData,
   ExpenseSummary,
   PackingSummary,
+  TripProgress,
+  DestinationWithActivities,
 } from './types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -34,6 +36,12 @@ export const tripApi = {
   update: (id: number, data: Partial<TripFormData>) =>
     api.put<Trip>(`/trips/${id}`, data),
   delete: (id: number) => api.delete(`/trips/${id}`),
+  getProgress: (tripId: number) =>
+    api.get<TripProgress>(`/trips/${tripId}/progress/`),
+  getDestinationsWithActivities: (tripId: number) =>
+    api.get<DestinationWithActivities[]>(
+      `/trips/${tripId}/destinations-with-activities/`
+    ),
 };
 
 // Destination API

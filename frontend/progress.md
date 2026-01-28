@@ -228,11 +228,61 @@ Moving business logic calculations from Next.js frontend hooks to FastAPI backen
 - Backend: 48/48 pytest tests pass
 - Frontend: TypeScript builds successfully
 
-## Remaining Phases
+---
 
-### Phase 2: Trip Progress & Destinations with Activities
-- `GET /trips/{id}/progress/` - Activity completion stats
-- `GET /trips/{id}/destinations-with-activities/` - Eager-loaded data (eliminates N+1)
+## Phase 2: Trip Progress & Destinations with Activities (Completed)
+
+### New Backend Endpoints
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /trips/{id}/progress/` | Activity completion stats (total, completed, percent) |
+| `GET /trips/{id}/destinations-with-activities/` | Eager-loaded destinations with nested activities |
+
+### Backend Changes
+
+**schemas.py** - Added Pydantic response models:
+- `TripProgress` - total_activities, completed_activities, progress_percent
+- `DestinationWithActivities` - destination with nested activities list
+
+**main.py** - Added 2 new endpoints:
+- `get_trip_progress()` - Calculates activity completion stats via JOIN query
+- `get_destinations_with_activities()` - Returns destinations with nested activities (eliminates N+1)
+
+**test_main.py** - Added 6 unit tests:
+- Empty data cases for both endpoints
+- Multiple items with proper nested data
+- Nonexistent trip (404) cases
+
+### Frontend Changes
+
+**lib/types.ts** - Added TypeScript types:
+- `TripProgress`
+- `DestinationWithActivities`
+
+**lib/api.ts** - Added API functions:
+- `tripApi.getProgress(tripId)`
+- `tripApi.getDestinationsWithActivities(tripId)`
+
+**useTripActivities.ts** - Simplified hook:
+- **Eliminated N+1 problem**: Was making 1 + N API calls (1 for destinations, N for activities)
+- Now makes only 2 API calls (destinations-with-activities + progress)
+- Removed local `totalActivities`, `completedActivities`, `progressPercent` calculations
+
+### Code Reduction
+
+| Hook | Before | After | Improvement |
+|------|--------|-------|-------------|
+| useTripActivities.ts | 87 lines, N+1 calls | 70 lines, 2 calls | N+1 eliminated |
+
+### Tests
+
+- Backend: 54/54 pytest tests pass
+- Frontend: TypeScript builds successfully
+
+---
+
+## Remaining Phases
 
 ### Phase 3: Timeline & Accommodation
 - `GET /trips/{id}/timeline/` - Merged/sorted destinations and journeys

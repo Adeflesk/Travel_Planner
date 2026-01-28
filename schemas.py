@@ -248,3 +248,18 @@ class PackingSummary(BaseModel):
     packed_items: int
     progress_percent: int
     by_category: dict[str, PackingCategoryDetail]
+
+
+class TripProgress(BaseModel):
+    """Activity progress summary for a trip"""
+
+    total_activities: int
+    completed_activities: int
+    progress_percent: int
+
+
+class DestinationWithActivities(BaseModel):
+    """Destination with nested activities list"""
+
+    destination: Destination
+    activities: list[Activity]

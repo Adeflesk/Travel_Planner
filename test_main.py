@@ -768,6 +768,119 @@ def test_packing_summary_nonexistent_trip(test_db):
     assert response.json()["detail"] == "Trip not found"
 
 
+# ==================== TRIP PROGRESS TESTS ====================
+
+
+def test_trip_progress_empty(test_db, created_trip):
+    """Test trip progress with no activities"""
+    response = client.get(f"/trips/{created_trip['id']}/progress/")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total_activities"] == 0
+    assert data["completed_activities"] == 0
+    assert data["progress_percent"] == 0
+
+
+def test_trip_progress_with_activities(test_db, created_trip):
+    """Test trip progress with multiple activities"""
+    # Create destination
+    dest_response = client.post(
+        "/destinations/",
+        json={"trip_id": created_trip["id"], "name": "Paris"},
+    )
+    dest_id = dest_response.json()["id"]
+
+    # Create activities
+    activities = [
+        {"destination_id": dest_id, "name": "Visit Eiffel Tower", "is_completed": True},
+        {"destination_id": dest_id, "name": "Visit Louvre", "is_completed": True},
+        {"destination_id": dest_id, "name": "Seine Cruise", "is_completed": False},
+        {"destination_id": dest_id, "name": "Arc de Triomphe", "is_completed": False},
+    ]
+
+    for act in activities:
+        client.post("/activities/", json=act)
+
+    response = client.get(f"/trips/{created_trip['id']}/progress/")
+    assert response.status_code == 200
+    data = response.json()
+
+    assert data["total_activities"] == 4
+    assert data["completed_activities"] == 2
+    assert data["progress_percent"] == 50
+
+
+def test_trip_progress_nonexistent_trip(test_db):
+    """Test trip progress for nonexistent trip"""
+    response = client.get("/trips/99999/progress/")
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Trip not found"
+
+
+# ==================== DESTINATIONS WITH ACTIVITIES TESTS ====================
+
+
+def test_destinations_with_activities_empty(test_db, created_trip):
+    """Test destinations with activities with no destinations"""
+    response = client.get(f"/trips/{created_trip['id']}/destinations-with-activities/")
+    assert response.status_code == 200
+    data = response.json()
+    assert data == []
+
+
+def test_destinations_with_activities(test_db, created_trip):
+    """Test destinations with activities returns nested data"""
+    # Create destinations
+    dest1 = client.post(
+        "/destinations/",
+        json={"trip_id": created_trip["id"], "name": "Paris", "order": 0},
+    ).json()
+
+    dest2 = client.post(
+        "/destinations/",
+        json={"trip_id": created_trip["id"], "name": "London", "order": 1},
+    ).json()
+
+    # Create activities for each destination
+    client.post(
+        "/activities/",
+        json={"destination_id": dest1["id"], "name": "Eiffel Tower"},
+    )
+    client.post(
+        "/activities/",
+        json={"destination_id": dest1["id"], "name": "Louvre"},
+    )
+    client.post(
+        "/activities/",
+        json={"destination_id": dest2["id"], "name": "Big Ben"},
+    )
+
+    response = client.get(f"/trips/{created_trip['id']}/destinations-with-activities/")
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 2
+
+    # Check first destination (Paris)
+    assert data[0]["destination"]["name"] == "Paris"
+    assert len(data[0]["activities"]) == 2
+    activity_names = [a["name"] for a in data[0]["activities"]]
+    assert "Eiffel Tower" in activity_names
+    assert "Louvre" in activity_names
+
+    # Check second destination (London)
+    assert data[1]["destination"]["name"] == "London"
+    assert len(data[1]["activities"]) == 1
+    assert data[1]["activities"][0]["name"] == "Big Ben"
+
+
+def test_destinations_with_activities_nonexistent_trip(test_db):
+    """Test destinations with activities for nonexistent trip"""
+    response = client.get("/trips/99999/destinations-with-activities/")
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Trip not found"
+
+
 # ==================== INTEGRATION TESTS ====================
 
 
