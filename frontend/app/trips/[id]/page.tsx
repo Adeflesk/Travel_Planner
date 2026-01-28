@@ -11,7 +11,7 @@ import { ExpenseList } from '@/components/expenses';
 import TripActivityList from '@/components/TripActivityList';
 import { JourneyList } from '@/components/journeys';
 import TripTimeline from '@/components/TripTimeline';
-import PackingList from '@/components/PackingList';
+import { PackingList } from '@/components/packing';
 
 export default function TripDetailPage() {
   const params = useParams();

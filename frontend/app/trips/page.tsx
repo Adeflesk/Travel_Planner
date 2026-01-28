@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 import { ArrowLeft, Calendar, DollarSign } from 'lucide-react';
 import { DestinationList } from '@/components/destinations';
 import { ExpenseList } from '@/components/expenses';
-import PackingList from '@/components/PackingList';
+import { PackingList } from '@/components/packing';
 
 type TabType = 'destinations' | 'expenses' | 'packing';
 
