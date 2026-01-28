@@ -149,3 +149,25 @@ export interface JourneyFormData {
   status?: string;
   order?: number;
 }
+
+// Summary Types
+export interface ExpenseSummary {
+  total: number;
+  paid_total: number;
+  unpaid_total: number;
+  by_category: Record<string, number>;
+  count: number;
+}
+
+export interface PackingCategoryDetail {
+  total: number;
+  packed: number;
+  items: PackingItem[];
+}
+
+export interface PackingSummary {
+  total_items: number;
+  packed_items: number;
+  progress_percent: number;
+  by_category: Record<string, PackingCategoryDetail>;
+}

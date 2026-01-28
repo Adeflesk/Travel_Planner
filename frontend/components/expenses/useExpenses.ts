@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Expense } from '@/lib/types';
+import { Expense, ExpenseSummary } from '@/lib/types';
 import { expenseApi } from '@/lib/api';
 
 export const categories = [
@@ -25,14 +25,27 @@ export const getCategoryIcon = (category: string) => {
   return icons[category] || '💰';
 };
 
+const defaultSummary: ExpenseSummary = {
+  total: 0,
+  paid_total: 0,
+  unpaid_total: 0,
+  by_category: {},
+  count: 0,
+};
+
 export function useExpenses(tripId: number) {
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [summary, setSummary] = useState<ExpenseSummary>(defaultSummary);
   const [loading, setLoading] = useState(true);
 
   const loadExpenses = useCallback(async () => {
     try {
-      const response = await expenseApi.getByTripId(tripId);
-      setExpenses(response.data);
+      const [expensesRes, summaryRes] = await Promise.all([
+        expenseApi.getByTripId(tripId),
+        expenseApi.getSummary(tripId),
+      ]);
+      setExpenses(expensesRes.data);
+      setSummary(summaryRes.data);
     } catch (error) {
       console.error('Error loading expenses:', error);
     } finally {
@@ -53,21 +66,13 @@ export function useExpenses(tripId: number) {
     }
   };
 
-  const totalExpenses = expenses.reduce(
-    (sum, exp) => sum + parseFloat(exp.amount.toString()),
-    0
-  );
-
-  const expensesByCategory = expenses.reduce((acc, exp) => {
-    acc[exp.category] = (acc[exp.category] || 0) + parseFloat(exp.amount.toString());
-    return acc;
-  }, {} as Record<string, number>);
-
   return {
     expenses,
     loading,
-    totalExpenses,
-    expensesByCategory,
+    totalExpenses: summary.total,
+    expensesByCategory: summary.by_category,
+    paidTotal: summary.paid_total,
+    unpaidTotal: summary.unpaid_total,
     reload: loadExpenses,
     deleteExpense,
   };

@@ -13,6 +13,8 @@ import {
   PackingItemFormData,
   ActivityFormData,
   JourneyFormData,
+  ExpenseSummary,
+  PackingSummary,
 } from './types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -94,6 +96,8 @@ export const activityApi = {
 export const expenseApi = {
   getByTripId: (tripId: number) =>
     api.get<Expense[]>(`/trips/${tripId}/expenses/`),
+  getSummary: (tripId: number) =>
+    api.get<ExpenseSummary>(`/trips/${tripId}/expenses/summary/`),
   create: (data: ExpenseFormData) => {
     const cleanedData: Partial<ExpenseFormData> = {};
     (Object.keys(data) as Array<keyof ExpenseFormData>).forEach((key) => {
@@ -136,6 +140,8 @@ export const expenseApi = {
 export const packingApi = {
   getByTripId: (tripId: number) =>
     api.get<PackingItem[]>(`/trips/${tripId}/packing-items/`),
+  getSummary: (tripId: number) =>
+    api.get<PackingSummary>(`/trips/${tripId}/packing/summary/`),
   create: (data: PackingItemFormData) =>
     api.post<PackingItem>('/packing-items/', data),
   update: (id: number, data: Partial<Omit<PackingItem, 'id'>>) =>

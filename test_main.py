@@ -628,6 +628,146 @@ def test_update_packing_item_packed_status(test_db, created_trip):
     assert response.json()["is_packed"] is True
 
 
+# ==================== EXPENSE SUMMARY TESTS ====================
+
+
+def test_expense_summary_empty(test_db, created_trip):
+    """Test expense summary with no expenses"""
+    response = client.get(f"/trips/{created_trip['id']}/expenses/summary/")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] == 0
+    assert data["paid_total"] == 0
+    assert data["unpaid_total"] == 0
+    assert data["by_category"] == {}
+    assert data["count"] == 0
+
+
+def test_expense_summary_with_expenses(test_db, created_trip):
+    """Test expense summary with multiple expenses"""
+    expenses = [
+        {
+            "trip_id": created_trip["id"],
+            "category": "food",
+            "amount": 50.00,
+            "date": created_trip["start_date"],
+            "paid": True,
+        },
+        {
+            "trip_id": created_trip["id"],
+            "category": "food",
+            "amount": 30.00,
+            "date": created_trip["start_date"],
+            "paid": False,
+        },
+        {
+            "trip_id": created_trip["id"],
+            "category": "transport",
+            "amount": 100.00,
+            "date": created_trip["start_date"],
+            "paid": True,
+        },
+        {
+            "trip_id": created_trip["id"],
+            "category": "accommodation",
+            "amount": 200.00,
+            "date": created_trip["start_date"],
+            "paid": False,
+        },
+    ]
+
+    for exp in expenses:
+        client.post("/expenses/", json=exp)
+
+    response = client.get(f"/trips/{created_trip['id']}/expenses/summary/")
+    assert response.status_code == 200
+    data = response.json()
+
+    assert data["total"] == 380.00
+    assert data["paid_total"] == 150.00
+    assert data["unpaid_total"] == 230.00
+    assert data["count"] == 4
+    assert data["by_category"]["food"] == 80.00
+    assert data["by_category"]["transport"] == 100.00
+    assert data["by_category"]["accommodation"] == 200.00
+
+
+def test_expense_summary_nonexistent_trip(test_db):
+    """Test expense summary for nonexistent trip"""
+    response = client.get("/trips/99999/expenses/summary/")
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Trip not found"
+
+
+# ==================== PACKING SUMMARY TESTS ====================
+
+
+def test_packing_summary_empty(test_db, created_trip):
+    """Test packing summary with no items"""
+    response = client.get(f"/trips/{created_trip['id']}/packing/summary/")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total_items"] == 0
+    assert data["packed_items"] == 0
+    assert data["progress_percent"] == 0
+    assert data["by_category"] == {}
+
+
+def test_packing_summary_with_items(test_db, created_trip):
+    """Test packing summary with multiple items"""
+    items = [
+        {"trip_id": created_trip["id"], "item_name": "T-Shirt", "category": "clothing"},
+        {"trip_id": created_trip["id"], "item_name": "Jeans", "category": "clothing"},
+        {
+            "trip_id": created_trip["id"],
+            "item_name": "Passport",
+            "category": "documents",
+        },
+        {
+            "trip_id": created_trip["id"],
+            "item_name": "Toothbrush",
+            "category": "toiletries",
+        },
+    ]
+
+    item_ids = []
+    for item in items:
+        response = client.post("/packing-items/", json=item)
+        item_ids.append(response.json()["id"])
+
+    # Mark some items as packed
+    client.put(f"/packing-items/{item_ids[0]}", json={"is_packed": True})
+    client.put(f"/packing-items/{item_ids[2]}", json={"is_packed": True})
+
+    response = client.get(f"/trips/{created_trip['id']}/packing/summary/")
+    assert response.status_code == 200
+    data = response.json()
+
+    assert data["total_items"] == 4
+    assert data["packed_items"] == 2
+    assert data["progress_percent"] == 50
+
+    # Check category breakdown
+    assert "clothing" in data["by_category"]
+    assert data["by_category"]["clothing"]["total"] == 2
+    assert data["by_category"]["clothing"]["packed"] == 1
+
+    assert "documents" in data["by_category"]
+    assert data["by_category"]["documents"]["total"] == 1
+    assert data["by_category"]["documents"]["packed"] == 1
+
+    assert "toiletries" in data["by_category"]
+    assert data["by_category"]["toiletries"]["total"] == 1
+    assert data["by_category"]["toiletries"]["packed"] == 0
+
+
+def test_packing_summary_nonexistent_trip(test_db):
+    """Test packing summary for nonexistent trip"""
+    response = client.get("/trips/99999/packing/summary/")
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Trip not found"
+
+
 # ==================== INTEGRATION TESTS ====================
 
 

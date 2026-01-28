@@ -155,3 +155,85 @@ All 58 E2E Playwright tests pass after refactoring.
 - `f13ce2c1` - Refactor ExpenseList into modular components
 - `16d0ba6d` - Refactor JourneyList into modular components
 - `233b15a3` - Refactor PackingList into modular components
+
+---
+
+# Backend Business Logic Migration
+
+## Overview
+
+Moving business logic calculations from Next.js frontend hooks to FastAPI backend endpoints to:
+- Reduce frontend bundle size and complexity
+- Centralize business logic in one place
+- Eliminate N+1 query patterns
+- Enable server-side caching opportunities
+
+## Phase 1: Summary Endpoints (Completed)
+
+### New Backend Endpoints
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /trips/{id}/expenses/summary/` | Expense totals, paid/unpaid breakdown, category totals |
+| `GET /trips/{id}/packing/summary/` | Packing progress, items grouped by category |
+
+### Backend Changes
+
+**schemas.py** - Added Pydantic response models:
+- `ExpenseSummary` - total, paid_total, unpaid_total, by_category, count
+- `PackingCategoryDetail` - total, packed, items list
+- `PackingSummary` - total_items, packed_items, progress_percent, by_category
+
+**main.py** - Added 2 new endpoints with business logic:
+- `get_expense_summary()` - Calculates expense totals and category breakdown
+- `get_packing_summary()` - Calculates packing progress and groups items
+
+**test_main.py** - Added 6 unit tests:
+- Empty data cases
+- Multiple items with calculations
+- Nonexistent trip (404) cases
+
+### Frontend Changes
+
+**lib/types.ts** - Added TypeScript types matching backend schemas:
+- `ExpenseSummary`
+- `PackingCategoryDetail`
+- `PackingSummary`
+
+**lib/api.ts** - Added API functions:
+- `expenseApi.getSummary(tripId)`
+- `packingApi.getSummary(tripId)`
+
+**useExpenses.ts** - Simplified hook:
+- Removed local `totalExpenses` and `expensesByCategory` calculations
+- Now fetches summary from backend in parallel with expenses list
+- Added `paidTotal` and `unpaidTotal` to returned values
+
+**usePacking.ts** - Simplified hook:
+- Removed local `packedCount`, `totalCount`, `progress`, `itemsByCategory` calculations
+- Single API call to summary endpoint (includes items grouped by category)
+- Extracts flat items list and itemsByCategory for backward compatibility
+
+### Code Reduction
+
+| Hook | Before | After | Reduction |
+|------|--------|-------|-----------|
+| useExpenses.ts | 75 lines | 79 lines | Logic moved to backend |
+| usePacking.ts | 88 lines | 94 lines | Logic moved to backend |
+
+*Note: Line counts increased slightly due to TypeScript types, but business logic (reduce/filter operations) moved to backend.*
+
+### Tests
+
+- Backend: 48/48 pytest tests pass
+- Frontend: TypeScript builds successfully
+
+## Remaining Phases
+
+### Phase 2: Trip Progress & Destinations with Activities
+- `GET /trips/{id}/progress/` - Activity completion stats
+- `GET /trips/{id}/destinations-with-activities/` - Eager-loaded data (eliminates N+1)
+
+### Phase 3: Timeline & Accommodation
+- `GET /trips/{id}/timeline/` - Merged/sorted destinations and journeys
+- `GET /trips/{id}/accommodation-expenses/` - Accommodation expenses by destination

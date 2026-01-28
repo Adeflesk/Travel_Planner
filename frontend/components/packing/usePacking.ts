@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { PackingItem } from '@/lib/types';
+import { PackingItem, PackingSummary } from '@/lib/types';
 import { packingApi } from '@/lib/api';
 
 export const categories = [
@@ -25,14 +25,21 @@ export const getCategoryIcon = (category: string) => {
   return icons[category] || '📦';
 };
 
+const defaultSummary: PackingSummary = {
+  total_items: 0,
+  packed_items: 0,
+  progress_percent: 0,
+  by_category: {},
+};
+
 export function usePacking(tripId: number) {
-  const [items, setItems] = useState<PackingItem[]>([]);
+  const [summary, setSummary] = useState<PackingSummary>(defaultSummary);
   const [loading, setLoading] = useState(true);
 
   const loadItems = useCallback(async () => {
     try {
-      const response = await packingApi.getByTripId(tripId);
-      setItems(response.data);
+      const response = await packingApi.getSummary(tripId);
+      setSummary(response.data);
     } catch (error) {
       console.error('Error loading packing items:', error);
     } finally {
@@ -62,23 +69,23 @@ export function usePacking(tripId: number) {
     }
   };
 
-  const packedCount = items.filter((item) => item.is_packed).length;
-  const totalCount = items.length;
-  const progress = totalCount > 0 ? (packedCount / totalCount) * 100 : 0;
+  // Extract flat items list from summary for backwards compatibility
+  const items: PackingItem[] = Object.values(summary.by_category).flatMap(
+    (cat) => cat.items
+  );
 
-  const itemsByCategory = items.reduce((acc, item) => {
-    const cat = item.category || 'other';
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(item);
-    return acc;
-  }, {} as Record<string, PackingItem[]>);
+  // Convert by_category to simpler format for itemsByCategory
+  const itemsByCategory: Record<string, PackingItem[]> = {};
+  for (const [cat, detail] of Object.entries(summary.by_category)) {
+    itemsByCategory[cat] = detail.items;
+  }
 
   return {
     items,
     loading,
-    packedCount,
-    totalCount,
-    progress,
+    packedCount: summary.packed_items,
+    totalCount: summary.total_items,
+    progress: summary.progress_percent,
     itemsByCategory,
     reload: loadItems,
     togglePacked,

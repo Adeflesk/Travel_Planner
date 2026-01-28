@@ -288,6 +288,32 @@ def delete_expense(expense_id: int, db: Session = Depends(get_db)):
     return None
 
 
+@app.get("/trips/{trip_id}/expenses/summary/", response_model=schemas.ExpenseSummary)
+def get_expense_summary(trip_id: int, db: Session = Depends(get_db)):
+    """Get expense summary with totals and category breakdown for a trip"""
+    trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    expenses = db.query(models.Expense).filter(models.Expense.trip_id == trip_id).all()
+
+    total = sum(float(e.amount) for e in expenses)
+    paid_total = sum(float(e.amount) for e in expenses if e.paid)
+
+    by_category: dict[str, float] = {}
+    for e in expenses:
+        cat = e.category or "other"
+        by_category[cat] = by_category.get(cat, 0) + float(e.amount)
+
+    return {
+        "total": round(total, 2),
+        "paid_total": round(paid_total, 2),
+        "unpaid_total": round(total - paid_total, 2),
+        "by_category": {k: round(v, 2) for k, v in by_category.items()},
+        "count": len(expenses),
+    }
+
+
 # ==================== PACKING ITEM ENDPOINTS ====================
 
 
@@ -341,6 +367,43 @@ def delete_packing_item(item_id: int, db: Session = Depends(get_db)):
     db.delete(item)
     db.commit()
     return None
+
+
+@app.get("/trips/{trip_id}/packing/summary/", response_model=schemas.PackingSummary)
+def get_packing_summary(trip_id: int, db: Session = Depends(get_db)):
+    """Get packing summary with progress and category breakdown for a trip"""
+    trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    items = (
+        db.query(models.PackingItem)
+        .filter(models.PackingItem.trip_id == trip_id)
+        .order_by(models.PackingItem.category)
+        .all()
+    )
+
+    total_items = len(items)
+    packed_items = sum(1 for item in items if item.is_packed)
+    progress_percent = round(packed_items / total_items * 100) if total_items > 0 else 0
+
+    # Group by category
+    by_category: dict[str, dict] = {}
+    for item in items:
+        cat = item.category or "other"
+        if cat not in by_category:
+            by_category[cat] = {"total": 0, "packed": 0, "items": []}
+        by_category[cat]["total"] += 1
+        if item.is_packed:
+            by_category[cat]["packed"] += 1
+        by_category[cat]["items"].append(item)
+
+    return {
+        "total_items": total_items,
+        "packed_items": packed_items,
+        "progress_percent": progress_percent,
+        "by_category": by_category,
+    }
 
 
 # ==================== JOURNEY ENDPOINTS ====================

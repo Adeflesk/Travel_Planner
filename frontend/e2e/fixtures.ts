@@ -1,14 +1,14 @@
-import { test as base, expect } from '@playwright/test';
+import { test as base, expect, APIRequestContext } from '@playwright/test';
 
 // API base URL
 const API_URL = 'http://localhost:8000';
 
 // Helper functions for API cleanup
-export async function deleteAllTrips(request: typeof base['request']) {
-  const response = await (await request).get(`${API_URL}/trips/`);
+export async function deleteAllTrips(request: APIRequestContext) {
+  const response = await request.get(`${API_URL}/trips/`);
   const trips = await response.json();
   for (const trip of trips) {
-    await (await request).delete(`${API_URL}/trips/${trip.id}`);
+    await request.delete(`${API_URL}/trips/${trip.id}`);
   }
 }
 

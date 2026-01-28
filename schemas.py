@@ -218,3 +218,33 @@ class Journey(JourneyBase):
     destination_id: Optional[int] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# ==================== SUMMARY SCHEMAS ====================
+
+
+class ExpenseSummary(BaseModel):
+    """Summary of expenses for a trip"""
+
+    total: float
+    paid_total: float
+    unpaid_total: float
+    by_category: dict[str, float]
+    count: int
+
+
+class PackingCategoryDetail(BaseModel):
+    """Detail for a packing category"""
+
+    total: int
+    packed: int
+    items: list[PackingItem]
+
+
+class PackingSummary(BaseModel):
+    """Summary of packing items for a trip"""
+
+    total_items: int
+    packed_items: int
+    progress_percent: int
+    by_category: dict[str, PackingCategoryDetail]
