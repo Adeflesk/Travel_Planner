@@ -24,6 +24,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ==================== HEALTH CHECK ====================
+@app.get("/health")
+def health_check():
+    return {"status": "healthy"}
+
+
 # ==================== TRIP ENDPOINTS ====================
 
 

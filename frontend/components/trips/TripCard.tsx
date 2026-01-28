@@ -1,4 +1,3 @@
-// components/TripCard.tsx
 'use client';
 
 import { Trip } from '@/lib/types';
@@ -11,6 +10,13 @@ interface TripCardProps {
   trip: Trip;
   onDelete: () => void;
 }
+
+const statusColors: Record<string, string> = {
+  planning: 'bg-yellow-100 text-yellow-800',
+  booked: 'bg-blue-100 text-blue-800',
+  ongoing: 'bg-green-100 text-green-800',
+  completed: 'bg-gray-100 text-gray-800',
+};
 
 export default function TripCard({ trip, onDelete }: TripCardProps) {
   const router = useRouter();
@@ -44,19 +50,13 @@ export default function TripCard({ trip, onDelete }: TripCardProps) {
   };
 
   const getStatusColor = (status: string) => {
-    const colors = {
-      planning: 'bg-yellow-100 text-yellow-800',
-      booked: 'bg-blue-100 text-blue-800',
-      ongoing: 'bg-green-100 text-green-800',
-      completed: 'bg-gray-100 text-gray-800',
-    };
-    return colors[status as keyof typeof colors] || colors.planning;
+    return statusColors[status] || statusColors.planning;
   };
 
   return (
     <div
       onClick={handleClick}
-      className="border border-gray-200 rounded-lg p-4 hover:shadow-lg 
+      className="border border-gray-200 rounded-lg p-4 hover:shadow-lg
                  transition cursor-pointer"
     >
       <div className="flex justify-between items-start">
@@ -64,7 +64,7 @@ export default function TripCard({ trip, onDelete }: TripCardProps) {
           <h3 className="text-xl font-semibold text-gray-800">
             {trip.name}
           </h3>
-          
+
           <div className="flex items-center gap-2 text-gray-600 mt-2">
             <Calendar className="w-4 h-4" />
             <p>
@@ -82,7 +82,7 @@ export default function TripCard({ trip, onDelete }: TripCardProps) {
 
         <div className="text-right">
           <span
-            className={`inline-block px-3 py-1 text-sm rounded-full 
+            className={`inline-block px-3 py-1 text-sm rounded-full
                        ${getStatusColor(trip.status)}`}
           >
             {trip.status}
@@ -100,8 +100,8 @@ export default function TripCard({ trip, onDelete }: TripCardProps) {
           <div className="flex gap-2 mt-3">
             <button
               onClick={handleEdit}
-              className="px-3 py-1 bg-blue-600 text-white text-sm 
-                       rounded hover:bg-blue-700 transition flex 
+              className="px-3 py-1 bg-blue-600 text-white text-sm
+                       rounded hover:bg-blue-700 transition flex
                        items-center gap-1"
             >
               <Edit className="w-3 h-3" />
@@ -109,8 +109,8 @@ export default function TripCard({ trip, onDelete }: TripCardProps) {
             </button>
             <button
               onClick={handleDelete}
-              className="px-3 py-1 bg-red-600 text-white text-sm 
-                       rounded hover:bg-red-700 transition flex 
+              className="px-3 py-1 bg-red-600 text-white text-sm
+                       rounded hover:bg-red-700 transition flex
                        items-center gap-1"
             >
               <Trash2 className="w-3 h-3" />

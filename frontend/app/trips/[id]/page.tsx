@@ -8,9 +8,9 @@ import { tripApi } from '@/lib/api';
 import { ArrowLeft, Calendar, DollarSign, Edit, MapPin, Receipt, Package, Compass, Route, Clock } from 'lucide-react';
 import { DestinationList } from '@/components/destinations';
 import { ExpenseList } from '@/components/expenses';
-import TripActivityList from '@/components/TripActivityList';
+import { TripActivityList } from '@/components/trip-activities';
 import { JourneyList } from '@/components/journeys';
-import TripTimeline from '@/components/TripTimeline';
+import { TripTimeline } from '@/components/timeline';
 import { PackingList } from '@/components/packing';
 
 export default function TripDetailPage() {

@@ -4,8 +4,7 @@
 import { useState, useEffect } from 'react';
 import { Trip } from '@/lib/types';
 import { tripApi } from '@/lib/api';
-import TripCard from '@/components/TripCard';
-import TripForm from '@/components/TripForm';
+import { TripCard, TripForm } from '@/components/trips';
 import { Plus } from 'lucide-react';
 
 export default function Home() {
