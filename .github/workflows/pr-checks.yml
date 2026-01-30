@@ -91,10 +91,11 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-    
+        pip install pytest pytest-cov
+
     - name: Run tests with coverage
       run: |
-        pytest test_main.py -v --cov=main --cov-report=term-missing --cov-report=html
+        pytest tests/ -v --cov=app --cov-report=term-missing --cov-report=html
     
     - name: Check coverage threshold
       run: |
@@ -105,4 +106,32 @@ jobs:
       uses: py-cov-action/python-coverage-comment-action@v3
       with:
         GITHUB_TOKEN: ${{ github.token }}
+      continue-on-error: true
+
+  frontend-quality:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Install frontend dependencies
+      working-directory: frontend
+      run: npm ci
+
+    - name: Run ESLint
+      working-directory: frontend
+      run: npm run lint
+      continue-on-error: true
+
+    - name: Run TypeScript type check
+      working-directory: frontend
+      run: npx tsc --noEmit
       continue-on-error: true
