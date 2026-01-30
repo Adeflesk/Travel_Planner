@@ -1,44 +1,9 @@
 # test_main.py
 import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from datetime import date, timedelta, datetime
 
-from main import app
-from database import get_db
-from models import Base
 
-# Create test database
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-
-# Override the get_db dependency
-def override_get_db():
-    try:
-        db = TestingSessionLocal()
-        yield db
-    finally:
-        db.close()
-
-
-app.dependency_overrides[get_db] = override_get_db
-
-# Test client
-client = TestClient(app)
-
-
-# Fixtures
-@pytest.fixture(scope="function")
-def test_db():
-    """Create a fresh database for each test"""
-    Base.metadata.create_all(bind=engine)
-    yield
-    Base.metadata.drop_all(bind=engine)
+# Tests now explicitly request `client` and `db_setup` fixtures from `conftest.py`.
 
 
 @pytest.fixture
@@ -56,7 +21,7 @@ def sample_trip_data():
 
 
 @pytest.fixture
-def created_trip(test_db, sample_trip_data):
+def created_trip(client, db_setup, sample_trip_data):
     """Create a trip and return its data"""
     response = client.post("/trips/", json=sample_trip_data)
     return response.json()
@@ -65,7 +30,7 @@ def created_trip(test_db, sample_trip_data):
 # ==================== TRIP TESTS ====================
 
 
-def test_create_trip(test_db, sample_trip_data):
+def test_create_trip(client, db_setup, sample_trip_data):
     """Test creating a new trip"""
     response = client.post("/trips/", json=sample_trip_data)
     assert response.status_code == 201
@@ -76,7 +41,7 @@ def test_create_trip(test_db, sample_trip_data):
     assert "created_at" in data
 
 
-def test_create_trip_missing_required_fields(test_db):
+def test_create_trip_missing_required_fields(client, db_setup):
     """Test creating trip without required fields"""
     response = client.post(
         "/trips/",
@@ -88,7 +53,7 @@ def test_create_trip_missing_required_fields(test_db):
     assert response.status_code == 422  # Validation error
 
 
-def test_get_all_trips(test_db, created_trip):
+def test_get_all_trips(client, db_setup, created_trip):
     """Test getting all trips"""
     response = client.get("/trips/")
     assert response.status_code == 200
@@ -97,7 +62,7 @@ def test_get_all_trips(test_db, created_trip):
     assert data[0]["name"] == created_trip["name"]
 
 
-def test_get_trip_by_id(test_db, created_trip):
+def test_get_trip_by_id(client, db_setup, created_trip):
     """Test getting a specific trip by ID"""
     trip_id = created_trip["id"]
     response = client.get(f"/trips/{trip_id}")
@@ -107,14 +72,14 @@ def test_get_trip_by_id(test_db, created_trip):
     assert data["name"] == created_trip["name"]
 
 
-def test_get_nonexistent_trip(test_db):
+def test_get_nonexistent_trip(client, db_setup):
     """Test getting a trip that doesn't exist"""
     response = client.get("/trips/99999")
     assert response.status_code == 404
     assert response.json()["detail"] == "Trip not found"
 
 
-def test_update_trip(test_db, created_trip):
+def test_update_trip(client, db_setup, created_trip):
     """Test updating a trip"""
     trip_id = created_trip["id"]
     update_data = {"name": "Updated Trip Name", "status": "booked"}
@@ -125,7 +90,7 @@ def test_update_trip(test_db, created_trip):
     assert data["status"] == "booked"
 
 
-def test_delete_trip(test_db, created_trip):
+def test_delete_trip(client, db_setup, created_trip):
     """Test deleting a trip"""
     trip_id = created_trip["id"]
     response = client.delete(f"/trips/{trip_id}")
@@ -139,7 +104,7 @@ def test_delete_trip(test_db, created_trip):
 # ==================== DESTINATION TESTS ====================
 
 
-def test_create_destination(test_db, created_trip):
+def test_create_destination(client, db_setup, created_trip):
     """Test creating a destination"""
     destination_data = {
         "trip_id": created_trip["id"],
@@ -158,14 +123,14 @@ def test_create_destination(test_db, created_trip):
     assert data["trip_id"] == created_trip["id"]
 
 
-def test_create_destination_invalid_trip(test_db):
+def test_create_destination_invalid_trip(client, db_setup):
     """Test creating destination with non-existent trip"""
     destination_data = {"trip_id": 99999, "name": "Paris", "country": "France"}
     response = client.post("/destinations/", json=destination_data)
     assert response.status_code == 404
 
 
-def test_get_trip_destinations(test_db, created_trip):
+def test_get_trip_destinations(client, db_setup, created_trip):
     """Test getting all destinations for a trip"""
     # Create multiple destinations
     for city in ["Paris", "London", "Rome"]:
@@ -185,7 +150,7 @@ def test_get_trip_destinations(test_db, created_trip):
     assert any(d["name"] == "Paris" for d in data)
 
 
-def test_update_destination(test_db, created_trip):
+def test_update_destination(client, db_setup, created_trip):
     """Test updating a destination"""
     # Create destination
     dest_response = client.post(
@@ -207,7 +172,7 @@ def test_update_destination(test_db, created_trip):
     assert response.json()["notes"] == "City of lights"
 
 
-def test_delete_destination(test_db, created_trip):
+def test_delete_destination(client, db_setup, created_trip):
     """Test deleting a destination"""
     dest_response = client.post(
         "/destinations/", json={"trip_id": created_trip["id"], "name": "Paris"}
@@ -221,7 +186,7 @@ def test_delete_destination(test_db, created_trip):
 # ==================== ACTIVITY TESTS ====================
 
 
-def test_create_activity(test_db, created_trip):
+def test_create_activity(client, db_setup, created_trip):
     """Test creating an activity"""
     # Create destination first
     dest_response = client.post(
@@ -243,7 +208,7 @@ def test_create_activity(test_db, created_trip):
     assert float(data["cost"]) == activity_data["cost"]
 
 
-def test_get_destination_activities(test_db, created_trip):
+def test_get_destination_activities(client, db_setup, created_trip):
     """Test getting all activities for a destination"""
     # Create destination
     dest_response = client.post(
@@ -261,7 +226,7 @@ def test_get_destination_activities(test_db, created_trip):
     assert len(data) == 2
 
 
-def test_create_todo_activity(test_db, created_trip):
+def test_create_todo_activity(client, db_setup, created_trip):
     """Test creating a todo activity"""
     # Create destination
     dest_response = client.post(
@@ -284,7 +249,7 @@ def test_create_todo_activity(test_db, created_trip):
     assert data["is_completed"] is False
 
 
-def test_complete_todo_activity(test_db, created_trip):
+def test_complete_todo_activity(client, db_setup, created_trip):
     """Test marking a todo activity as completed"""
     # Create destination
     dest_response = client.post(
@@ -311,7 +276,7 @@ def test_complete_todo_activity(test_db, created_trip):
     assert response.json()["is_todo"] is True
 
 
-def test_scheduled_vs_todo_activities(test_db, created_trip):
+def test_scheduled_vs_todo_activities(client, db_setup, created_trip):
     """Test difference between scheduled and todo activities"""
     # Create destination
     dest_response = client.post(
@@ -351,7 +316,7 @@ def test_scheduled_vs_todo_activities(test_db, created_trip):
 # ==================== EXPENSE TESTS ====================
 
 
-def test_create_expense(test_db, created_trip):
+def test_create_expense(client, db_setup, created_trip):
     """Test creating an expense"""
     expense_data = {
         "trip_id": created_trip["id"],
@@ -372,7 +337,7 @@ def test_create_expense(test_db, created_trip):
     assert data["paid"] is False
 
 
-def test_get_trip_expenses(test_db, created_trip):
+def test_get_trip_expenses(client, db_setup, created_trip):
     """Test getting all expenses for a trip"""
     # Create multiple expenses
     expenses = [
@@ -409,7 +374,7 @@ def test_get_trip_expenses(test_db, created_trip):
     assert any(not e["booked"] and not e["paid"] for e in data)
 
 
-def test_update_expense_status(test_db, created_trip):
+def test_update_expense_status(client, db_setup, created_trip):
     """Test updating expense booked/paid status"""
     exp_response = client.post(
         "/expenses/",
@@ -437,7 +402,7 @@ def test_update_expense_status(test_db, created_trip):
     assert response.json()["paid"] is True
 
 
-def test_link_accommodation_expense_to_destination(test_db, created_trip):
+def test_link_accommodation_expense_to_destination(client, db_setup, created_trip):
     """Test linking accommodation expenses to a destination"""
     # Create destination with dates
     dest_response = client.post(
@@ -493,7 +458,7 @@ def test_link_accommodation_expense_to_destination(test_db, created_trip):
     assert len(accommodation_expenses) == 2
 
 
-def test_expense_with_cancel_by_date(test_db, created_trip):
+def test_expense_with_cancel_by_date(client, db_setup, created_trip):
     """Test creating expense with cancel_by_date"""
     cancel_date = (
         datetime.strptime(created_trip["start_date"], "%Y-%m-%d") + timedelta(days=-7)
@@ -517,7 +482,7 @@ def test_expense_with_cancel_by_date(test_db, created_trip):
     assert data["paid"] is False
 
 
-def test_update_expense_cancel_by_date(test_db, created_trip):
+def test_update_expense_cancel_by_date(client, db_setup, created_trip):
     """Test updating cancel_by_date on an existing expense"""
     # First create an expense without cancel_by_date
     expense_data = {
@@ -545,7 +510,7 @@ def test_update_expense_cancel_by_date(test_db, created_trip):
     assert update_response.json()["cancel_by_date"] == new_cancel_date
 
 
-def test_update_expense_date_field(test_db, created_trip):
+def test_update_expense_date_field(client, db_setup, created_trip):
     """Test updating the date field on an existing expense"""
     # Create an expense
     expense_data = {
@@ -567,7 +532,7 @@ def test_update_expense_date_field(test_db, created_trip):
     assert update_response.json()["date"] == new_date
 
 
-def test_delete_expense(test_db, created_trip):
+def test_delete_expense(client, db_setup, created_trip):
     """Test deleting an expense"""
     exp_response = client.post(
         "/expenses/",
@@ -587,7 +552,7 @@ def test_delete_expense(test_db, created_trip):
 # ==================== PACKING ITEM TESTS ====================
 
 
-def test_create_packing_item(test_db, created_trip):
+def test_create_packing_item(client, db_setup, created_trip):
     """Test creating a packing item"""
     item_data = {
         "trip_id": created_trip["id"],
@@ -602,7 +567,7 @@ def test_create_packing_item(test_db, created_trip):
     assert data["is_packed"] is False
 
 
-def test_get_trip_packing_items(test_db, created_trip):
+def test_get_trip_packing_items(client, db_setup, created_trip):
     """Test getting packing list for a trip"""
     items = ["Passport", "Sunglasses", "Camera"]
     for item in items:
@@ -616,7 +581,7 @@ def test_get_trip_packing_items(test_db, created_trip):
     assert len(data) == 3
 
 
-def test_update_packing_item_packed_status(test_db, created_trip):
+def test_update_packing_item_packed_status(client, db_setup, created_trip):
     """Test marking item as packed"""
     item_response = client.post(
         "/packing-items/", json={"trip_id": created_trip["id"], "item_name": "Passport"}
@@ -631,7 +596,7 @@ def test_update_packing_item_packed_status(test_db, created_trip):
 # ==================== EXPENSE SUMMARY TESTS ====================
 
 
-def test_expense_summary_empty(test_db, created_trip):
+def test_expense_summary_empty(client, db_setup, created_trip):
     """Test expense summary with no expenses"""
     response = client.get(f"/trips/{created_trip['id']}/expenses/summary/")
     assert response.status_code == 200
@@ -643,7 +608,7 @@ def test_expense_summary_empty(test_db, created_trip):
     assert data["count"] == 0
 
 
-def test_expense_summary_with_expenses(test_db, created_trip):
+def test_expense_summary_with_expenses(client, db_setup, created_trip):
     """Test expense summary with multiple expenses"""
     expenses = [
         {
@@ -692,7 +657,7 @@ def test_expense_summary_with_expenses(test_db, created_trip):
     assert data["by_category"]["accommodation"] == 200.00
 
 
-def test_expense_summary_nonexistent_trip(test_db):
+def test_expense_summary_nonexistent_trip(client, db_setup):
     """Test expense summary for nonexistent trip"""
     response = client.get("/trips/99999/expenses/summary/")
     assert response.status_code == 404
@@ -702,7 +667,7 @@ def test_expense_summary_nonexistent_trip(test_db):
 # ==================== PACKING SUMMARY TESTS ====================
 
 
-def test_packing_summary_empty(test_db, created_trip):
+def test_packing_summary_empty(client, db_setup, created_trip):
     """Test packing summary with no items"""
     response = client.get(f"/trips/{created_trip['id']}/packing/summary/")
     assert response.status_code == 200
@@ -713,7 +678,7 @@ def test_packing_summary_empty(test_db, created_trip):
     assert data["by_category"] == {}
 
 
-def test_packing_summary_with_items(test_db, created_trip):
+def test_packing_summary_with_items(client, db_setup, created_trip):
     """Test packing summary with multiple items"""
     items = [
         {"trip_id": created_trip["id"], "item_name": "T-Shirt", "category": "clothing"},
@@ -761,7 +726,7 @@ def test_packing_summary_with_items(test_db, created_trip):
     assert data["by_category"]["toiletries"]["packed"] == 0
 
 
-def test_packing_summary_nonexistent_trip(test_db):
+def test_packing_summary_nonexistent_trip(client, db_setup):
     """Test packing summary for nonexistent trip"""
     response = client.get("/trips/99999/packing/summary/")
     assert response.status_code == 404
@@ -771,7 +736,7 @@ def test_packing_summary_nonexistent_trip(test_db):
 # ==================== TRIP PROGRESS TESTS ====================
 
 
-def test_trip_progress_empty(test_db, created_trip):
+def test_trip_progress_empty(client, db_setup, created_trip):
     """Test trip progress with no activities"""
     response = client.get(f"/trips/{created_trip['id']}/progress/")
     assert response.status_code == 200
@@ -781,7 +746,7 @@ def test_trip_progress_empty(test_db, created_trip):
     assert data["progress_percent"] == 0
 
 
-def test_trip_progress_with_activities(test_db, created_trip):
+def test_trip_progress_with_activities(client, db_setup, created_trip):
     """Test trip progress with multiple activities"""
     # Create destination
     dest_response = client.post(
@@ -810,7 +775,7 @@ def test_trip_progress_with_activities(test_db, created_trip):
     assert data["progress_percent"] == 50
 
 
-def test_trip_progress_nonexistent_trip(test_db):
+def test_trip_progress_nonexistent_trip(client, db_setup):
     """Test trip progress for nonexistent trip"""
     response = client.get("/trips/99999/progress/")
     assert response.status_code == 404
@@ -820,7 +785,7 @@ def test_trip_progress_nonexistent_trip(test_db):
 # ==================== DESTINATIONS WITH ACTIVITIES TESTS ====================
 
 
-def test_destinations_with_activities_empty(test_db, created_trip):
+def test_destinations_with_activities_empty(client, db_setup, created_trip):
     """Test destinations with activities with no destinations"""
     response = client.get(f"/trips/{created_trip['id']}/destinations-with-activities/")
     assert response.status_code == 200
@@ -828,7 +793,7 @@ def test_destinations_with_activities_empty(test_db, created_trip):
     assert data == []
 
 
-def test_destinations_with_activities(test_db, created_trip):
+def test_destinations_with_activities(client, db_setup, created_trip):
     """Test destinations with activities returns nested data"""
     # Create destinations
     dest1 = client.post(
@@ -874,7 +839,7 @@ def test_destinations_with_activities(test_db, created_trip):
     assert data[1]["activities"][0]["name"] == "Big Ben"
 
 
-def test_destinations_with_activities_nonexistent_trip(test_db):
+def test_destinations_with_activities_nonexistent_trip(client, db_setup):
     """Test destinations with activities for nonexistent trip"""
     response = client.get("/trips/99999/destinations-with-activities/")
     assert response.status_code == 404
@@ -884,7 +849,7 @@ def test_destinations_with_activities_nonexistent_trip(test_db):
 # ==================== TIMELINE TESTS ====================
 
 
-def test_timeline_empty(test_db, created_trip):
+def test_timeline_empty(client, db_setup, created_trip):
     """Test timeline with no destinations or journeys"""
     response = client.get(f"/trips/{created_trip['id']}/timeline/")
     assert response.status_code == 200
@@ -892,7 +857,7 @@ def test_timeline_empty(test_db, created_trip):
     assert data == []
 
 
-def test_timeline_with_data(test_db, created_trip):
+def test_timeline_with_data(client, db_setup, created_trip):
     """Test timeline merges and sorts destinations and journeys"""
     # Create destinations with dates
     dest1 = client.post(
@@ -943,7 +908,7 @@ def test_timeline_with_data(test_db, created_trip):
     assert data[2]["destination"]["name"] == "London"
 
 
-def test_timeline_items_without_dates(test_db, created_trip):
+def test_timeline_items_without_dates(client, db_setup, created_trip):
     """Test timeline handles items without dates"""
     # Create destination without date
     client.post(
@@ -971,7 +936,7 @@ def test_timeline_items_without_dates(test_db, created_trip):
     assert data[1]["destination"]["name"] == "Dated City"
 
 
-def test_timeline_nonexistent_trip(test_db):
+def test_timeline_nonexistent_trip(client, db_setup):
     """Test timeline for nonexistent trip"""
     response = client.get("/trips/99999/timeline/")
     assert response.status_code == 404
@@ -981,7 +946,7 @@ def test_timeline_nonexistent_trip(test_db):
 # ==================== ACCOMMODATION EXPENSES TESTS ====================
 
 
-def test_accommodation_expenses_empty(test_db, created_trip):
+def test_accommodation_expenses_empty(client, db_setup, created_trip):
     """Test accommodation expenses with no destinations"""
     response = client.get(f"/trips/{created_trip['id']}/accommodation-expenses/")
     assert response.status_code == 200
@@ -989,7 +954,7 @@ def test_accommodation_expenses_empty(test_db, created_trip):
     assert data == []
 
 
-def test_accommodation_expenses_manual_link(test_db, created_trip):
+def test_accommodation_expenses_manual_link(client, db_setup, created_trip):
     """Test accommodation expenses with manual destination link"""
     # Create destination
     dest = client.post(
@@ -1026,7 +991,7 @@ def test_accommodation_expenses_manual_link(test_db, created_trip):
     assert data[0]["total"] == 150.00
 
 
-def test_accommodation_expenses_auto_link_by_date(test_db, created_trip):
+def test_accommodation_expenses_auto_link_by_date(client, db_setup, created_trip):
     """Test accommodation expenses auto-linked by date range"""
     # Create destination with date range
     client.post(
@@ -1064,7 +1029,7 @@ def test_accommodation_expenses_auto_link_by_date(test_db, created_trip):
     assert data[0]["total"] == 200.00
 
 
-def test_accommodation_expenses_multiple_destinations(test_db, created_trip):
+def test_accommodation_expenses_multiple_destinations(client, db_setup, created_trip):
     """Test accommodation expenses across multiple destinations"""
     # Create two destinations
     dest1 = client.post(
@@ -1131,7 +1096,7 @@ def test_accommodation_expenses_multiple_destinations(test_db, created_trip):
     assert data[1]["total"] == 150.00
 
 
-def test_accommodation_expenses_nonexistent_trip(test_db):
+def test_accommodation_expenses_nonexistent_trip(client, db_setup):
     """Test accommodation expenses for nonexistent trip"""
     response = client.get("/trips/99999/accommodation-expenses/")
     assert response.status_code == 404
@@ -1141,7 +1106,7 @@ def test_accommodation_expenses_nonexistent_trip(test_db):
 # ==================== INTEGRATION TESTS ====================
 
 
-def test_cascade_delete_trip_with_data(test_db, created_trip):
+def test_cascade_delete_trip_with_data(client, db_setup, created_trip):
     """Test that deleting a trip deletes all related data"""
     trip_id = created_trip["id"]
 
@@ -1175,7 +1140,7 @@ def test_cascade_delete_trip_with_data(test_db, created_trip):
     assert len(expenses_response.json()) == 0 or expenses_response.status_code == 404
 
 
-def test_root_endpoint(test_db):
+def test_root_endpoint(client, db_setup):
     """Test the root endpoint"""
     response = client.get("/")
     assert response.status_code == 200
@@ -1187,7 +1152,7 @@ def test_root_endpoint(test_db):
 # ==================== JOURNEY TESTS ====================
 
 
-def test_create_journey(test_db, created_trip):
+def test_create_journey(client, db_setup, created_trip):
     """Test creating a journey"""
     # Create two destinations
     dest1_response = client.post(
@@ -1225,7 +1190,7 @@ def test_create_journey(test_db, created_trip):
     assert data["status"] == "booked"
 
 
-def test_create_journey_minimal(test_db, created_trip):
+def test_create_journey_minimal(client, db_setup, created_trip):
     """Test creating a journey with minimal data"""
     journey_data = {
         "trip_id": created_trip["id"],
@@ -1239,7 +1204,7 @@ def test_create_journey_minimal(test_db, created_trip):
     assert data["currency"] == "USD"
 
 
-def test_create_journey_invalid_trip(test_db):
+def test_create_journey_invalid_trip(client, db_setup):
     """Test creating journey with non-existent trip"""
     journey_data = {
         "trip_id": 99999,
@@ -1249,7 +1214,7 @@ def test_create_journey_invalid_trip(test_db):
     assert response.status_code == 404
 
 
-def test_get_trip_journeys(test_db, created_trip):
+def test_get_trip_journeys(client, db_setup, created_trip):
     """Test getting all journeys for a trip"""
     # Create multiple journeys
     transport_modes = ["flight", "train", "bus"]
@@ -1272,7 +1237,7 @@ def test_get_trip_journeys(test_db, created_trip):
     assert "bus" in modes
 
 
-def test_get_journey_by_id(test_db, created_trip):
+def test_get_journey_by_id(client, db_setup, created_trip):
     """Test getting a specific journey by ID"""
     journey_response = client.post(
         "/journeys/",
@@ -1292,14 +1257,14 @@ def test_get_journey_by_id(test_db, created_trip):
     assert data["carrier"] == "P&O Ferries"
 
 
-def test_get_nonexistent_journey(test_db):
+def test_get_nonexistent_journey(client, db_setup):
     """Test getting a journey that doesn't exist"""
     response = client.get("/journeys/99999")
     assert response.status_code == 404
     assert response.json()["detail"] == "Journey not found"
 
 
-def test_update_journey(test_db, created_trip):
+def test_update_journey(client, db_setup, created_trip):
     """Test updating a journey"""
     journey_response = client.post(
         "/journeys/",
@@ -1326,7 +1291,7 @@ def test_update_journey(test_db, created_trip):
     assert data["status"] == "booked"
 
 
-def test_update_journey_datetime(test_db, created_trip):
+def test_update_journey_datetime(client, db_setup, created_trip):
     """Test updating journey departure and arrival times"""
     journey_response = client.post(
         "/journeys/",
@@ -1348,7 +1313,7 @@ def test_update_journey_datetime(test_db, created_trip):
     assert created_trip["start_date"] in data["arrival_datetime"]
 
 
-def test_delete_journey(test_db, created_trip):
+def test_delete_journey(client, db_setup, created_trip):
     """Test deleting a journey"""
     journey_response = client.post(
         "/journeys/",
@@ -1367,7 +1332,7 @@ def test_delete_journey(test_db, created_trip):
     assert response.status_code == 404
 
 
-def test_journey_with_destinations(test_db, created_trip):
+def test_journey_with_destinations(client, db_setup, created_trip):
     """Test journey links to origin and destination correctly"""
     # Create destinations
     paris = client.post(
@@ -1394,7 +1359,7 @@ def test_journey_with_destinations(test_db, created_trip):
     assert journey["destination_id"] == london["id"]
 
 
-def test_cascade_delete_trip_with_journeys(test_db, created_trip):
+def test_cascade_delete_trip_with_journeys(client, db_setup, created_trip):
     """Test that deleting a trip deletes all related journeys"""
     trip_id = created_trip["id"]
 
@@ -1427,7 +1392,7 @@ def test_cascade_delete_trip_with_journeys(test_db, created_trip):
     assert response.status_code == 404
 
 
-def test_all_transport_modes(test_db, created_trip):
+def test_all_transport_modes(client, db_setup, created_trip):
     """Test creating journeys with all supported transport modes"""
     modes = ["flight", "train", "bus", "car", "ferry", "walk"]
     for mode in modes:

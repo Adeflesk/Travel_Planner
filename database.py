@@ -3,6 +3,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from typing import Generator
 
+"""
+database.py
+"""
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, Session
+from typing import Generator
+
 # SQLite database URL (change to PostgreSQL for production)
 SQLALCHEMY_DATABASE_URL = "sqlite:///./travel_planner.db"
 # For PostgreSQL: "postgresql://user:password@localhost/travel_planner"
