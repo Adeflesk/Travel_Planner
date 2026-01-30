@@ -104,3 +104,4 @@ Plans.txt
 pyvenv.cfg
 updateExpense
 -- SQLite.sql
+.aider*
