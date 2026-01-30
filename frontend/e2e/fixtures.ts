@@ -84,7 +84,6 @@ export function generateJourneyData(tripId: number, overrides = {}) {
 export const test = base.extend<{ cleanupTrips: void }>({
   cleanupTrips: async ({ request }, use) => {
     // Setup: nothing to do
-    // eslint-disable-next-line react-hooks/rules-of-hooks
     await use();
     // Teardown: cleanup all trips after each test
     const response = await request.get(`${API_URL}/trips/`);
