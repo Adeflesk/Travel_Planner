@@ -7,7 +7,7 @@ interface TripFormProps {
   onCancel?: () => void;
 }
 
-export default function TripForm({ onTripCreated, onCancel }: TripFormProps) {
+export default function TripForm({ onTripCreated }: TripFormProps) {
   const { formData, loading, handleSubmit, handleChange } = useTripForm(onTripCreated);
 
   return (

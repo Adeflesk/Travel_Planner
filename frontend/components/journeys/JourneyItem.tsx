@@ -2,8 +2,17 @@
 
 import { Journey } from '@/lib/types';
 import { format } from 'date-fns';
-import { Trash2, Edit2, ArrowRight } from 'lucide-react';
-import { getTransportIcon, getStatusColor } from './useJourneys';
+import { Trash2, Edit2, ArrowRight, Plane, Train, Bus, Car, Ship, Footprints } from 'lucide-react';
+import { getStatusColor } from './useJourneys';
+
+const transportIcons: Record<string, React.ComponentType<{ className?: string }>> = {
+  flight: Plane,
+  train: Train,
+  bus: Bus,
+  car: Car,
+  ferry: Ship,
+  walk: Footprints,
+};
 
 interface JourneyItemProps {
   journey: Journey;
@@ -18,7 +27,7 @@ export function JourneyItem({
   onEdit,
   onDelete,
 }: JourneyItemProps) {
-  const TransportIcon = getTransportIcon(journey.transport_mode);
+  const TransportIcon = transportIcons[journey.transport_mode] || Plane;
 
   return (
     <div className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">

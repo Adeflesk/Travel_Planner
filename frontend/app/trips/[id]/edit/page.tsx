@@ -1,7 +1,7 @@
 // app/trips/[id]/edit/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { TripFormData } from '@/lib/types';
 import { tripApi } from '@/lib/api';
@@ -23,11 +23,7 @@ export default function EditTripPage() {
     status: 'planning',
   });
 
-  useEffect(() => {
-    loadTrip();
-  }, [tripId]);
-
-  const loadTrip = async () => {
+  const loadTrip = useCallback(async () => {
     try {
       const response = await tripApi.getById(tripId);
       const trip = response.data;
@@ -45,7 +41,11 @@ export default function EditTripPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [tripId]);
+
+  useEffect(() => {
+    loadTrip();
+  }, [loadTrip]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
