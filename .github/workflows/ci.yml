@@ -6,6 +6,14 @@ on:
     branches: [ master, develop ]
   pull_request:
     branches: [ master, develop ]
+# .github/workflows/ci.yml
+name: CI
+
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+    branches: [ master, develop ]
 
 jobs:
   test:
@@ -48,7 +56,9 @@ jobs:
     
     - name: Run tests with pytest
       run: |
-        pytest test_main.py -v --cov=main --cov-report=xml --cov-report=term-missing
+        # Run the full test suite under the `tests/` folder and collect coverage for the `app` package
+        python -m pip install pytest pytest-cov
+        pytest -q --cov=app --cov-report=xml --cov-report=term-missing tests/
     
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
