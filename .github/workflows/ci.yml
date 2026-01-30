@@ -3,9 +3,12 @@ name: CI
 
 on:
   push:
-    branches: [ master, develop ]
+    # Run CI on pushes to main development branches and feature branches
+    branches: [ master, develop, 'feature/**' ]
   pull_request:
     branches: [ master, develop ]
+  # Allow manual workflow runs from the Actions UI
+  workflow_dispatch: {}
 # .github/workflows/ci.yml
 name: CI
 
