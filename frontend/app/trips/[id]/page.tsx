@@ -14,8 +14,10 @@ import { TripTimeline } from '@/components/timeline';
 import { PackingList } from '@/components/packing';
 import { ShareTripModal } from '@/components/sharing';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import { useAuth } from '@/lib/auth-context';
 
 function TripDetailContent() {
+  const { isAuthenticated } = useAuth();
   const params = useParams();
   const router = useRouter();
   const tripId = parseInt(params.id as string);
@@ -26,6 +28,8 @@ function TripDetailContent() {
   const [showShareModal, setShowShareModal] = useState(false);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
+
     const loadTrip = async () => {
       try {
         const response = await tripApi.getById(tripId);
@@ -39,7 +43,7 @@ function TripDetailContent() {
     };
 
     loadTrip();
-  }, [tripId]);
+  }, [tripId, isAuthenticated]);
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {

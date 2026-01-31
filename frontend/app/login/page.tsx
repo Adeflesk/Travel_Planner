@@ -20,7 +20,7 @@ export default function LoginPage() {
 
     try {
       await login({ email, password });
-      router.push('/trips');
+      router.push('/');
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);

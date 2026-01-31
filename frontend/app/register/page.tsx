@@ -33,7 +33,7 @@ export default function RegisterPage() {
 
     try {
       await register({ email, password, full_name: fullName || undefined });
-      router.push('/trips');
+      router.push('/');
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);

@@ -7,15 +7,19 @@ import { tripApi } from '@/lib/api';
 import { TripCard, TripForm } from '@/components/trips';
 import { Plus } from 'lucide-react';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import { useAuth } from '@/lib/auth-context';
 
 function TripsContent() {
+  const { isAuthenticated } = useAuth();
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
-    loadTrips();
-  }, []);
+    if (isAuthenticated) {
+      loadTrips();
+    }
+  }, [isAuthenticated]);
 
   const loadTrips = async () => {
     try {

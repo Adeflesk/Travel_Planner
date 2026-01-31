@@ -30,6 +30,9 @@ class JourneyCreate(JourneyBase):
     trip_id: int
     origin_id: Optional[int] = None
     destination_id: Optional[int] = None
+    # Text fields for locations not in destinations (e.g., home airport)
+    origin_name: Optional[str] = None
+    destination_name: Optional[str] = None
 
 
 class JourneyUpdate(BaseModel):
@@ -45,6 +48,8 @@ class JourneyUpdate(BaseModel):
     order: Optional[int] = None
     origin_id: Optional[int] = None
     destination_id: Optional[int] = None
+    origin_name: Optional[str] = None
+    destination_name: Optional[str] = None
 
 
 class Journey(JourneyBase):
@@ -52,5 +57,7 @@ class Journey(JourneyBase):
     trip_id: int
     origin_id: Optional[int] = None
     destination_id: Optional[int] = None
+    origin_name: Optional[str] = None
+    destination_name: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)

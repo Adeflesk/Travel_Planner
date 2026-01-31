@@ -1,0 +1,62 @@
+# Feature Documentation
+
+This directory contains specifications for planned features.
+
+## Feature Status Key
+
+- **Planned** - Documented, not started
+- **In Progress** - Currently being implemented
+- **Complete** - Implemented and tested
+- **On Hold** - Deprioritized or blocked
+
+## Features Index
+
+| # | Feature | Priority | Complexity | Status |
+|---|---------|----------|------------|--------|
+| 001 | [Journey Validation](./001-journey-validation.md) | Medium | Low | Planned |
+| 002 | [Currency Selection](./002-currency-selection.md) | Low | Low | Planned |
+| 003 | [Trip Cost Summary](./003-trip-cost-summary.md) | High | Medium | Planned |
+| 004 | [Journey Sorting](./004-journey-sorting.md) | Medium | Low | Planned |
+| 005 | [Duplicate Journey](./005-duplicate-journey.md) | High | Low | Planned |
+| 006 | [Timeline Accommodations](./006-timeline-accommodations.md) | Medium | Medium | Planned |
+| 007 | [Schedule Conflicts](./007-schedule-conflicts.md) | Medium | Medium | Planned |
+| 008 | [Export Itinerary](./008-export-itinerary.md) | Medium | High | Planned |
+| 009 | [Trip Statistics API](./009-trip-statistics.md) | Low | Medium | Planned |
+
+## Adding New Features
+
+1. Create a new file: `XXX-feature-name.md`
+2. Use the template below
+3. Update this README index
+
+## Template
+
+```markdown
+# Feature: [Name]
+
+**Status:** Planned
+**Priority:** High/Medium/Low
+**Complexity:** Low/Medium/High
+
+## Overview
+
+Brief description of the feature.
+
+## Requirements
+
+1. Requirement one
+2. Requirement two
+
+## Approach
+
+How to implement this feature.
+
+## Files to Modify
+
+- `path/to/file.ts`
+
+## Acceptance Criteria
+
+- [ ] Criteria one
+- [ ] Criteria two
+```

@@ -71,6 +71,9 @@ export interface Journey {
   trip_id: number;
   origin_id?: number;
   destination_id?: number;
+  // Text fields for locations not in destinations (e.g., home airport)
+  origin_name?: string;
+  destination_name?: string;
   transport_mode: string;
   departure_datetime?: string;
   arrival_datetime?: string;
@@ -140,6 +143,9 @@ export interface JourneyFormData {
   trip_id: number;
   origin_id?: number;
   destination_id?: number;
+  // Text fields for locations not in destinations (e.g., home airport)
+  origin_name?: string;
+  destination_name?: string;
   transport_mode: string;
   departure_datetime?: string;
   arrival_datetime?: string;

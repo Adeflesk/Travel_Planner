@@ -60,13 +60,20 @@ export function JourneyForm({
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-700">From</label>
           <select
-            value={formData.origin_id || ''}
-            onChange={(e) =>
-              updateField(
-                'origin_id',
-                e.target.value ? parseInt(e.target.value) : undefined
-              )
-            }
+            value={formData.origin_id ? String(formData.origin_id) : (formData.origin_name !== undefined ? 'other' : '')}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === 'other') {
+                updateField('origin_id', undefined);
+                updateField('origin_name', formData.origin_name || '');
+              } else if (value) {
+                updateField('origin_id', parseInt(value));
+                updateField('origin_name', undefined);
+              } else {
+                updateField('origin_id', undefined);
+                updateField('origin_name', undefined);
+              }
+            }}
             className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs"
           >
             <option value="">Select Origin</option>
@@ -76,18 +83,35 @@ export function JourneyForm({
                 {dest.country ? `, ${dest.country}` : ''}
               </option>
             ))}
+            <option value="other">📍 Other Location (e.g., Home Airport)</option>
           </select>
+          {formData.origin_name !== undefined && (
+            <input
+              type="text"
+              value={formData.origin_name || ''}
+              onChange={(e) => updateField('origin_name', e.target.value)}
+              placeholder="e.g., Dublin Airport (DUB)"
+              className="mt-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+            />
+          )}
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-700">To</label>
           <select
-            value={formData.destination_id || ''}
-            onChange={(e) =>
-              updateField(
-                'destination_id',
-                e.target.value ? parseInt(e.target.value) : undefined
-              )
-            }
+            value={formData.destination_id ? String(formData.destination_id) : (formData.destination_name !== undefined ? 'other' : '')}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === 'other') {
+                updateField('destination_id', undefined);
+                updateField('destination_name', formData.destination_name || '');
+              } else if (value) {
+                updateField('destination_id', parseInt(value));
+                updateField('destination_name', undefined);
+              } else {
+                updateField('destination_id', undefined);
+                updateField('destination_name', undefined);
+              }
+            }}
             className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs"
           >
             <option value="">Select Destination</option>
@@ -97,7 +121,17 @@ export function JourneyForm({
                 {dest.country ? `, ${dest.country}` : ''}
               </option>
             ))}
+            <option value="other">📍 Other Location (e.g., Home Airport)</option>
           </select>
+          {formData.destination_name !== undefined && (
+            <input
+              type="text"
+              value={formData.destination_name || ''}
+              onChange={(e) => updateField('destination_name', e.target.value)}
+              placeholder="e.g., Dublin Airport (DUB)"
+              className="mt-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+            />
+          )}
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-700">Departure</label>

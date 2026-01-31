@@ -20,7 +20,7 @@ export default function Navigation() {
         ) : isAuthenticated ? (
           <>
             <Link
-              href="/trips"
+              href="/"
               className="text-white hover:text-blue-200 transition-colors"
             >
               My Trips

@@ -19,7 +19,7 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
     }
 
     if (!isLoading && isAuthenticated && requireAdmin && user?.role !== 'admin') {
-      router.push('/trips');
+      router.push('/');
     }
   }, [isLoading, isAuthenticated, requireAdmin, user, router]);
 

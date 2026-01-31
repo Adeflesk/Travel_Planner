@@ -10,7 +10,7 @@ import { Users, Activity, UserPlus, Trash2, Shield, ShieldOff } from 'lucide-rea
 
 function AdminDashboardContent() {
   const router = useRouter();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, isAuthenticated } = useAuth();
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,8 +41,10 @@ function AdminDashboardContent() {
   }, []);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    if (isAuthenticated) {
+      loadData();
+    }
+  }, [loadData, isAuthenticated]);
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();

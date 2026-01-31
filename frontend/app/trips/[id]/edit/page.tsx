@@ -7,8 +7,10 @@ import { TripFormData } from '@/lib/types';
 import { tripApi } from '@/lib/api';
 import { ArrowLeft } from 'lucide-react';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import { useAuth } from '@/lib/auth-context';
 
 function EditTripContent() {
+  const { isAuthenticated } = useAuth();
   const params = useParams();
   const router = useRouter();
   const tripId = parseInt(params.id as string);
@@ -45,8 +47,10 @@ function EditTripContent() {
   }, [tripId]);
 
   useEffect(() => {
-    loadTrip();
-  }, [loadTrip]);
+    if (isAuthenticated) {
+      loadTrip();
+    }
+  }, [loadTrip, isAuthenticated]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
