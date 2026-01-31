@@ -15,7 +15,7 @@ This directory contains specifications for planned features.
 
 | # | Feature | Priority | Complexity | Status |
 |---|---------|----------|------------|--------|
-| 001 | [Journey Validation](./001-journey-validation.md) | Medium | Low | Planned |
+| 001 | [Journey Validation](./001-journey-validation.md) | Medium | Low | Complete |
 | 002 | [Currency Selection](./002-currency-selection.md) | Low | Low | Planned |
 | 003 | [Trip Cost Summary](./003-trip-cost-summary.md) | High | Medium | Planned |
 | 004 | [Journey Sorting](./004-journey-sorting.md) | Medium | Low | Planned |

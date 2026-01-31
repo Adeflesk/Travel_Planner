@@ -1,6 +1,6 @@
 # Feature: Journey Date/Time Validation
 
-**Status:** Planned
+**Status:** Complete
 **Priority:** Medium
 **Complexity:** Low
 
@@ -34,6 +34,6 @@ Add validation to ensure journey times are logical and fall within trip dates.
 
 ## Acceptance Criteria
 
-- [ ] Cannot submit form if departure > arrival
-- [ ] Warning shown if journey outside trip dates
-- [ ] Clear error messages displayed to user
+- [x] Cannot submit form if departure > arrival
+- [x] Warning shown if journey outside trip dates
+- [x] Clear error messages displayed to user

@@ -22,6 +22,8 @@ export default function JourneyList({ tripId }: JourneyListProps) {
   const {
     formData,
     isEditing,
+    errors,
+    warnings,
     handleSubmit,
     startEdit,
     resetForm,
@@ -40,6 +42,8 @@ export default function JourneyList({ tripId }: JourneyListProps) {
         formData={formData}
         isEditing={isEditing}
         destinations={destinations}
+        errors={errors}
+        warnings={warnings}
         onSubmit={handleSubmit}
         onCancel={resetForm}
         updateField={updateField}

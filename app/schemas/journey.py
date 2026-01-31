@@ -7,7 +7,7 @@ Defines Journey-related Pydantic models: `JourneyBase`, `JourneyCreate`,
 Author: Travel Planner Team
 """
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional
@@ -24,6 +24,13 @@ class JourneyBase(BaseModel):
     notes: Optional[str] = None
     status: str = "planned"
     order: int = 0
+
+    @model_validator(mode="after")
+    def validate_departure_before_arrival(self):
+        if self.departure_datetime and self.arrival_datetime:
+            if self.departure_datetime >= self.arrival_datetime:
+                raise ValueError("Departure datetime must be before arrival datetime")
+        return self
 
 
 class JourneyCreate(JourneyBase):
@@ -50,6 +57,13 @@ class JourneyUpdate(BaseModel):
     destination_id: Optional[int] = None
     origin_name: Optional[str] = None
     destination_name: Optional[str] = None
+
+    @model_validator(mode="after")
+    def validate_departure_before_arrival(self):
+        if self.departure_datetime and self.arrival_datetime:
+            if self.departure_datetime >= self.arrival_datetime:
+                raise ValueError("Departure datetime must be before arrival datetime")
+        return self
 
 
 class Journey(JourneyBase):
