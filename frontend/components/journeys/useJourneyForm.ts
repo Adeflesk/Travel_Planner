@@ -147,6 +147,32 @@ export function useJourneyForm(tripId: number, onSuccess: () => void) {
     setWarnings({});
   };
 
+  // Duplicate journey as return trip (swap origin/destination)
+  const duplicateAsReturn = (journey: Journey) => {
+    setEditingId(null); // Creating new, not editing
+    setFormData({
+      trip_id: tripId,
+      // Swap origin and destination
+      origin_id: journey.destination_id,
+      destination_id: journey.origin_id,
+      origin_name: journey.destination_name,
+      destination_name: journey.origin_name,
+      // Keep transport details
+      transport_mode: journey.transport_mode,
+      carrier: journey.carrier || '',
+      cost: journey.cost,
+      currency: journey.currency || 'USD',
+      notes: journey.notes || '',
+      // Clear booking-specific fields
+      departure_datetime: '',
+      arrival_datetime: '',
+      booking_reference: '',
+      status: 'planned',
+    });
+    setErrors({});
+    setWarnings({});
+  };
+
   const updateField = <K extends keyof JourneyFormData>(
     field: K,
     value: JourneyFormData[K]
@@ -163,5 +189,6 @@ export function useJourneyForm(tripId: number, onSuccess: () => void) {
     startEdit,
     resetForm,
     updateField,
+    duplicateAsReturn,
   };
 }

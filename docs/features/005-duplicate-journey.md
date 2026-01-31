@@ -1,6 +1,6 @@
 # Feature: Duplicate Journey (Return Trip)
 
-**Status:** Planned
+**Status:** Complete
 **Priority:** High
 **Complexity:** Low
 
@@ -39,8 +39,8 @@ Add icon button next to edit/delete:
 
 ## Acceptance Criteria
 
-- [ ] Duplicate button visible on each journey
-- [ ] Creates new journey with swapped locations
-- [ ] Booking-specific fields cleared
-- [ ] Form opens with pre-filled data
-- [ ] User can edit before saving
+- [x] Duplicate button visible on each journey
+- [x] Creates new journey with swapped locations
+- [x] Booking-specific fields cleared
+- [x] Form opens with pre-filled data
+- [x] User can edit before saving
