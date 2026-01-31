@@ -8,31 +8,36 @@ Provides endpoints for:
 - Get current user profile
 - Update user profile
 - Change password
+
+Rate limits:
+- Login: 5 requests per minute (prevents brute force)
+- Register: 3 requests per minute (prevents spam)
+- Change password: 3 requests per minute
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
-from database import get_db
+from app.core.deps import get_current_user
+from app.core.rate_limit import limiter
+from app.core.security import (
+    create_access_token,
+    create_refresh_token,
+    decode_token,
+    get_password_hash,
+    verify_password,
+)
 from app.models import User
 from app.schemas.auth import (
+    PasswordChange,
+    RefreshTokenRequest,
+    Token,
     UserCreate,
     UserLogin,
     UserResponse,
     UserUpdate,
-    PasswordChange,
-    Token,
-    RefreshTokenRequest,
 )
-from app.core.security import (
-    verify_password,
-    get_password_hash,
-    create_access_token,
-    create_refresh_token,
-    decode_token,
-)
-from app.core.deps import get_current_user
-
+from database import get_db
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
@@ -40,13 +45,16 @@ router = APIRouter(prefix="/auth", tags=["authentication"])
 @router.post(
     "/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED
 )
-def register(user_data: UserCreate, db: Session = Depends(get_db)):
+@limiter.limit("3/minute")
+def register(request: Request, user_data: UserCreate, db: Session = Depends(get_db)):
     """
     Register a new user.
 
     - **email**: Unique email address
     - **password**: Minimum 8 characters
     - **full_name**: Optional full name
+
+    Rate limited to 3 requests per minute.
     """
     # Check if email already exists
     existing_user = db.query(User).filter(User.email == user_data.email).first()
@@ -69,12 +77,15 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=Token)
-def login(credentials: UserLogin, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def login(request: Request, credentials: UserLogin, db: Session = Depends(get_db)):
     """
     Authenticate user and return access/refresh tokens.
 
     - **email**: User's email address
     - **password**: User's password
+
+    Rate limited to 5 requests per minute to prevent brute force attacks.
     """
     # Find user by email
     user = db.query(User).filter(User.email == credentials.email).first()
@@ -105,13 +116,18 @@ def login(credentials: UserLogin, db: Session = Depends(get_db)):
 
 
 @router.post("/refresh", response_model=Token)
-def refresh_token(request: RefreshTokenRequest, db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+def refresh_token(
+    request: Request, token_request: RefreshTokenRequest, db: Session = Depends(get_db)
+):
     """
     Refresh access token using a valid refresh token.
 
     - **refresh_token**: Valid refresh token
+
+    Rate limited to 10 requests per minute.
     """
-    token_data = decode_token(request.refresh_token)
+    token_data = decode_token(token_request.refresh_token)
 
     if not token_data:
         raise HTTPException(
@@ -188,7 +204,9 @@ def update_me(
 
 
 @router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("3/minute")
 def change_password(
+    request: Request,
     password_change: PasswordChange,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -198,6 +216,8 @@ def change_password(
 
     - **current_password**: Current password for verification
     - **new_password**: New password (minimum 8 characters)
+
+    Rate limited to 3 requests per minute.
     """
     # Verify current password
     if not verify_password(

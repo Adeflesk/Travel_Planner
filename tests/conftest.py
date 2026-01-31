@@ -3,6 +3,9 @@ import sys
 
 import pytest
 
+# Disable rate limiting for tests
+os.environ["RATE_LIMIT_ENABLED"] = "false"
+
 # Ensure project root is on sys.path for test imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 

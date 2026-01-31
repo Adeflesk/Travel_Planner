@@ -9,9 +9,12 @@ Author: Travel Planner Team
 
 import os
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from slowapi.errors import RateLimitExceeded
 
+from app.core.rate_limit import limiter
 from app.routers import (
     health_router,
     auth_router,
@@ -28,6 +31,14 @@ from database import engine
 
 # Ensure tables exist (kept for compatibility)
 models.Base.metadata.create_all(bind=engine)
+
+
+def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
+    """Custom handler for rate limit exceeded errors."""
+    return JSONResponse(
+        status_code=429,
+        content={"detail": f"Rate limit exceeded: {exc.detail}"},
+    )
 
 
 def get_cors_origins() -> list[str]:
@@ -58,6 +69,10 @@ def create_app() -> FastAPI:
         docs_url="/docs" if os.getenv("ENVIRONMENT") != "production" else None,
         redoc_url="/redoc" if os.getenv("ENVIRONMENT") != "production" else None,
     )
+
+    # Register rate limiter
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
     app.add_middleware(
         CORSMiddleware,
