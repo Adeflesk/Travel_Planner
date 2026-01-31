@@ -7,6 +7,8 @@ Creates the FastAPI app, configures middleware, and includes routers from
 Author: Travel Planner Team
 """
 
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -28,15 +30,38 @@ from database import engine
 models.Base.metadata.create_all(bind=engine)
 
 
+def get_cors_origins() -> list[str]:
+    """Get allowed CORS origins from environment or defaults."""
+    # Default development origins
+    origins = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
+
+    # Add production frontend URL if configured
+    frontend_url = os.getenv("FRONTEND_URL")
+    if frontend_url:
+        origins.append(frontend_url)
+
+    # Add additional origins from comma-separated env var
+    extra_origins = os.getenv("CORS_ORIGINS", "")
+    if extra_origins:
+        origins.extend([o.strip() for o in extra_origins.split(",") if o.strip()])
+
+    return origins
+
+
 def create_app() -> FastAPI:
-    app = FastAPI(title="Travel Planner API", version="1.0.0")
+    app = FastAPI(
+        title="Travel Planner API",
+        version="1.0.0",
+        docs_url="/docs" if os.getenv("ENVIRONMENT") != "production" else None,
+        redoc_url="/redoc" if os.getenv("ENVIRONMENT") != "production" else None,
+    )
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[
-            "http://localhost:3000",
-            "http://127.0.0.1:3000",
-        ],
+        allow_origins=get_cors_origins(),
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

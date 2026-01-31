@@ -6,12 +6,15 @@ Provides timeline merging and accommodation expense grouping logic.
 Author: Travel Planner Team
 """
 
-from typing import List, Dict
+from datetime import datetime, time
+from typing import List, Dict, Optional
+
 from sqlalchemy.orm import Session
-import models
+
+from app import models
 
 
-def get_timeline(trip_id: int, db: Session) -> List[Dict]:
+def get_timeline(trip_id: int, db: Session) -> Optional[List[Dict]]:
     trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
     if not trip:
         return None
@@ -27,8 +30,6 @@ def get_timeline(trip_id: int, db: Session) -> List[Dict]:
     for dest in destinations:
         sort_date = None
         if dest.arrival_date:
-            from datetime import datetime, time
-
             sort_date = datetime.combine(dest.arrival_date, time.min)
         timeline.append(
             {"type": "destination", "sort_date": sort_date, "destination": dest}
@@ -43,16 +44,14 @@ def get_timeline(trip_id: int, db: Session) -> List[Dict]:
             }
         )
 
-    from datetime import datetime as dt
-
     timeline.sort(
-        key=lambda x: x["sort_date"] if x["sort_date"] is not None else dt.min
+        key=lambda x: x["sort_date"] if x["sort_date"] is not None else datetime.min
     )
 
     return timeline
 
 
-def get_accommodation_expenses(trip_id: int, db: Session) -> List[Dict]:
+def get_accommodation_expenses(trip_id: int, db: Session) -> Optional[List[Dict]]:
     trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
     if not trip:
         return None

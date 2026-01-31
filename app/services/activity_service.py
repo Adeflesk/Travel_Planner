@@ -6,12 +6,14 @@ Provides functions to compute trip progress and destinations-with-activities.
 Author: Travel Planner Team
 """
 
-from typing import List, Dict
-from sqlalchemy.orm import Session
-import models
+from typing import List, Dict, Optional
+
+from sqlalchemy.orm import Session, selectinload
+
+from app import models
 
 
-def get_trip_progress(trip_id: int, db: Session) -> Dict:
+def get_trip_progress(trip_id: int, db: Session) -> Optional[Dict]:
     trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
     if not trip:
         return None
@@ -34,13 +36,16 @@ def get_trip_progress(trip_id: int, db: Session) -> Dict:
     }
 
 
-def get_destinations_with_activities(trip_id: int, db: Session) -> List[Dict]:
+def get_destinations_with_activities(trip_id: int, db: Session) -> Optional[List[Dict]]:
     trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
     if not trip:
         return None
 
+    # Use selectinload to eagerly load activities (avoids N+1 queries)
+    # This issues just 2 queries: one for destinations, one for all their activities
     destinations = (
         db.query(models.Destination)
+        .options(selectinload(models.Destination.activities))
         .filter(models.Destination.trip_id == trip_id)
         .order_by(models.Destination.order)
         .all()
@@ -48,12 +53,14 @@ def get_destinations_with_activities(trip_id: int, db: Session) -> List[Dict]:
 
     result = []
     for dest in destinations:
-        activities = (
-            db.query(models.Activity)
-            .filter(models.Activity.destination_id == dest.id)
-            .order_by(models.Activity.scheduled_date, models.Activity.scheduled_time)
-            .all()
+        # Sort activities in Python (already loaded via selectinload)
+        sorted_activities = sorted(
+            dest.activities,
+            key=lambda a: (
+                a.scheduled_date or "",
+                a.scheduled_time or "",
+            ),
         )
-        result.append({"destination": dest, "activities": activities})
+        result.append({"destination": dest, "activities": sorted_activities})
 
     return result

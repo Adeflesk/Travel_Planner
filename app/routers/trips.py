@@ -128,17 +128,36 @@ def get_trip(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    trip = get_trip_or_404(trip_id, db, current_user)
+    # Single query with JOIN to get trip and owner email (avoids N+1)
+    result = (
+        db.query(models.Trip, models.User.email)
+        .join(models.User, models.Trip.user_id == models.User.id)
+        .filter(models.Trip.id == trip_id)
+        .first()
+    )
+
+    if not result:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    trip, owner_email = result
     is_owner = trip.user_id == current_user.id
+
+    # Check access if not owner
+    if not is_owner:
+        share = (
+            db.query(models.TripShare)
+            .filter(
+                models.TripShare.trip_id == trip_id,
+                models.TripShare.user_id == current_user.id,
+            )
+            .first()
+        )
+        if not share:
+            raise HTTPException(status_code=404, detail="Trip not found")
 
     trip_dict = schemas.Trip.model_validate(trip).model_dump()
     trip_dict["is_owner"] = is_owner
-    trip_dict["shared_by"] = None
-
-    if not is_owner:
-        # Get owner's email
-        owner = db.query(models.User).filter(models.User.id == trip.user_id).first()
-        trip_dict["shared_by"] = owner.email if owner else "Unknown"
+    trip_dict["shared_by"] = owner_email if not is_owner else None
 
     return schemas.TripWithOwnership(**trip_dict)
 
@@ -271,19 +290,18 @@ def get_trip_shares(
     """Get all shares for a trip (owner only)."""
     get_trip_or_404(trip_id, db, current_user, require_owner=True)
 
-    shares = (
-        db.query(models.TripShare).filter(models.TripShare.trip_id == trip_id).all()
+    # Single query with JOIN to avoid N+1 problem
+    shares_with_users = (
+        db.query(models.TripShare, models.User.email)
+        .join(models.User, models.TripShare.user_id == models.User.id)
+        .filter(models.TripShare.trip_id == trip_id)
+        .all()
     )
 
-    result = []
-    for share in shares:
-        user = db.query(models.User).filter(models.User.id == share.user_id).first()
-        result.append(
-            schemas.TripShareResponse.from_orm_with_email(
-                share, user.email if user else "Unknown"
-            )
-        )
-    return result
+    return [
+        schemas.TripShareResponse.from_orm_with_email(share, email)
+        for share, email in shares_with_users
+    ]
 
 
 @router.post(
