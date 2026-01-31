@@ -41,3 +41,10 @@ class Trip(TripBase):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class TripWithOwnership(Trip):
+    """Trip with ownership information."""
+
+    is_owner: bool = True
+    shared_by: Optional[str] = None

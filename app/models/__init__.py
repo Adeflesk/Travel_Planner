@@ -7,7 +7,9 @@ Author: Travel Planner Team
 """
 
 from .base import Base
+from .user import User, UserRole
 from .trip import Trip
+from .trip_share import TripShare
 from .destination import Destination
 from .activity import Activity
 from .expense import Expense
@@ -16,7 +18,10 @@ from .journey import Journey
 
 __all__ = [
     "Base",
+    "User",
+    "UserRole",
     "Trip",
+    "TripShare",
     "Destination",
     "Activity",
     "Expense",

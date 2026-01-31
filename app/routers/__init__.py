@@ -7,6 +7,8 @@ Author: Travel Planner Team
 """
 
 from .health import router as health_router
+from .auth import router as auth_router
+from .admin import router as admin_router
 from .trips import router as trips_router
 from .destinations import router as destinations_router
 from .activities import router as activities_router
@@ -16,6 +18,8 @@ from .journeys import router as journeys_router
 
 __all__ = [
     "health_router",
+    "auth_router",
+    "admin_router",
     "trips_router",
     "destinations_router",
     "activities_router",

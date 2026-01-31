@@ -2,6 +2,7 @@
 app/routers/destinations.py - Destination endpoints router
 
 CRUD and trip-scoped destination endpoints.
+All endpoints require authentication.
 
 Author: Travel Planner Team
 """
@@ -11,9 +12,36 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app import schemas, models
+from app.core.deps import get_current_user
 from database import get_db
 
 router = APIRouter()
+
+
+def get_trip_for_destination(
+    trip_id: int, db: Session, current_user: models.User, require_owner: bool = False
+) -> models.Trip:
+    """Check user has access to the trip."""
+    trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    if trip.user_id == current_user.id:
+        return trip
+
+    if not require_owner:
+        share = (
+            db.query(models.TripShare)
+            .filter(
+                models.TripShare.trip_id == trip_id,
+                models.TripShare.user_id == current_user.id,
+            )
+            .first()
+        )
+        if share:
+            return trip
+
+    raise HTTPException(status_code=404, detail="Trip not found")
 
 
 @router.post(
@@ -23,11 +51,11 @@ router = APIRouter()
     tags=["destinations"],
 )
 def create_destination(
-    destination: schemas.DestinationCreate, db: Session = Depends(get_db)
+    destination: schemas.DestinationCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
 ):
-    trip = db.query(models.Trip).filter(models.Trip.id == destination.trip_id).first()
-    if not trip:
-        raise HTTPException(status_code=404, detail="Trip not found")
+    get_trip_for_destination(destination.trip_id, db, current_user, require_owner=True)
 
     db_destination = models.Destination(**destination.model_dump())
     db.add(db_destination)
@@ -41,7 +69,12 @@ def create_destination(
     response_model=List[schemas.Destination],
     tags=["destinations"],
 )
-def get_trip_destinations(trip_id: int, db: Session = Depends(get_db)):
+def get_trip_destinations(
+    trip_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    get_trip_for_destination(trip_id, db, current_user)
     destinations = (
         db.query(models.Destination)
         .filter(models.Destination.trip_id == trip_id)
@@ -56,7 +89,11 @@ def get_trip_destinations(trip_id: int, db: Session = Depends(get_db)):
     response_model=schemas.Destination,
     tags=["destinations"],
 )
-def get_destination(destination_id: int, db: Session = Depends(get_db)):
+def get_destination(
+    destination_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
     destination = (
         db.query(models.Destination)
         .filter(models.Destination.id == destination_id)
@@ -64,6 +101,8 @@ def get_destination(destination_id: int, db: Session = Depends(get_db)):
     )
     if not destination:
         raise HTTPException(status_code=404, detail="Destination not found")
+
+    get_trip_for_destination(destination.trip_id, db, current_user)
     return destination
 
 
@@ -76,6 +115,7 @@ def update_destination(
     destination_id: int,
     destination_update: schemas.DestinationUpdate,
     db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
 ):
     destination = (
         db.query(models.Destination)
@@ -84,6 +124,8 @@ def update_destination(
     )
     if not destination:
         raise HTTPException(status_code=404, detail="Destination not found")
+
+    get_trip_for_destination(destination.trip_id, db, current_user, require_owner=True)
 
     for key, value in destination_update.model_dump(exclude_unset=True).items():
         setattr(destination, key, value)
@@ -94,7 +136,11 @@ def update_destination(
 
 
 @router.delete("/destinations/{destination_id}", status_code=204, tags=["destinations"])
-def delete_destination(destination_id: int, db: Session = Depends(get_db)):
+def delete_destination(
+    destination_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
     destination = (
         db.query(models.Destination)
         .filter(models.Destination.id == destination_id)
@@ -102,6 +148,8 @@ def delete_destination(destination_id: int, db: Session = Depends(get_db)):
     )
     if not destination:
         raise HTTPException(status_code=404, detail="Destination not found")
+
+    get_trip_for_destination(destination.trip_id, db, current_user, require_owner=True)
 
     db.delete(destination)
     db.commit()

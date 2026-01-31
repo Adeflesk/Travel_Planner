@@ -4,7 +4,7 @@ import { Trip } from '@/lib/types';
 import { tripApi } from '@/lib/api';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
-import { Trash2, Edit, Calendar, DollarSign } from 'lucide-react';
+import { Trash2, Edit, Calendar, DollarSign, Users } from 'lucide-react';
 
 interface TripCardProps {
   trip: Trip;
@@ -61,9 +61,17 @@ export default function TripCard({ trip, onDelete }: TripCardProps) {
     >
       <div className="flex justify-between items-start">
         <div className="flex-1">
-          <h3 className="text-xl font-semibold text-gray-800">
-            {trip.name}
-          </h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-xl font-semibold text-gray-800">
+              {trip.name}
+            </h3>
+            {trip.is_owner === false && (
+              <span className="flex items-center gap-1 px-2 py-0.5 bg-purple-100 text-purple-800 text-xs rounded-full">
+                <Users className="w-3 h-3" />
+                Shared
+              </span>
+            )}
+          </div>
 
           <div className="flex items-center gap-2 text-gray-600 mt-2">
             <Calendar className="w-4 h-4" />
@@ -72,6 +80,12 @@ export default function TripCard({ trip, onDelete }: TripCardProps) {
               {format(new Date(trip.end_date), 'MMM dd, yyyy')}
             </p>
           </div>
+
+          {trip.shared_by && (
+            <p className="text-purple-600 mt-1 text-sm">
+              Shared by {trip.shared_by}
+            </p>
+          )}
 
           {trip.description && (
             <p className="text-gray-500 mt-2 text-sm">
@@ -97,26 +111,28 @@ export default function TripCard({ trip, onDelete }: TripCardProps) {
             </div>
           )}
 
-          <div className="flex gap-2 mt-3">
-            <button
-              onClick={handleEdit}
-              className="px-3 py-1 bg-blue-600 text-white text-sm
-                       rounded hover:bg-blue-700 transition flex
-                       items-center gap-1"
-            >
-              <Edit className="w-3 h-3" />
-              Edit
-            </button>
-            <button
-              onClick={handleDelete}
-              className="px-3 py-1 bg-red-600 text-white text-sm
-                       rounded hover:bg-red-700 transition flex
-                       items-center gap-1"
-            >
-              <Trash2 className="w-3 h-3" />
-              Delete
-            </button>
-          </div>
+          {trip.is_owner !== false && (
+            <div className="flex gap-2 mt-3">
+              <button
+                onClick={handleEdit}
+                className="px-3 py-1 bg-blue-600 text-white text-sm
+                         rounded hover:bg-blue-700 transition flex
+                         items-center gap-1"
+              >
+                <Edit className="w-3 h-3" />
+                Edit
+              </button>
+              <button
+                onClick={handleDelete}
+                className="px-3 py-1 bg-red-600 text-white text-sm
+                         rounded hover:bg-red-700 transition flex
+                         items-center gap-1"
+              >
+                <Trash2 className="w-3 h-3" />
+                Delete
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

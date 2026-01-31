@@ -6,8 +6,9 @@ import { Trip } from '@/lib/types';
 import { tripApi } from '@/lib/api';
 import { TripCard, TripForm } from '@/components/trips';
 import { Plus } from 'lucide-react';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
-export default function Home() {
+function TripsContent() {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -88,5 +89,13 @@ export default function Home() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <ProtectedRoute>
+      <TripsContent />
+    </ProtectedRoute>
   );
 }

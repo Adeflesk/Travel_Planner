@@ -202,4 +202,35 @@ export const journeyApi = {
   delete: (id: number) => api.delete(`/journeys/${id}`),
 };
 
+// Admin API
+import {
+  AdminStats,
+  AdminUserCreate,
+  AdminUserUpdate,
+  User,
+  TripShare,
+  TripShareCreate,
+} from './types';
+
+export const adminApi = {
+  getStats: () => api.get<AdminStats>('/admin/stats/'),
+  getUsers: (skip = 0, limit = 100) =>
+    api.get<User[]>(`/admin/users/?skip=${skip}&limit=${limit}`),
+  getUser: (id: number) => api.get<User>(`/admin/users/${id}`),
+  createUser: (data: AdminUserCreate) => api.post<User>('/admin/users/', data),
+  updateUser: (id: number, data: AdminUserUpdate) =>
+    api.patch<User>(`/admin/users/${id}`, data),
+  deleteUser: (id: number) => api.delete(`/admin/users/${id}`),
+};
+
+// Trip Share API
+export const tripShareApi = {
+  getByTripId: (tripId: number) =>
+    api.get<TripShare[]>(`/trips/${tripId}/shares/`),
+  create: (tripId: number, data: TripShareCreate) =>
+    api.post<TripShare>(`/trips/${tripId}/shares/`, data),
+  delete: (tripId: number, shareId: number) =>
+    api.delete(`/trips/${tripId}/shares/${shareId}`),
+};
+
 export default api;
