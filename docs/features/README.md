@@ -11,6 +11,8 @@ This directory contains specifications for planned features.
 
 ## Features Index
 
+### Application Features
+
 | # | Feature | Priority | Complexity | Status |
 |---|---------|----------|------------|--------|
 | 001 | [Journey Validation](./001-journey-validation.md) | Medium | Low | Planned |
@@ -22,6 +24,15 @@ This directory contains specifications for planned features.
 | 007 | [Schedule Conflicts](./007-schedule-conflicts.md) | Medium | Medium | Planned |
 | 008 | [Export Itinerary](./008-export-itinerary.md) | Medium | High | Planned |
 | 009 | [Trip Statistics API](./009-trip-statistics.md) | Low | Medium | Planned |
+
+### Infrastructure & Deployment
+
+| # | Feature | Priority | Complexity | Status |
+|---|---------|----------|------------|--------|
+| 010 | [Alembic Migrations](./010-alembic-migrations.md) | High | Medium | Planned |
+| 011 | [Environment Config](./011-environment-config.md) | High | Low | Planned |
+| 012 | [Production Deployment](./012-production-deployment.md) | Medium | High | Planned |
+| 013 | [SQLite to PostgreSQL Migration](./013-sqlite-to-postgres-migration.md) | Low | Medium | Planned |
 
 ## Adding New Features
 
