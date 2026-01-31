@@ -2,11 +2,15 @@
 
 import { JourneyFormData, Destination } from '@/lib/types';
 import { transportModes } from './useJourneys';
+import { ValidationErrors, ValidationWarnings } from './useJourneyForm';
+import { AlertCircle, AlertTriangle } from 'lucide-react';
 
 interface JourneyFormProps {
   formData: JourneyFormData;
   isEditing: boolean;
   destinations: Destination[];
+  errors?: ValidationErrors;
+  warnings?: ValidationWarnings;
   onSubmit: (e: React.FormEvent) => void;
   onCancel: () => void;
   updateField: <K extends keyof JourneyFormData>(
@@ -19,6 +23,8 @@ export function JourneyForm({
   formData,
   isEditing,
   destinations,
+  errors = {},
+  warnings = {},
   onSubmit,
   onCancel,
   updateField,
@@ -60,13 +66,20 @@ export function JourneyForm({
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-700">From</label>
           <select
-            value={formData.origin_id || ''}
-            onChange={(e) =>
-              updateField(
-                'origin_id',
-                e.target.value ? parseInt(e.target.value) : undefined
-              )
-            }
+            value={formData.origin_id ? String(formData.origin_id) : (formData.origin_name !== undefined ? 'other' : '')}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === 'other') {
+                updateField('origin_id', undefined);
+                updateField('origin_name', formData.origin_name || '');
+              } else if (value) {
+                updateField('origin_id', parseInt(value));
+                updateField('origin_name', undefined);
+              } else {
+                updateField('origin_id', undefined);
+                updateField('origin_name', undefined);
+              }
+            }}
             className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs"
           >
             <option value="">Select Origin</option>
@@ -76,18 +89,35 @@ export function JourneyForm({
                 {dest.country ? `, ${dest.country}` : ''}
               </option>
             ))}
+            <option value="other">📍 Other Location (e.g., Home Airport)</option>
           </select>
+          {formData.origin_name !== undefined && (
+            <input
+              type="text"
+              value={formData.origin_name || ''}
+              onChange={(e) => updateField('origin_name', e.target.value)}
+              placeholder="e.g., Dublin Airport (DUB)"
+              className="mt-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+            />
+          )}
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-700">To</label>
           <select
-            value={formData.destination_id || ''}
-            onChange={(e) =>
-              updateField(
-                'destination_id',
-                e.target.value ? parseInt(e.target.value) : undefined
-              )
-            }
+            value={formData.destination_id ? String(formData.destination_id) : (formData.destination_name !== undefined ? 'other' : '')}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === 'other') {
+                updateField('destination_id', undefined);
+                updateField('destination_name', formData.destination_name || '');
+              } else if (value) {
+                updateField('destination_id', parseInt(value));
+                updateField('destination_name', undefined);
+              } else {
+                updateField('destination_id', undefined);
+                updateField('destination_name', undefined);
+              }
+            }}
             className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs"
           >
             <option value="">Select Destination</option>
@@ -97,7 +127,17 @@ export function JourneyForm({
                 {dest.country ? `, ${dest.country}` : ''}
               </option>
             ))}
+            <option value="other">📍 Other Location (e.g., Home Airport)</option>
           </select>
+          {formData.destination_name !== undefined && (
+            <input
+              type="text"
+              value={formData.destination_name || ''}
+              onChange={(e) => updateField('destination_name', e.target.value)}
+              placeholder="e.g., Dublin Airport (DUB)"
+              className="mt-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+            />
+          )}
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-700">Departure</label>
@@ -117,6 +157,25 @@ export function JourneyForm({
             className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs"
           />
         </div>
+
+        {/* Validation Messages */}
+        {(errors.departure_arrival || warnings.outside_trip_dates) && (
+          <div className="md:col-span-2 space-y-2">
+            {errors.departure_arrival && (
+              <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 p-2 rounded">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>{errors.departure_arrival}</span>
+              </div>
+            )}
+            {warnings.outside_trip_dates && (
+              <div className="flex items-center gap-2 text-amber-600 text-sm bg-amber-50 p-2 rounded">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                <span>{warnings.outside_trip_dates}</span>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-700">
             Cost <span className="text-gray-400 font-normal">(optional)</span>

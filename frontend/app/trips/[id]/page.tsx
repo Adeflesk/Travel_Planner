@@ -5,15 +5,19 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Trip } from '@/lib/types';
 import { tripApi } from '@/lib/api';
-import { ArrowLeft, Calendar, DollarSign, Edit, MapPin, Receipt, Package, Compass, Route, Clock } from 'lucide-react';
+import { ArrowLeft, Calendar, DollarSign, Edit, MapPin, Receipt, Package, Compass, Route, Clock, Share2, Users } from 'lucide-react';
 import { DestinationList } from '@/components/destinations';
 import { ExpenseList } from '@/components/expenses';
 import { TripActivityList } from '@/components/trip-activities';
 import { JourneyList } from '@/components/journeys';
 import { TripTimeline } from '@/components/timeline';
 import { PackingList } from '@/components/packing';
+import { ShareTripModal } from '@/components/sharing';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import { useAuth } from '@/lib/auth-context';
 
-export default function TripDetailPage() {
+function TripDetailContent() {
+  const { isAuthenticated } = useAuth();
   const params = useParams();
   const router = useRouter();
   const tripId = parseInt(params.id as string);
@@ -21,8 +25,11 @@ export default function TripDetailPage() {
   const [trip, setTrip] = useState<Trip | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'destinations' | 'journeys' | 'timeline' | 'expenses' | 'activities' | 'packing'>('destinations');
+  const [showShareModal, setShowShareModal] = useState(false);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
+
     const loadTrip = async () => {
       try {
         const response = await tripApi.getById(tripId);
@@ -36,7 +43,7 @@ export default function TripDetailPage() {
     };
 
     loadTrip();
-  }, [tripId]);
+  }, [tripId, isAuthenticated]);
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
@@ -78,27 +85,53 @@ export default function TripDetailPage() {
       <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
         <div className="flex justify-between items-start mb-4">
           <div>
-            <h1 className="w-full px-4 py-2 border
-                                       border-gray-300 rounded-md
-                                       focus:outline-none focus:ring-2
-                                       focus:ring-indigo-500">
-              {trip.name}
-            </h1>
-            <span
-              className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
-                trip.status
-              )}`}
-            >
-              {trip.status.charAt(0).toUpperCase() + trip.status.slice(1)}
-            </span>
+            <div className="flex items-center gap-2">
+              <h1 className="w-full px-4 py-2 border
+                                         border-gray-300 rounded-md
+                                         focus:outline-none focus:ring-2
+                                         focus:ring-indigo-500">
+                {trip.name}
+              </h1>
+              {trip.is_owner === false && (
+                <span className="flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-800 text-sm rounded-full">
+                  <Users className="w-4 h-4" />
+                  Shared
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              <span
+                className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
+                  trip.status
+                )}`}
+              >
+                {trip.status.charAt(0).toUpperCase() + trip.status.slice(1)}
+              </span>
+              {trip.shared_by && (
+                <span className="text-sm text-purple-600">
+                  Shared by {trip.shared_by}
+                </span>
+              )}
+            </div>
           </div>
-          <button
-            onClick={() => router.push(`/trips/${tripId}/edit`)}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-          >
-            <Edit className="w-4 h-4" />
-            Edit Trip
-          </button>
+          {trip.is_owner !== false && (
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowShareModal(true)}
+                className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+              >
+                <Share2 className="w-4 h-4" />
+                Share
+              </button>
+              <button
+                onClick={() => router.push(`/trips/${tripId}/edit`)}
+                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+              >
+                <Edit className="w-4 h-4" />
+                Edit Trip
+              </button>
+            </div>
+          )}
         </div>
 
         {trip.description && (
@@ -225,6 +258,22 @@ export default function TripDetailPage() {
         {activeTab === 'activities' && <TripActivityList tripId={tripId} />}
         {activeTab === 'packing' && <PackingList tripId={tripId} />}
       </div>
+
+      {/* Share Modal */}
+      <ShareTripModal
+        tripId={tripId}
+        tripName={trip.name}
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+      />
     </div>
+  );
+}
+
+export default function TripDetailPage() {
+  return (
+    <ProtectedRoute>
+      <TripDetailContent />
+    </ProtectedRoute>
   );
 }

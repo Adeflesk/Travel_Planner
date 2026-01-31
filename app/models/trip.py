@@ -16,6 +16,7 @@ from sqlalchemy import (
     Date,
     DateTime,
     Numeric,
+    ForeignKey,
 )
 from sqlalchemy.orm import relationship
 
@@ -37,6 +38,17 @@ class Trip(Base):
         DateTime,
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    # Owner relationship
+    user_id = Column(
+        Integer, ForeignKey("users.id"), nullable=True
+    )  # nullable for migration
+    owner = relationship("User", back_populates="trips", foreign_keys=[user_id])
+
+    # Sharing relationship
+    shares = relationship(
+        "TripShare", back_populates="trip", cascade="all, delete-orphan"
     )
 
     destinations = relationship(

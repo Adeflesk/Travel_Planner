@@ -29,11 +29,11 @@ export function TimelineJourney({
       <div className="flex-1 bg-gradient-to-r from-gray-50 to-white border border-gray-200 rounded-lg p-4 shadow-sm">
         <div className="flex items-center gap-2 mb-2">
           <span className="font-medium text-gray-700">
-            {getDestinationName(journey.origin_id)}
+            {journey.origin_name || getDestinationName(journey.origin_id)}
           </span>
           <ArrowDown className="w-4 h-4 text-gray-400 rotate-[-90deg]" />
           <span className="font-medium text-gray-700">
-            {getDestinationName(journey.destination_id)}
+            {journey.destination_name || getDestinationName(journey.destination_id)}
           </span>
           <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${
             journey.status === 'booked'

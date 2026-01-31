@@ -1,6 +1,4 @@
-import { test, expect, generateTripData, generateDestinationData } from './fixtures';
-
-const API_URL = 'http://localhost:8000';
+import { test, expect, generateTripData, generateDestinationData, API_URL } from './fixtures';
 
 function generateActivityData(destinationId: number, overrides = {}) {
   const now = new Date();
@@ -22,19 +20,19 @@ test.describe('Activity Management', () => {
   let tripId: number;
   let destinationId: number;
 
-  test.beforeEach(async ({ request }) => {
+  test.beforeEach(async ({ authApiRequest }) => {
     // Clean up existing trips
-    const response = await request.get(`${API_URL}/trips/`);
+    const response = await authApiRequest('get', `${API_URL}/trips/`);
     if (response.ok()) {
       const trips = await response.json();
       for (const trip of trips) {
-        await request.delete(`${API_URL}/trips/${trip.id}`);
+        await authApiRequest('delete', `${API_URL}/trips/${trip.id}`);
       }
     }
 
     // Create a trip for activity tests
     const tripData = generateTripData({ name: 'Activity Test Trip' });
-    const tripResponse = await request.post(`${API_URL}/trips/`, { data: tripData });
+    const tripResponse = await authApiRequest('post', `${API_URL}/trips/`, tripData);
     expect(tripResponse.ok()).toBeTruthy();
     const trip = await tripResponse.json();
     tripId = trip.id;
@@ -42,44 +40,44 @@ test.describe('Activity Management', () => {
 
     // Create a destination for activities
     const destData = generateDestinationData(tripId, { name: 'Paris', country: 'France' });
-    const destResponse = await request.post(`${API_URL}/destinations/`, { data: destData });
+    const destResponse = await authApiRequest('post', `${API_URL}/destinations/`, destData);
     expect(destResponse.ok()).toBeTruthy();
     const dest = await destResponse.json();
     destinationId = dest.id;
     expect(destinationId).toBeDefined();
   });
 
-  test.afterEach(async ({ request }) => {
+  test.afterEach(async ({ authApiRequest }) => {
     // Clean up all trips
-    const response = await request.get(`${API_URL}/trips/`);
+    const response = await authApiRequest('get', `${API_URL}/trips/`);
     if (response.ok()) {
       const trips = await response.json();
       for (const trip of trips) {
-        await request.delete(`${API_URL}/trips/${trip.id}`);
+        await authApiRequest('delete', `${API_URL}/trips/${trip.id}`);
       }
     }
   });
 
-  test('should display empty state when no activities exist', async ({ page }) => {
-    await page.goto(`/trips/${tripId}`);
+  test('should display empty state when no activities exist', async ({ authenticatedPage }) => {
+    await authenticatedPage.goto(`/trips/${tripId}`);
 
     // Expand activities section
-    await page.getByText('Show Activities').click();
+    await authenticatedPage.getByText('Show Activities').click();
 
-    await expect(page.getByText('No activities yet')).toBeVisible();
+    await expect(authenticatedPage.getByText('No activities yet')).toBeVisible();
   });
 
-  test('should create a scheduled activity', async ({ page }) => {
-    await page.goto(`/trips/${tripId}`);
+  test('should create a scheduled activity', async ({ authenticatedPage }) => {
+    await authenticatedPage.goto(`/trips/${tripId}`);
 
     // Expand activities section
-    await page.getByText('Show Activities').click();
+    await authenticatedPage.getByText('Show Activities').click();
 
     // Wait for the activity form to be visible
-    await expect(page.getByRole('heading', { name: 'Add Activity' })).toBeVisible();
+    await expect(authenticatedPage.getByRole('heading', { name: 'Add Activity' })).toBeVisible();
 
     // Get the activity form specifically (inside the border-t section)
-    const activitySection = page.locator('.border-t').filter({ hasText: 'Add Activity' });
+    const activitySection = authenticatedPage.locator('.border-t').filter({ hasText: 'Add Activity' });
 
     // Fill in the activity form
     await activitySection.getByPlaceholder('Activity name').fill('Visit Eiffel Tower');
@@ -93,21 +91,21 @@ test.describe('Activity Management', () => {
     await activitySection.getByRole('button', { name: /Add Activity/i }).click();
 
     // Verify activity appears in scheduled activities
-    await expect(page.getByText('Visit Eiffel Tower')).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText('Must-see landmark')).toBeVisible();
+    await expect(authenticatedPage.getByText('Visit Eiffel Tower')).toBeVisible({ timeout: 10000 });
+    await expect(authenticatedPage.getByText('Must-see landmark')).toBeVisible();
   });
 
-  test('should create a todo item', async ({ page }) => {
-    await page.goto(`/trips/${tripId}`);
+  test('should create a todo item', async ({ authenticatedPage }) => {
+    await authenticatedPage.goto(`/trips/${tripId}`);
 
     // Expand activities section
-    await page.getByText('Show Activities').click();
+    await authenticatedPage.getByText('Show Activities').click();
 
     // Wait for the activity form to be visible
-    await expect(page.getByRole('heading', { name: 'Add Activity' })).toBeVisible();
+    await expect(authenticatedPage.getByRole('heading', { name: 'Add Activity' })).toBeVisible();
 
     // Get the activity form specifically
-    const activityForm = page.locator('form').filter({ hasText: 'Add Activity' });
+    const activityForm = authenticatedPage.locator('form').filter({ hasText: 'Add Activity' });
 
     // Fill in the activity form
     await activityForm.getByPlaceholder('Activity name').fill('Book museum tickets');
@@ -116,7 +114,7 @@ test.describe('Activity Management', () => {
     await activityForm.getByLabel('Mark as todo item').check();
 
     // Wait for API response when submitting
-    const responsePromise = page.waitForResponse(
+    const responsePromise = authenticatedPage.waitForResponse(
       (response) => response.url().includes('/activities/') && response.request().method() === 'POST'
     );
 
@@ -128,170 +126,170 @@ test.describe('Activity Management', () => {
     expect(response.status()).toBe(201);
 
     // Verify todo appears in the checklist
-    await expect(page.getByText('Todo Checklist')).toBeVisible({ timeout: 15000 });
-    await expect(page.locator('.space-y-2').getByText('Book museum tickets')).toBeVisible({ timeout: 10000 });
+    await expect(authenticatedPage.getByText('Todo Checklist')).toBeVisible({ timeout: 15000 });
+    await expect(authenticatedPage.locator('.space-y-2').getByText('Book museum tickets')).toBeVisible({ timeout: 10000 });
   });
 
-  test('should toggle todo completion', async ({ page, request }) => {
+  test('should toggle todo completion', async ({ authenticatedPage, authApiRequest }) => {
     // Create todo via API
     const activityData = generateActivityData(destinationId, {
       name: 'Pack bags',
       is_todo: true,
       is_completed: false,
     });
-    const response = await request.post(`${API_URL}/activities/`, { data: activityData });
+    const response = await authApiRequest('post', `${API_URL}/activities/`, activityData);
     expect(response.ok()).toBeTruthy();
 
-    await page.goto(`/trips/${tripId}`);
+    await authenticatedPage.goto(`/trips/${tripId}`);
 
     // Expand activities section
-    await page.getByText('Show Activities').click();
+    await authenticatedPage.getByText('Show Activities').click();
 
     // Wait for todo to load
-    await expect(page.getByText('Pack bags')).toBeVisible({ timeout: 15000 });
+    await expect(authenticatedPage.getByText('Pack bags')).toBeVisible({ timeout: 15000 });
 
     // Verify initial state shows 0 completed
-    await expect(page.getByText('(0/1 completed)')).toBeVisible();
+    await expect(authenticatedPage.getByText('(0/1 completed)')).toBeVisible();
 
     // Click the toggle button (circle icon)
-    await page.locator('button').filter({ has: page.locator('svg.lucide-circle') }).click();
+    await authenticatedPage.locator('button').filter({ has: authenticatedPage.locator('svg.lucide-circle') }).click();
 
     // Verify completion state changes
-    await expect(page.getByText('(1/1 completed)')).toBeVisible({ timeout: 10000 });
+    await expect(authenticatedPage.getByText('(1/1 completed)')).toBeVisible({ timeout: 10000 });
   });
 
-  test('should edit a scheduled activity', async ({ page, request }) => {
+  test('should edit a scheduled activity', async ({ authenticatedPage, authApiRequest }) => {
     // Create activity via API
     const activityData = generateActivityData(destinationId, {
       name: 'Louvre Museum',
       description: 'Visit the art museum',
     });
-    const response = await request.post(`${API_URL}/activities/`, { data: activityData });
+    const response = await authApiRequest('post', `${API_URL}/activities/`, activityData);
     expect(response.ok()).toBeTruthy();
 
-    await page.goto(`/trips/${tripId}`);
+    await authenticatedPage.goto(`/trips/${tripId}`);
 
     // Expand activities section
-    await page.getByText('Show Activities').click();
+    await authenticatedPage.getByText('Show Activities').click();
 
     // Wait for activity to load
-    await expect(page.getByText('Louvre Museum')).toBeVisible({ timeout: 15000 });
+    await expect(authenticatedPage.getByText('Louvre Museum')).toBeVisible({ timeout: 15000 });
 
     // Get the activity section
-    const activitySection = page.locator('.border-t').filter({ hasText: 'Louvre Museum' });
+    const activitySection = authenticatedPage.locator('.border-t').filter({ hasText: 'Louvre Museum' });
 
     // Click edit button within the activity section
     await activitySection.locator('.space-y-2 button').first().click();
 
     // Verify edit mode
-    await expect(page.getByRole('heading', { name: 'Edit Activity' })).toBeVisible();
+    await expect(authenticatedPage.getByRole('heading', { name: 'Edit Activity' })).toBeVisible();
 
     // Change the name
-    await page.getByPlaceholder('Activity name').fill('Musee d\'Orsay');
+    await authenticatedPage.getByPlaceholder('Activity name').fill('Musee d\'Orsay');
 
     // Save changes
-    await page.getByRole('button', { name: /Update Activity/i }).click();
+    await authenticatedPage.getByRole('button', { name: /Update Activity/i }).click();
 
     // Verify updated activity
-    await expect(page.getByText('Musee d\'Orsay')).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText('Louvre Museum')).not.toBeVisible();
+    await expect(authenticatedPage.getByText('Musee d\'Orsay')).toBeVisible({ timeout: 10000 });
+    await expect(authenticatedPage.getByText('Louvre Museum')).not.toBeVisible();
   });
 
-  test('should cancel editing an activity', async ({ page, request }) => {
+  test('should cancel editing an activity', async ({ authenticatedPage, authApiRequest }) => {
     // Create activity via API
     const activityData = generateActivityData(destinationId, {
       name: 'Seine River Cruise',
     });
-    const response = await request.post(`${API_URL}/activities/`, { data: activityData });
+    const response = await authApiRequest('post', `${API_URL}/activities/`, activityData);
     expect(response.ok()).toBeTruthy();
 
-    await page.goto(`/trips/${tripId}`);
+    await authenticatedPage.goto(`/trips/${tripId}`);
 
     // Expand activities section
-    await page.getByText('Show Activities').click();
+    await authenticatedPage.getByText('Show Activities').click();
 
     // Wait for activity to load
-    await expect(page.getByText('Seine River Cruise')).toBeVisible({ timeout: 15000 });
+    await expect(authenticatedPage.getByText('Seine River Cruise')).toBeVisible({ timeout: 15000 });
 
     // Get the activity section
-    const activitySection = page.locator('.border-t').filter({ hasText: 'Seine River Cruise' });
+    const activitySection = authenticatedPage.locator('.border-t').filter({ hasText: 'Seine River Cruise' });
 
     // Click edit button within the activity section
     await activitySection.locator('.space-y-2 button').first().click();
 
     // Verify edit mode
-    await expect(page.getByRole('heading', { name: 'Edit Activity' })).toBeVisible();
+    await expect(authenticatedPage.getByRole('heading', { name: 'Edit Activity' })).toBeVisible();
 
     // Click cancel
-    await page.getByRole('button', { name: /Cancel/i }).click();
+    await authenticatedPage.getByRole('button', { name: /Cancel/i }).click();
 
     // Verify back to add mode
-    await expect(page.getByRole('heading', { name: 'Add Activity' })).toBeVisible();
+    await expect(authenticatedPage.getByRole('heading', { name: 'Add Activity' })).toBeVisible();
   });
 
-  test('should delete a scheduled activity', async ({ page, request }) => {
+  test('should delete a scheduled activity', async ({ authenticatedPage, authApiRequest }) => {
     // Create activity via API
     const activityData = generateActivityData(destinationId, {
       name: 'Notre Dame Visit',
     });
-    const response = await request.post(`${API_URL}/activities/`, { data: activityData });
+    const response = await authApiRequest('post', `${API_URL}/activities/`, activityData);
     expect(response.ok()).toBeTruthy();
 
-    await page.goto(`/trips/${tripId}`);
+    await authenticatedPage.goto(`/trips/${tripId}`);
 
     // Expand activities section
-    await page.getByText('Show Activities').click();
+    await authenticatedPage.getByText('Show Activities').click();
 
     // Verify activity exists
-    await expect(page.getByText('Notre Dame Visit')).toBeVisible({ timeout: 15000 });
+    await expect(authenticatedPage.getByText('Notre Dame Visit')).toBeVisible({ timeout: 15000 });
 
     // Handle the confirm dialog
-    page.on('dialog', (dialog) => dialog.accept());
+    authenticatedPage.on('dialog', (dialog) => dialog.accept());
 
     // Get the activity section and click delete button
-    const activitySection = page.locator('.border-t').filter({ hasText: 'Notre Dame Visit' });
+    const activitySection = authenticatedPage.locator('.border-t').filter({ hasText: 'Notre Dame Visit' });
     await activitySection.locator('.space-y-2 button').nth(1).click();
 
     // Verify activity is removed
-    await expect(page.getByText('Notre Dame Visit')).not.toBeVisible({ timeout: 5000 });
+    await expect(authenticatedPage.getByText('Notre Dame Visit')).not.toBeVisible({ timeout: 5000 });
   });
 
-  test('should delete a todo item', async ({ page, request }) => {
+  test('should delete a todo item', async ({ authenticatedPage, authApiRequest }) => {
     // Create todo via API
     const activityData = generateActivityData(destinationId, {
       name: 'Buy metro pass',
       is_todo: true,
     });
-    const response = await request.post(`${API_URL}/activities/`, { data: activityData });
+    const response = await authApiRequest('post', `${API_URL}/activities/`, activityData);
     expect(response.ok()).toBeTruthy();
 
-    await page.goto(`/trips/${tripId}`);
+    await authenticatedPage.goto(`/trips/${tripId}`);
 
     // Expand activities section
-    await page.getByText('Show Activities').click();
+    await authenticatedPage.getByText('Show Activities').click();
 
     // Verify todo exists
-    await expect(page.getByText('Buy metro pass')).toBeVisible({ timeout: 15000 });
+    await expect(authenticatedPage.getByText('Buy metro pass')).toBeVisible({ timeout: 15000 });
 
     // Handle the confirm dialog
-    page.on('dialog', (dialog) => dialog.accept());
+    authenticatedPage.on('dialog', (dialog) => dialog.accept());
 
     // Find the todo item row and click the delete button (red trash icon)
     // For todos: toggle button, then flex with edit/delete
-    const todoItem = page.locator('.border-t .space-y-2 > div').filter({ hasText: 'Buy metro pass' });
+    const todoItem = authenticatedPage.locator('.border-t .space-y-2 > div').filter({ hasText: 'Buy metro pass' });
     await todoItem.locator('button.text-red-600').click();
 
     // Verify todo is removed
-    await expect(page.getByText('Buy metro pass')).not.toBeVisible({ timeout: 5000 });
+    await expect(authenticatedPage.getByText('Buy metro pass')).not.toBeVisible({ timeout: 5000 });
   });
 
-  test('should display both scheduled activities and todos', async ({ page, request }) => {
+  test('should display both scheduled activities and todos', async ({ authenticatedPage, authApiRequest }) => {
     // Create a scheduled activity via API
     const scheduledActivity = generateActivityData(destinationId, {
       name: 'Arc de Triomphe',
       is_todo: false,
     });
-    const resp1 = await request.post(`${API_URL}/activities/`, { data: scheduledActivity });
+    const resp1 = await authApiRequest('post', `${API_URL}/activities/`, scheduledActivity);
     expect(resp1.ok()).toBeTruthy();
 
     // Create a todo via API
@@ -299,43 +297,43 @@ test.describe('Activity Management', () => {
       name: 'Get travel insurance',
       is_todo: true,
     });
-    const resp2 = await request.post(`${API_URL}/activities/`, { data: todoActivity });
+    const resp2 = await authApiRequest('post', `${API_URL}/activities/`, todoActivity);
     expect(resp2.ok()).toBeTruthy();
 
-    await page.goto(`/trips/${tripId}`);
+    await authenticatedPage.goto(`/trips/${tripId}`);
 
     // Expand activities section
-    await page.getByText('Show Activities').click();
+    await authenticatedPage.getByText('Show Activities').click();
 
     // Verify both sections are visible
-    await expect(page.getByText('Scheduled Activities')).toBeVisible({ timeout: 15000 });
-    await expect(page.getByText('Todo Checklist')).toBeVisible();
+    await expect(authenticatedPage.getByText('Scheduled Activities')).toBeVisible({ timeout: 15000 });
+    await expect(authenticatedPage.getByText('Todo Checklist')).toBeVisible();
 
     // Verify both items are visible
-    await expect(page.getByText('Arc de Triomphe')).toBeVisible();
-    await expect(page.getByText('Get travel insurance')).toBeVisible();
+    await expect(authenticatedPage.getByText('Arc de Triomphe')).toBeVisible();
+    await expect(authenticatedPage.getByText('Get travel insurance')).toBeVisible();
   });
 
-  test('should show activity description', async ({ page, request }) => {
+  test('should show activity description', async ({ authenticatedPage, authApiRequest }) => {
     // Create activity with description via API
     const activityData = generateActivityData(destinationId, {
       name: 'Montmartre Walk',
       description: 'Explore the artistic neighborhood',
     });
-    const response = await request.post(`${API_URL}/activities/`, { data: activityData });
+    const response = await authApiRequest('post', `${API_URL}/activities/`, activityData);
     expect(response.ok()).toBeTruthy();
 
-    await page.goto(`/trips/${tripId}`);
+    await authenticatedPage.goto(`/trips/${tripId}`);
 
     // Expand activities section
-    await page.getByText('Show Activities').click();
+    await authenticatedPage.getByText('Show Activities').click();
 
     // Verify activity and description are visible
-    await expect(page.getByText('Montmartre Walk')).toBeVisible({ timeout: 15000 });
-    await expect(page.getByText('Explore the artistic neighborhood')).toBeVisible();
+    await expect(authenticatedPage.getByText('Montmartre Walk')).toBeVisible({ timeout: 15000 });
+    await expect(authenticatedPage.getByText('Explore the artistic neighborhood')).toBeVisible();
   });
 
-  test('should display scheduled date for activities', async ({ page, request }) => {
+  test('should display scheduled date for activities', async ({ authenticatedPage, authApiRequest }) => {
     const scheduledDate = new Date(Date.now() + 8 * 24 * 60 * 60 * 1000);
 
     // Create activity with scheduled date via API
@@ -343,29 +341,29 @@ test.describe('Activity Management', () => {
       name: 'Palace of Versailles',
       scheduled_date: scheduledDate.toISOString().split('T')[0],
     });
-    const response = await request.post(`${API_URL}/activities/`, { data: activityData });
+    const response = await authApiRequest('post', `${API_URL}/activities/`, activityData);
     expect(response.ok()).toBeTruthy();
 
-    await page.goto(`/trips/${tripId}`);
+    await authenticatedPage.goto(`/trips/${tripId}`);
 
     // Expand activities section
-    await page.getByText('Show Activities').click();
+    await authenticatedPage.getByText('Show Activities').click();
 
     // Verify activity is visible with date
-    await expect(page.getByText('Palace of Versailles')).toBeVisible({ timeout: 15000 });
+    await expect(authenticatedPage.getByText('Palace of Versailles')).toBeVisible({ timeout: 15000 });
   });
 
-  test('should disable date field when todo is checked', async ({ page }) => {
-    await page.goto(`/trips/${tripId}`);
+  test('should disable date field when todo is checked', async ({ authenticatedPage }) => {
+    await authenticatedPage.goto(`/trips/${tripId}`);
 
     // Expand activities section
-    await page.getByText('Show Activities').click();
+    await authenticatedPage.getByText('Show Activities').click();
 
     // Wait for the activity form to be visible
-    await expect(page.getByRole('heading', { name: 'Add Activity' })).toBeVisible();
+    await expect(authenticatedPage.getByRole('heading', { name: 'Add Activity' })).toBeVisible();
 
     // Get the activity form specifically
-    const activitySection = page.locator('.border-t').filter({ hasText: 'Add Activity' });
+    const activitySection = authenticatedPage.locator('.border-t').filter({ hasText: 'Add Activity' });
 
     // Verify date field is enabled initially
     const dateInput = activitySection.locator('input[type="date"]');

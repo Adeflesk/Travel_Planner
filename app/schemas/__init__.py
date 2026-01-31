@@ -6,10 +6,11 @@ Convenience imports for schema classes in the `app.schemas` package.
 Author: Travel Planner Team
 """
 
-from .trip import *
-from .destination import *
-from .activity import *
-from .expense import *
-from .packing_item import *
-from .journey import *
-from .aggregates import *
+from .trip import *  # noqa: F401, F403
+from .destination import *  # noqa: F401, F403
+from .activity import *  # noqa: F401, F403
+from .expense import *  # noqa: F401, F403
+from .packing_item import *  # noqa: F401, F403
+from .journey import *  # noqa: F401, F403
+from .aggregates import *  # noqa: F401, F403
+from .auth import *  # noqa: F401, F403

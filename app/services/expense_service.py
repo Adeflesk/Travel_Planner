@@ -6,12 +6,14 @@ Extracted business logic for computing expense summaries.
 Author: Travel Planner Team
 """
 
-from typing import Dict
+from typing import Dict, Optional
+
 from sqlalchemy.orm import Session
-import models
+
+from app import models
 
 
-def get_expense_summary(trip_id: int, db: Session) -> Dict:
+def get_expense_summary(trip_id: int, db: Session) -> Optional[Dict]:
     trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
     if not trip:
         return None

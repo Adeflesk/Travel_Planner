@@ -9,6 +9,8 @@ export interface Trip {
   status: 'planning' | 'booked' | 'ongoing' | 'completed';
   created_at: string;
   updated_at: string;
+  is_owner?: boolean;
+  shared_by?: string;
 }
 
 export interface Destination {
@@ -69,6 +71,9 @@ export interface Journey {
   trip_id: number;
   origin_id?: number;
   destination_id?: number;
+  // Text fields for locations not in destinations (e.g., home airport)
+  origin_name?: string;
+  destination_name?: string;
   transport_mode: string;
   departure_datetime?: string;
   arrival_datetime?: string;
@@ -138,6 +143,9 @@ export interface JourneyFormData {
   trip_id: number;
   origin_id?: number;
   destination_id?: number;
+  // Text fields for locations not in destinations (e.g., home airport)
+  origin_name?: string;
+  destination_name?: string;
   transport_mode: string;
   departure_datetime?: string;
   arrival_datetime?: string;
@@ -194,4 +202,68 @@ export interface DestinationAccommodation {
   destination: Destination;
   expenses: Expense[];
   total: number;
+}
+
+// Auth Types
+export interface User {
+  id: number;
+  email: string;
+  full_name?: string;
+  role: 'admin' | 'user';
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface AuthTokens {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+}
+
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+export interface RegisterData {
+  email: string;
+  password: string;
+  full_name?: string;
+}
+
+// Admin Types
+export interface AdminStats {
+  total_users: number;
+  active_users: number;
+  inactive_users: number;
+  total_trips: number;
+}
+
+export interface AdminUserCreate {
+  email: string;
+  password: string;
+  full_name?: string;
+  role?: 'admin' | 'user';
+  is_active?: boolean;
+}
+
+export interface AdminUserUpdate {
+  email?: string;
+  full_name?: string;
+  role?: 'admin' | 'user';
+  is_active?: boolean;
+}
+
+// Trip Sharing Types
+export interface TripShare {
+  id: number;
+  trip_id: number;
+  user_id: number;
+  permission: 'view' | 'edit';
+  created_at: string;
+  user_email?: string;
+}
+
+export interface TripShareCreate {
+  email: string;
 }

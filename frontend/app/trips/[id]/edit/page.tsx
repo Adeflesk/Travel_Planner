@@ -6,8 +6,11 @@ import { useParams, useRouter } from 'next/navigation';
 import { TripFormData } from '@/lib/types';
 import { tripApi } from '@/lib/api';
 import { ArrowLeft } from 'lucide-react';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import { useAuth } from '@/lib/auth-context';
 
-export default function EditTripPage() {
+function EditTripContent() {
+  const { isAuthenticated } = useAuth();
   const params = useParams();
   const router = useRouter();
   const tripId = parseInt(params.id as string);
@@ -44,8 +47,10 @@ export default function EditTripPage() {
   }, [tripId]);
 
   useEffect(() => {
-    loadTrip();
-  }, [loadTrip]);
+    if (isAuthenticated) {
+      loadTrip();
+    }
+  }, [loadTrip, isAuthenticated]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -220,5 +225,13 @@ export default function EditTripPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function EditTripPage() {
+  return (
+    <ProtectedRoute>
+      <EditTripContent />
+    </ProtectedRoute>
   );
 }

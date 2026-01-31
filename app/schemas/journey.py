@@ -7,7 +7,7 @@ Defines Journey-related Pydantic models: `JourneyBase`, `JourneyCreate`,
 Author: Travel Planner Team
 """
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional
@@ -25,11 +25,21 @@ class JourneyBase(BaseModel):
     status: str = "planned"
     order: int = 0
 
+    @model_validator(mode="after")
+    def validate_departure_before_arrival(self):
+        if self.departure_datetime and self.arrival_datetime:
+            if self.departure_datetime >= self.arrival_datetime:
+                raise ValueError("Departure datetime must be before arrival datetime")
+        return self
+
 
 class JourneyCreate(JourneyBase):
     trip_id: int
     origin_id: Optional[int] = None
     destination_id: Optional[int] = None
+    # Text fields for locations not in destinations (e.g., home airport)
+    origin_name: Optional[str] = None
+    destination_name: Optional[str] = None
 
 
 class JourneyUpdate(BaseModel):
@@ -45,6 +55,15 @@ class JourneyUpdate(BaseModel):
     order: Optional[int] = None
     origin_id: Optional[int] = None
     destination_id: Optional[int] = None
+    origin_name: Optional[str] = None
+    destination_name: Optional[str] = None
+
+    @model_validator(mode="after")
+    def validate_departure_before_arrival(self):
+        if self.departure_datetime and self.arrival_datetime:
+            if self.departure_datetime >= self.arrival_datetime:
+                raise ValueError("Departure datetime must be before arrival datetime")
+        return self
 
 
 class Journey(JourneyBase):
@@ -52,5 +71,7 @@ class Journey(JourneyBase):
     trip_id: int
     origin_id: Optional[int] = None
     destination_id: Optional[int] = None
+    origin_name: Optional[str] = None
+    destination_name: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
