@@ -28,6 +28,7 @@ export default function JourneyList({ tripId }: JourneyListProps) {
     startEdit,
     resetForm,
     updateField,
+    duplicateAsReturn,
   } = useJourneyForm(tripId, reload);
 
   const handleDelete = async (id: number) => {
@@ -67,6 +68,7 @@ export default function JourneyList({ tripId }: JourneyListProps) {
               getDestinationName={getDestinationName}
               onEdit={startEdit}
               onDelete={handleDelete}
+              onDuplicateReturn={duplicateAsReturn}
             />
           ))}
         </div>

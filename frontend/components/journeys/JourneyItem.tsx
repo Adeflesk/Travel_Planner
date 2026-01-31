@@ -2,7 +2,7 @@
 
 import { Journey } from '@/lib/types';
 import { format } from 'date-fns';
-import { Trash2, Edit2, ArrowRight, Plane, Train, Bus, Car, Ship, Footprints } from 'lucide-react';
+import { Trash2, Edit2, ArrowRight, Plane, Train, Bus, Car, Ship, Footprints, Copy } from 'lucide-react';
 import { getStatusColor } from './useJourneys';
 
 const transportIcons: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -19,6 +19,7 @@ interface JourneyItemProps {
   getDestinationName: (destId?: number) => string;
   onEdit: (journey: Journey) => void;
   onDelete: (id: number) => void;
+  onDuplicateReturn: (journey: Journey) => void;
 }
 
 export function JourneyItem({
@@ -26,6 +27,7 @@ export function JourneyItem({
   getDestinationName,
   onEdit,
   onDelete,
+  onDuplicateReturn,
 }: JourneyItemProps) {
   const TransportIcon = transportIcons[journey.transport_mode] || Plane;
 
@@ -89,12 +91,21 @@ export function JourneyItem({
           <button
             onClick={() => onEdit(journey)}
             className="text-blue-600 hover:text-blue-700 p-2"
+            title="Edit journey"
           >
             <Edit2 className="w-4 h-4" />
           </button>
           <button
+            onClick={() => onDuplicateReturn(journey)}
+            className="text-green-600 hover:text-green-700 p-2"
+            title="Duplicate as return trip"
+          >
+            <Copy className="w-4 h-4" />
+          </button>
+          <button
             onClick={() => onDelete(journey.id)}
             className="text-red-600 hover:text-red-700 p-2"
+            title="Delete journey"
           >
             <Trash2 className="w-4 h-4" />
           </button>
