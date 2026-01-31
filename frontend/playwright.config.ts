@@ -28,9 +28,9 @@ export default defineConfig({
   webServer: [
     {
       command: process.env.CI
-        ? 'cd .. && uvicorn main:app --reload --port 8000'
-        : 'cd .. && source .venv/bin/activate && uvicorn main:app --reload --port 8000',
-      url: 'http://localhost:8000',
+        ? 'sh -c "cd .. && uvicorn app.main:app --host 0.0.0.0 --port 8000"'
+        : 'uvicorn app.main:app --reload --port 8000',
+      url: 'http://localhost:8000/health',
       reuseExistingServer: !process.env.CI,
       timeout: 120000,
     },
