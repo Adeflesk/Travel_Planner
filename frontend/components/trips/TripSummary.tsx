@@ -30,16 +30,18 @@ export function TripSummary({ tripId, budget }: TripSummaryProps) {
 
   // Separate accommodation from other expenses
   const accommodationCategories = ['accommodation', 'lodging', 'hotel', 'hostel', 'airbnb'];
-  const accommodationTotal = Object.entries(summary.expenses.byCategory).reduce(
+  const byCategory = summary.expenses.byCategory || {};
+  const accommodationTotal = Object.entries(byCategory).reduce(
     (total, [category, amount]) => {
       if (accommodationCategories.includes(category.toLowerCase())) {
-        return total + amount;
+        return total + Number(amount);
       }
       return total;
     },
     0
   );
-  const otherExpensesTotal = summary.expenses.total - accommodationTotal;
+  const expenseTotal = Number(summary.expenses.total) || 0;
+  const otherExpensesTotal = expenseTotal - accommodationTotal;
 
   const isOverBudget = remaining !== null && remaining < 0;
   const hasNoCosts = summary.grandTotal === 0;
@@ -66,7 +68,7 @@ export function TripSummary({ tripId, budget }: TripSummaryProps) {
                 )}
               </div>
               <span className="font-medium text-gray-800">
-                ${summary.journeys.total.toFixed(2)}
+                ${Number(summary.journeys.total).toFixed(2)}
               </span>
             </div>
 
@@ -77,7 +79,7 @@ export function TripSummary({ tripId, budget }: TripSummaryProps) {
                 <span className="text-sm">Accommodations</span>
               </div>
               <span className="font-medium text-gray-800">
-                ${accommodationTotal.toFixed(2)}
+                ${Number(accommodationTotal).toFixed(2)}
               </span>
             </div>
 
@@ -91,7 +93,7 @@ export function TripSummary({ tripId, budget }: TripSummaryProps) {
                 )}
               </div>
               <span className="font-medium text-gray-800">
-                ${otherExpensesTotal.toFixed(2)}
+                ${Number(otherExpensesTotal).toFixed(2)}
               </span>
             </div>
 
@@ -102,7 +104,7 @@ export function TripSummary({ tripId, budget }: TripSummaryProps) {
             <div className="flex items-center justify-between">
               <span className="font-semibold text-gray-800">Total Spent</span>
               <span className="font-bold text-lg text-gray-900">
-                ${summary.grandTotal.toFixed(2)}
+                ${Number(summary.grandTotal).toFixed(2)}
               </span>
             </div>
 
@@ -111,7 +113,7 @@ export function TripSummary({ tripId, budget }: TripSummaryProps) {
               <>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-600">Budget</span>
-                  <span className="text-gray-700">${budget.toFixed(2)}</span>
+                  <span className="text-gray-700">${Number(budget).toFixed(2)}</span>
                 </div>
 
                 {/* Progress bar */}
@@ -137,7 +139,7 @@ export function TripSummary({ tripId, budget }: TripSummaryProps) {
                     </span>
                   </div>
                   <span className={`font-bold ${isOverBudget ? 'text-red-600' : 'text-green-600'}`}>
-                    {isOverBudget ? '-' : ''}${Math.abs(remaining!).toFixed(2)}
+                    {isOverBudget ? '-' : ''}${Math.abs(Number(remaining) || 0).toFixed(2)}
                   </span>
                 </div>
               </>
@@ -148,8 +150,8 @@ export function TripSummary({ tripId, budget }: TripSummaryProps) {
           {summary.expenses.count > 0 && (
             <div className="mt-4 pt-3 border-t border-blue-200">
               <div className="flex justify-between text-xs text-gray-500">
-                <span>Paid: ${summary.expenses.paid.toFixed(2)}</span>
-                <span>Unpaid: ${summary.expenses.unpaid.toFixed(2)}</span>
+                <span>Paid: ${Number(summary.expenses.paid).toFixed(2)}</span>
+                <span>Unpaid: ${Number(summary.expenses.unpaid).toFixed(2)}</span>
               </div>
             </div>
           )}

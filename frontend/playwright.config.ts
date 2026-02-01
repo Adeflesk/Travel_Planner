@@ -6,15 +6,21 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './e2e',
-  fullyParallel: false,
+  fullyParallel: false, // Keep false due to shared database state
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: 1,
-  reporter: 'html',
+  retries: process.env.CI ? 1 : 0, // Reduced from 2 to 1
+  workers: 1, // Keep 1 due to shared database state
+  reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'html',
+  timeout: 30000, // 30 second test timeout
+  expect: {
+    timeout: 10000, // 10 second expect timeout
+  },
   use: {
     baseURL: 'http://localhost:3000',
-    trace: 'on-first-retry',
+    trace: 'retain-on-failure', // Only keep trace for failures
     screenshot: 'only-on-failure',
+    video: 'off', // Disable video recording
+    actionTimeout: 15000, // 15 second action timeout
   },
 
   projects: [
@@ -32,13 +38,13 @@ export default defineConfig({
         : 'uvicorn app.main:app --reload --port 8000',
       url: 'http://localhost:8000/health',
       reuseExistingServer: !process.env.CI,
-      timeout: 120000,
+      timeout: 60000, // Reduced from 120s to 60s
     },
     {
       command: 'npm run dev',
       url: 'http://localhost:3000',
       reuseExistingServer: !process.env.CI,
-      timeout: 120000,
+      timeout: 60000, // Reduced from 120s to 60s
     },
   ],
 });

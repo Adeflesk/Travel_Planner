@@ -29,12 +29,19 @@ export function useTripSummary(tripId: number, budget?: number) {
   const loadSummary = useCallback(async () => {
     try {
       const [expenseSummaryRes, journeysRes] = await Promise.all([
-        expenseApi.getSummary(tripId),
-        journeyApi.getByTripId(tripId),
+        expenseApi.getSummary(tripId).catch(() => ({ data: null })),
+        journeyApi.getByTripId(tripId).catch(() => ({ data: [] })),
       ]);
 
-      const expenseSummary: ExpenseSummary = expenseSummaryRes.data;
-      const journeys: Journey[] = journeysRes.data;
+      // Handle missing or invalid expense summary data
+      const expenseSummary: ExpenseSummary = expenseSummaryRes.data || {
+        total: 0,
+        paid_total: 0,
+        unpaid_total: 0,
+        by_category: {},
+        count: 0,
+      };
+      const journeys: Journey[] = journeysRes.data || [];
 
       // Calculate journey totals
       const journeyTotals = journeys.reduce(
@@ -52,34 +59,40 @@ export function useTripSummary(tripId: number, budget?: number) {
       );
 
       // Calculate accommodation total from expenses
-      const accommodationTotal = Object.entries(expenseSummary.by_category).reduce(
+      const byCategory = expenseSummary.by_category || {};
+      const accommodationTotal = Object.entries(byCategory).reduce(
         (total, [category, amount]) => {
           if (ACCOMMODATION_CATEGORIES.includes(category.toLowerCase())) {
-            return total + amount;
+            return total + Number(amount);
           }
           return total;
         },
         0
       );
 
-      // Other expenses (non-accommodation)
-      const otherExpensesTotal = expenseSummary.total - accommodationTotal;
+      const expenseTotal = Number(expenseSummary.total) || 0;
 
       const costSummary: TripCostSummary = {
         journeys: journeyTotals,
         expenses: {
-          total: expenseSummary.total,
-          paid: expenseSummary.paid_total,
-          unpaid: expenseSummary.unpaid_total,
-          byCategory: expenseSummary.by_category,
-          count: expenseSummary.count,
+          total: expenseTotal,
+          paid: Number(expenseSummary.paid_total) || 0,
+          unpaid: Number(expenseSummary.unpaid_total) || 0,
+          byCategory: byCategory,
+          count: expenseSummary.count || 0,
         },
-        grandTotal: journeyTotals.total + expenseSummary.total,
+        grandTotal: journeyTotals.total + expenseTotal,
       };
 
       setSummary(costSummary);
     } catch (error) {
       console.error('Error loading trip summary:', error);
+      // Set default empty summary on error
+      setSummary({
+        journeys: { total: 0, count: 0, byCurrency: {} },
+        expenses: { total: 0, paid: 0, unpaid: 0, byCategory: {}, count: 0 },
+        grandTotal: 0,
+      });
     } finally {
       setLoading(false);
     }

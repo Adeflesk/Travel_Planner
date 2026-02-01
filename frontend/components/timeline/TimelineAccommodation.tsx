@@ -44,7 +44,7 @@ export function TimelineAccommodation({ accommodation }: TimelineAccommodationPr
           </div>
           <div className="text-right">
             <span className="font-semibold text-purple-600">
-              {accommodation.amount.toFixed(2)} {accommodation.currency}
+              {Number(accommodation.amount).toFixed(2)} {accommodation.currency}
             </span>
           </div>
         </div>
