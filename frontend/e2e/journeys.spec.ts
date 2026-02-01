@@ -227,7 +227,7 @@ test.describe('Journey Management', () => {
     await authenticatedPage.getByRole('button', { name: /Journeys/i }).click();
 
     // Verify cost is displayed with increased timeout
-    await expect(authenticatedPage.getByText('$199.99')).toBeVisible({ timeout: 15000 });
+    await expect(authenticatedPage.getByText('199.99 USD')).toBeVisible({ timeout: 15000 });
   });
 
   test('should change journey status', async ({ authenticatedPage, authApiRequest }) => {

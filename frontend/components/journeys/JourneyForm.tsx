@@ -180,19 +180,37 @@ export function JourneyForm({
           <label className="text-sm font-medium text-gray-700">
             Cost <span className="text-gray-400 font-normal">(optional)</span>
           </label>
-          <input
-            type="number"
-            value={formData.cost || ''}
-            onChange={(e) =>
-              updateField(
-                'cost',
-                e.target.value ? parseFloat(e.target.value) : undefined
-              )
-            }
-            placeholder="0.00"
-            step="0.01"
-            className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
-          />
+          <div className="flex gap-2">
+            <input
+              type="number"
+              value={formData.cost || ''}
+              onChange={(e) =>
+                updateField(
+                  'cost',
+                  e.target.value ? parseFloat(e.target.value) : undefined
+                )
+              }
+              placeholder="0.00"
+              step="0.01"
+              className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+            />
+            <select
+              value={formData.currency}
+              onChange={(e) => updateField('currency', e.target.value)}
+              className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand px-3 py-2.5 shadow-xs"
+            >
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="GBP">GBP</option>
+              <option value="CAD">CAD</option>
+              <option value="AUD">AUD</option>
+              <option value="JPY">JPY</option>
+              <option value="CHF">CHF</option>
+              <option value="CNY">CNY</option>
+              <option value="INR">INR</option>
+              <option value="MXN">MXN</option>
+            </select>
+          </div>
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-700">

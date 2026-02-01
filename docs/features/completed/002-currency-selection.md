@@ -1,6 +1,6 @@
 # Feature: Currency Selection for Journeys
 
-**Status:** Planned
+**Status:** Complete
 **Priority:** Low
 **Complexity:** Low
 
@@ -32,6 +32,6 @@ Allow users to select currency when entering journey costs instead of defaulting
 
 ## Acceptance Criteria
 
-- [ ] Currency dropdown appears next to cost field
-- [ ] Selected currency saved with journey
-- [ ] Currency displayed in journey list and timeline
+- [x] Currency dropdown appears next to cost field
+- [x] Selected currency saved with journey
+- [x] Currency displayed in journey list and timeline
