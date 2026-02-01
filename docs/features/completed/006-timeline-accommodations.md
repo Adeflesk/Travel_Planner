@@ -1,6 +1,6 @@
 # Feature: Show Accommodations on Timeline
 
-**Status:** Planned
+**Status:** Complete
 **Priority:** Medium
 **Complexity:** Medium
 
@@ -48,7 +48,7 @@ Display accommodations alongside journeys on the trip timeline for a complete tr
 
 ## Acceptance Criteria
 
-- [ ] Accommodations appear on timeline
-- [ ] Visually distinct from journeys
-- [ ] Sorted correctly by date
-- [ ] Shows key info (name, dates, location)
+- [x] Accommodations appear on timeline
+- [x] Visually distinct from journeys (purple color scheme)
+- [x] Sorted correctly by date
+- [x] Shows key info (name, dates, booking status, cost)

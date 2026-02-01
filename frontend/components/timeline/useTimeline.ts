@@ -4,14 +4,18 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Journey,
   Destination,
+  Expense,
   TimelineItem as ApiTimelineItem,
 } from '@/lib/types';
-import { tripApi } from '@/lib/api';
+import { tripApi, expenseApi } from '@/lib/api';
 import { Plane, Train, Bus, Car, Ship, Footprints } from 'lucide-react';
 
 export type TimelineItem =
   | { type: 'destination'; data: Destination; sortDate: Date }
-  | { type: 'journey'; data: Journey; sortDate: Date };
+  | { type: 'journey'; data: Journey; sortDate: Date }
+  | { type: 'accommodation'; data: Expense; sortDate: Date };
+
+const ACCOMMODATION_CATEGORIES = ['accommodation', 'lodging', 'hotel', 'hostel', 'airbnb'];
 
 export const transportIcons: Record<string, typeof Plane> = {
   flight: Plane,
@@ -28,9 +32,13 @@ export function useTimeline(tripId: number) {
 
   const loadData = useCallback(async () => {
     try {
-      const response = await tripApi.getTimeline(tripId);
+      const [timelineResponse, expensesResponse] = await Promise.all([
+        tripApi.getTimeline(tripId),
+        expenseApi.getByTripId(tripId),
+      ]);
+
       // Transform API response to local TimelineItem format
-      const items: TimelineItem[] = response.data.map(
+      const items: TimelineItem[] = timelineResponse.data.map(
         (item: ApiTimelineItem) => {
           if (item.type === 'destination' && item.destination) {
             return {
@@ -47,7 +55,24 @@ export function useTimeline(tripId: number) {
           }
         }
       );
-      setTimeline(items);
+
+      // Filter and add accommodations
+      const accommodations: TimelineItem[] = expensesResponse.data
+        .filter((expense: Expense) =>
+          ACCOMMODATION_CATEGORIES.includes(expense.category.toLowerCase())
+        )
+        .map((expense: Expense) => ({
+          type: 'accommodation' as const,
+          data: expense,
+          sortDate: expense.date ? new Date(expense.date) : new Date(0),
+        }));
+
+      // Merge and sort all items by date
+      const allItems = [...items, ...accommodations].sort(
+        (a, b) => a.sortDate.getTime() - b.sortDate.getTime()
+      );
+
+      setTimeline(allItems);
     } catch (error) {
       console.error('Error loading timeline data:', error);
     } finally {
