@@ -68,7 +68,7 @@ export function TimelineJourney({
             <p><span className="font-medium">Ref:</span> {journey.booking_reference}</p>
           )}
           {journey.cost && (
-            <p><span className="font-medium">Cost:</span> ${Number(journey.cost).toFixed(2)}</p>
+            <p><span className="font-medium">Cost:</span> {Number(journey.cost).toFixed(2)} {journey.currency || 'USD'}</p>
           )}
         </div>
       </div>

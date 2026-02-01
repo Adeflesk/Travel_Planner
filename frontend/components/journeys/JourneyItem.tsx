@@ -81,8 +81,8 @@ export function JourneyItem({
             )}
             {journey.cost && (
               <p>
-                <span className="font-medium">Cost:</span> ${(+journey.cost).toFixed(2)}{' '}
-                {journey.currency}
+                <span className="font-medium">Cost:</span>{' '}
+                {(+journey.cost).toFixed(2)} {journey.currency || 'USD'}
               </p>
             )}
           </div>
