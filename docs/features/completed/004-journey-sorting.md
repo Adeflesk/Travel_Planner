@@ -1,6 +1,6 @@
 # Feature: Journey Sorting Options
 
-**Status:** Planned
+**Status:** Complete
 **Priority:** Medium
 **Complexity:** Low
 
@@ -39,6 +39,6 @@ Sort by: [Departure Date (Earliest) ▼]
 
 ## Acceptance Criteria
 
-- [ ] Sort dropdown/buttons visible
-- [ ] Journeys reorder when sort changes
-- [ ] Sort preference persists across page refreshes
+- [x] Sort dropdown/buttons visible
+- [x] Journeys reorder when sort changes
+- [x] Sort preference persists across page refreshes

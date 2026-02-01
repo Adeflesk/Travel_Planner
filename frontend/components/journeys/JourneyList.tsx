@@ -1,9 +1,10 @@
 'use client';
 
-import { useJourneys } from './useJourneys';
+import { useJourneys, sortOptions } from './useJourneys';
 import { useJourneyForm } from './useJourneyForm';
 import { JourneyForm } from './JourneyForm';
 import { JourneyItem } from './JourneyItem';
+import { ArrowUpDown } from 'lucide-react';
 
 interface JourneyListProps {
   tripId: number;
@@ -17,6 +18,8 @@ export default function JourneyList({ tripId }: JourneyListProps) {
     reload,
     deleteJourney,
     getDestinationName,
+    sortOption,
+    setSortOption,
   } = useJourneys(tripId);
 
   const {
@@ -49,6 +52,24 @@ export default function JourneyList({ tripId }: JourneyListProps) {
         onCancel={resetForm}
         updateField={updateField}
       />
+
+      {!loading && journeys.length > 0 && (
+        <div className="flex items-center gap-2 mb-4">
+          <ArrowUpDown className="w-4 h-4 text-gray-500" />
+          <label className="text-sm text-gray-600">Sort by:</label>
+          <select
+            value={sortOption}
+            onChange={(e) => setSortOption(e.target.value as typeof sortOption)}
+            className="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg px-3 py-1.5 focus:ring-blue-500 focus:border-blue-500"
+          >
+            {sortOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {loading ? (
         <p className="text-center text-gray-500">Loading...</p>

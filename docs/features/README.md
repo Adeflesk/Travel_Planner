@@ -18,7 +18,7 @@ This directory contains specifications for planned features.
 | 001 | [Journey Validation](./completed/001-journey-validation.md) | Medium | Low | Complete |
 | 002 | [Currency Selection](./completed/002-currency-selection.md) | Low | Low | Complete |
 | 003 | [Trip Cost Summary](./003-trip-cost-summary.md) | High | Medium | Planned |
-| 004 | [Journey Sorting](./004-journey-sorting.md) | Medium | Low | Planned |
+| 004 | [Journey Sorting](./completed/004-journey-sorting.md) | Medium | Low | Complete |
 | 005 | [Duplicate Journey](./completed/005-duplicate-journey.md) | High | Low | Complete |
 | 006 | [Timeline Accommodations](./006-timeline-accommodations.md) | Medium | Medium | Planned |
 | 007 | [Schedule Conflicts](./007-schedule-conflicts.md) | Medium | Medium | Planned |
