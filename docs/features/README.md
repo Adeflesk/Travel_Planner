@@ -22,17 +22,29 @@ This directory contains specifications for planned features.
 | 005 | [Duplicate Journey](./completed/005-duplicate-journey.md) | High | Low | Complete |
 | 006 | [Timeline Accommodations](./completed/006-timeline-accommodations.md) | Medium | Medium | Complete |
 | 007 | [Schedule Conflicts](./completed/007-schedule-conflicts.md) | Medium | Medium | Complete |
-| 008 | [Export Itinerary](./008-export-itinerary.md) | Medium | High | Planned |
-| 009 | [Trip Statistics API](./009-trip-statistics.md) | Low | Medium | Complete |
+| 008 | [Export Itinerary](./completed/008-export-itinerary.md) | Medium | High | Complete |
+| 009 | [Trip Statistics API](./completed/009-trip-statistics.md) | Low | Medium | Complete |
 
-### Infrastructure & Deployment
+### Journey Enhancements
+
+See [014-journey-enhancements-plan.md](./014-journey-enhancements-plan.md) for the planning document.
 
 | # | Feature | Priority | Complexity | Status |
 |---|---------|----------|------------|--------|
-| 010 | [Alembic Migrations](./010-alembic-migrations.md) | High | Medium | Planned |
-| 011 | [Environment Config](./011-environment-config.md) | High | Low | Planned |
-| 012 | [Production Deployment](./012-production-deployment.md) | Medium | High | Planned |
-| 013 | [SQLite to PostgreSQL Migration](./013-sqlite-to-postgres-migration.md) | Low | Medium | Planned |
+| 014 | [Journey Stops & Options](./completed/014-journey-stops.md) | High | Medium-High | Complete |
+| 015 | [Journey Documents](./015-journey-documents.md) | Medium | Low | Planned |
+| 016 | [Route Details](./016-route-details.md) | Low | Medium | Planned |
+
+### Infrastructure & Deployment
+
+See [deployment/README.md](./deployment/README.md) for detailed deployment documentation.
+
+| # | Feature | Priority | Complexity | Status |
+|---|---------|----------|------------|--------|
+| 010 | [Alembic Migrations](./deployment/010-alembic-migrations.md) | High | Medium | Planned |
+| 011 | [Environment Config](./deployment/011-environment-config.md) | High | Low | Planned |
+| 012 | [Production Deployment](./deployment/012-production-deployment.md) | Medium | High | Planned |
+| 013 | [SQLite to PostgreSQL Migration](./deployment/013-sqlite-to-postgres-migration.md) | Low | Medium | Planned |
 
 ## Adding New Features
 
