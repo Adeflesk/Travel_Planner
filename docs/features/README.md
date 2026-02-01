@@ -32,7 +32,7 @@ See [014-journey-enhancements-plan.md](./014-journey-enhancements-plan.md) for t
 | # | Feature | Priority | Complexity | Status |
 |---|---------|----------|------------|--------|
 | 014 | [Journey Stops & Options](./completed/014-journey-stops.md) | High | Medium-High | Complete |
-| 015 | [Journey Documents](./015-journey-documents.md) | Medium | Low | Planned |
+| 015 | [Journey Documents](./completed/015-journey-documents.md) | Medium | Low | Complete |
 | 016 | [Route Details](./016-route-details.md) | Low | Medium | Planned |
 
 ### Infrastructure & Deployment

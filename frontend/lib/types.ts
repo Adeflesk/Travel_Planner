@@ -220,6 +220,28 @@ export interface StopOptionFormData {
   order?: number;
 }
 
+// Journey Document Types
+export type DocumentType = 'ticket' | 'confirmation' | 'rental' | 'map' | 'visa' | 'insurance' | 'other';
+
+export interface JourneyDocument {
+  id: number;
+  journey_id: number;
+  name: string;
+  document_type: DocumentType;
+  file_path?: string;
+  url?: string;
+  notes?: string;
+  created_at: string;
+}
+
+export interface JourneyDocumentFormData {
+  journey_id: number;
+  name: string;
+  document_type?: DocumentType;
+  url?: string;
+  notes?: string;
+}
+
 // Summary Types
 export interface ExpenseSummary {
   total: number;

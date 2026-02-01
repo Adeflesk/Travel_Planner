@@ -51,3 +51,6 @@ class Journey(Base):
     stops = relationship(
         "JourneyStop", back_populates="journey", cascade="all, delete-orphan"
     )
+    documents = relationship(
+        "JourneyDocument", back_populates="journey", cascade="all, delete-orphan"
+    )

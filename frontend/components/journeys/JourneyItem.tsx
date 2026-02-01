@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import { Journey } from '@/lib/types';
 import { format } from 'date-fns';
-import { Trash2, Edit2, ArrowRight, Plane, Train, Bus, Car, Ship, Footprints, Copy, Route, ChevronDown, ChevronUp } from 'lucide-react';
+import { Trash2, Edit2, ArrowRight, Plane, Train, Bus, Car, Ship, Footprints, Copy, Route, ChevronDown, ChevronUp, FileText } from 'lucide-react';
 import { getStatusColor } from './useJourneys';
 import { JourneyStopsList } from '../journey-stops';
+import { JourneyDocuments } from './JourneyDocuments';
 
 const transportIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   flight: Plane,
@@ -32,6 +33,7 @@ export function JourneyItem({
   onDuplicateReturn,
 }: JourneyItemProps) {
   const [showStops, setShowStops] = useState(false);
+  const [showDocuments, setShowDocuments] = useState(false);
   const TransportIcon = transportIcons[journey.transport_mode] || Plane;
 
   // Only show stops for ground transport (car, bus, train)
@@ -120,32 +122,61 @@ export function JourneyItem({
           </div>
         </div>
 
-        {/* Stops Toggle Button - only for ground transport */}
-        {canHaveStops && (
+        {/* Toggle Buttons */}
+        <div className="mt-3 ml-12 flex gap-4">
+          {/* Stops Toggle - only for ground transport */}
+          {canHaveStops && (
+            <button
+              onClick={() => setShowStops(!showStops)}
+              className="flex items-center gap-2 text-sm text-orange-600 hover:text-orange-700"
+            >
+              <Route className="w-4 h-4" />
+              {showStops ? (
+                <>
+                  <span>Hide Stops</span>
+                  <ChevronUp className="w-4 h-4" />
+                </>
+              ) : (
+                <>
+                  <span>Manage Stops</span>
+                  <ChevronDown className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          )}
+
+          {/* Documents Toggle */}
           <button
-            onClick={() => setShowStops(!showStops)}
-            className="mt-3 ml-12 flex items-center gap-2 text-sm text-orange-600 hover:text-orange-700"
+            onClick={() => setShowDocuments(!showDocuments)}
+            className="flex items-center gap-2 text-sm text-purple-600 hover:text-purple-700"
           >
-            <Route className="w-4 h-4" />
-            {showStops ? (
+            <FileText className="w-4 h-4" />
+            {showDocuments ? (
               <>
-                <span>Hide Stops</span>
+                <span>Hide Documents</span>
                 <ChevronUp className="w-4 h-4" />
               </>
             ) : (
               <>
-                <span>Manage Stops</span>
+                <span>Documents</span>
                 <ChevronDown className="w-4 h-4" />
               </>
             )}
           </button>
-        )}
+        </div>
       </div>
 
       {/* Stops Section */}
       {canHaveStops && showStops && (
         <div className="border-t border-gray-200 p-4 bg-gray-50">
           <JourneyStopsList journeyId={journey.id} />
+        </div>
+      )}
+
+      {/* Documents Section */}
+      {showDocuments && (
+        <div className="border-t border-gray-200 p-4 bg-purple-50">
+          <JourneyDocuments journeyId={journey.id} />
         </div>
       )}
     </div>
