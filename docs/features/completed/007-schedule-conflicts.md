@@ -1,6 +1,6 @@
 # Feature: Timeline Conflict Detection
 
-**Status:** Planned
+**Status:** Complete
 **Priority:** Medium
 **Complexity:** Medium
 
@@ -45,7 +45,7 @@ Detect and highlight scheduling conflicts or gaps on the timeline (overlapping b
 
 ## Acceptance Criteria
 
-- [ ] Overlapping events highlighted in red
-- [ ] Large gaps show warning
-- [ ] Clear explanation of each issue
-- [ ] No false positives for valid schedules
+- [x] Overlapping events highlighted in red
+- [x] Large gaps (>24h) show warning in amber
+- [x] Clear explanation of each issue with duration
+- [x] No false positives for valid schedules
