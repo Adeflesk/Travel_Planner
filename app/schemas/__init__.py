@@ -14,5 +14,6 @@ from .packing_item import *  # noqa: F401, F403
 from .journey import *  # noqa: F401, F403
 from .journey_stop import *  # noqa: F401, F403
 from .stop_option import *  # noqa: F401, F403
+from .journey_document import *  # noqa: F401, F403
 from .aggregates import *  # noqa: F401, F403
 from .auth import *  # noqa: F401, F403

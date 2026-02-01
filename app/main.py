@@ -27,6 +27,7 @@ from app.routers import (
     journeys_router,
     journey_stops_router,
     stop_options_router,
+    journey_documents_router,
 )
 import models
 from database import engine
@@ -95,6 +96,7 @@ def create_app() -> FastAPI:
     app.include_router(journeys_router)
     app.include_router(journey_stops_router)
     app.include_router(stop_options_router)
+    app.include_router(journey_documents_router)
 
     return app
 

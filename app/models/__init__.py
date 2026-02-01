@@ -17,6 +17,7 @@ from .packing_item import PackingItem
 from .journey import Journey
 from .journey_stop import JourneyStop
 from .stop_option import StopOption
+from .journey_document import JourneyDocument
 
 __all__ = [
     "Base",
@@ -31,4 +32,5 @@ __all__ = [
     "Journey",
     "JourneyStop",
     "StopOption",
+    "JourneyDocument",
 ]

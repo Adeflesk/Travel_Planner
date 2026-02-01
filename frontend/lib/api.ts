@@ -13,6 +13,8 @@ import {
   StopOption,
   StopOptionFormData,
   StopOptionStatus,
+  JourneyDocument,
+  JourneyDocumentFormData,
   TripFormData,
   DestinationFormData,
   ExpenseFormData,
@@ -283,6 +285,47 @@ export const stopOptionApi = {
     api.delete(`/stops/${stopId}/options/${optionId}`),
   updateStatus: (stopId: number, optionId: number, status: StopOptionStatus) =>
     api.patch<StopOption>(`/stops/${stopId}/options/${optionId}/status`, { status }),
+};
+
+// Journey Document API
+export const journeyDocumentApi = {
+  getByJourneyId: (journeyId: number) =>
+    api.get<JourneyDocument[]>(`/journeys/${journeyId}/documents/`),
+  getById: (journeyId: number, documentId: number) =>
+    api.get<JourneyDocument>(`/journeys/${journeyId}/documents/${documentId}`),
+  create: (data: JourneyDocumentFormData) => {
+    const cleanedData: Partial<JourneyDocumentFormData> = {};
+    (Object.keys(data) as Array<keyof JourneyDocumentFormData>).forEach((key) => {
+      const value = data[key];
+      if (value !== '' && value !== undefined && value !== null) {
+        cleanedData[key] = value as never;
+      }
+    });
+    return api.post<JourneyDocument>(`/journeys/${data.journey_id}/documents/`, cleanedData);
+  },
+  upload: (journeyId: number, file: File, name: string, documentType: string, notes?: string) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('name', name);
+    formData.append('document_type', documentType);
+    if (notes) formData.append('notes', notes);
+    return api.post<JourneyDocument>(`/journeys/${journeyId}/documents/upload`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  update: (journeyId: number, documentId: number, data: Partial<JourneyDocumentFormData>) => {
+    const cleanedData: Partial<JourneyDocumentFormData> = {};
+    (Object.keys(data) as Array<keyof JourneyDocumentFormData>).forEach((key) => {
+      const value = data[key];
+      if (key === 'journey_id') return;
+      if (value !== '' && value !== undefined && value !== null) {
+        cleanedData[key] = value as never;
+      }
+    });
+    return api.put<JourneyDocument>(`/journeys/${journeyId}/documents/${documentId}`, cleanedData);
+  },
+  delete: (journeyId: number, documentId: number) =>
+    api.delete(`/journeys/${journeyId}/documents/${documentId}`),
 };
 
 // Admin API
