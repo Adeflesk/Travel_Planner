@@ -13,6 +13,7 @@ import { JourneyList } from '@/components/journeys';
 import { TripTimeline } from '@/components/timeline';
 import { PackingList } from '@/components/packing';
 import { ShareTripModal } from '@/components/sharing';
+import { TripSummary } from '@/components/trips';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/lib/auth-context';
 
@@ -167,8 +168,13 @@ function TripDetailContent() {
         </div>
       </div>
 
+      {/* Trip Budget Summary */}
+      <div className="mt-6 max-w-md">
+        <TripSummary tripId={tripId} budget={trip.budget} />
+      </div>
+
       {/* Tabs */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-6 mt-6">
         <button
           onClick={() => setActiveTab('destinations')}
           className={`px-6 py-3 rounded-lg font-medium transition ${
