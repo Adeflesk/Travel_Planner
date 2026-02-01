@@ -48,3 +48,6 @@ class Journey(Base):
     destination = relationship(
         "Destination", foreign_keys=[destination_id], backref="arriving_journeys"
     )
+    stops = relationship(
+        "JourneyStop", back_populates="journey", cascade="all, delete-orphan"
+    )
