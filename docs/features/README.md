@@ -23,7 +23,7 @@ This directory contains specifications for planned features.
 | 006 | [Timeline Accommodations](./completed/006-timeline-accommodations.md) | Medium | Medium | Complete |
 | 007 | [Schedule Conflicts](./completed/007-schedule-conflicts.md) | Medium | Medium | Complete |
 | 008 | [Export Itinerary](./008-export-itinerary.md) | Medium | High | Planned |
-| 009 | [Trip Statistics API](./009-trip-statistics.md) | Low | Medium | Planned |
+| 009 | [Trip Statistics API](./009-trip-statistics.md) | Low | Medium | Complete |
 
 ### Infrastructure & Deployment
 

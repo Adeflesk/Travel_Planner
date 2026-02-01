@@ -7,9 +7,12 @@ All endpoints require authentication.
 Author: Travel Planner Team
 """
 
+from datetime import date
+from decimal import Decimal
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app import models, schemas
@@ -272,6 +275,114 @@ def get_accommodation_expenses(
     if result is None:
         raise HTTPException(status_code=404, detail="Trip not found")
     return result
+
+
+@router.get(
+    "/trips/{trip_id}/stats/",
+    response_model=schemas.TripStats,
+    tags=["trips"],
+)
+def get_trip_stats(
+    trip_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Get comprehensive statistics for a trip."""
+    trip = get_trip_or_404(trip_id, db, current_user)
+
+    # Calculate days until departure
+    today = date.today()
+    days_until_departure = None
+    if trip.start_date >= today:
+        days_until_departure = (trip.start_date - today).days
+
+    # Calculate trip duration
+    duration_days = (trip.end_date - trip.start_date).days + 1
+
+    # Count destinations
+    destination_count = (
+        db.query(func.count(models.Destination.id))
+        .filter(models.Destination.trip_id == trip_id)
+        .scalar()
+        or 0
+    )
+
+    # Count and sum journeys
+    journey_stats = (
+        db.query(
+            func.count(models.Journey.id),
+            func.coalesce(func.sum(models.Journey.cost), 0),
+            func.sum(func.case((models.Journey.status == "booked", 1), else_=0)),
+        )
+        .filter(models.Journey.trip_id == trip_id)
+        .first()
+    )
+    journey_count = journey_stats[0] or 0
+    journey_cost = Decimal(str(journey_stats[1] or 0))
+    booked_journeys = journey_stats[2] or 0
+
+    # Get activity count (through destinations)
+    activity_count = (
+        db.query(func.count(models.Activity.id))
+        .join(
+            models.Destination, models.Activity.destination_id == models.Destination.id
+        )
+        .filter(models.Destination.trip_id == trip_id)
+        .scalar()
+        or 0
+    )
+
+    # Count and sum expenses
+    expense_stats = (
+        db.query(
+            func.count(models.Expense.id),
+            func.coalesce(func.sum(models.Expense.amount), 0),
+        )
+        .filter(models.Expense.trip_id == trip_id)
+        .first()
+    )
+    expense_count = expense_stats[0] or 0
+    expense_cost = Decimal(str(expense_stats[1] or 0))
+
+    # Packing items stats
+    packing_stats = (
+        db.query(
+            func.count(models.PackingItem.id),
+            func.sum(func.case((models.PackingItem.is_packed.is_(True), 1), else_=0)),
+        )
+        .filter(models.PackingItem.trip_id == trip_id)
+        .first()
+    )
+    total_packing_items = packing_stats[0] or 0
+    packed_items = packing_stats[1] or 0
+
+    # Calculate total cost
+    total_cost = journey_cost + expense_cost
+
+    # Calculate completion percentage (based on booked journeys)
+    completion_percentage = 0.0
+    if journey_count > 0:
+        completion_percentage = (booked_journeys / journey_count) * 100
+
+    return schemas.TripStats(
+        total_cost=total_cost,
+        journey_cost=journey_cost,
+        expense_cost=expense_cost,
+        days_until_departure=days_until_departure,
+        duration_days=duration_days,
+        completion_percentage=round(completion_percentage, 1),
+        booked_journeys=booked_journeys,
+        total_journeys=journey_count,
+        packed_items=packed_items,
+        total_packing_items=total_packing_items,
+        counts=schemas.TripStatsCounts(
+            destinations=destination_count,
+            journeys=journey_count,
+            activities=activity_count,
+            expenses=expense_count,
+            packing_items=total_packing_items,
+        ),
+    )
 
 
 # ==================== TRIP SHARING ENDPOINTS ====================
