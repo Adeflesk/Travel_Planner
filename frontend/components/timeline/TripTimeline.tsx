@@ -3,6 +3,7 @@
 import { useTimeline } from './useTimeline';
 import { TimelineDestination } from './TimelineDestination';
 import { TimelineJourney } from './TimelineJourney';
+import { TimelineAccommodation } from './TimelineAccommodation';
 
 interface TripTimelineProps {
   tripId: number;
@@ -41,12 +42,14 @@ export default function TripTimeline({ tripId }: TripTimelineProps) {
           <div key={`${item.type}-${item.data.id}`}>
             {item.type === 'destination' ? (
               <TimelineDestination destination={item.data} />
-            ) : (
+            ) : item.type === 'journey' ? (
               <TimelineJourney
                 journey={item.data}
                 getDestinationName={getDestinationName}
                 getStatusColor={getStatusColor}
               />
+            ) : (
+              <TimelineAccommodation accommodation={item.data} />
             )}
           </div>
         ))}
