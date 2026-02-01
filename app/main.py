@@ -25,6 +25,8 @@ from app.routers import (
     expenses_router,
     packing_router,
     journeys_router,
+    journey_stops_router,
+    stop_options_router,
 )
 import models
 from database import engine
@@ -91,6 +93,8 @@ def create_app() -> FastAPI:
     app.include_router(expenses_router)
     app.include_router(packing_router)
     app.include_router(journeys_router)
+    app.include_router(journey_stops_router)
+    app.include_router(stop_options_router)
 
     return app
 

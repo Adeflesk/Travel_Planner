@@ -158,6 +158,68 @@ export interface JourneyFormData {
   order?: number;
 }
 
+// Journey Stop Types
+export type StopOptionType = 'activity' | 'meal' | 'sightseeing' | 'rest' | 'fuel' | 'shopping' | 'other';
+export type StopOptionStatus = 'considering' | 'selected' | 'skipped' | 'done';
+
+export interface JourneyStop {
+  id: number;
+  journey_id: number;
+  name: string;
+  location?: string;
+  planned_arrival?: string;
+  planned_departure?: string;
+  actual_arrival?: string;
+  actual_departure?: string;
+  notes?: string;
+  order: number;
+}
+
+export interface JourneyStopWithOptions extends JourneyStop {
+  options: StopOption[];
+}
+
+export interface JourneyStopFormData {
+  journey_id: number;
+  name: string;
+  location?: string;
+  planned_arrival?: string;
+  planned_departure?: string;
+  actual_arrival?: string;
+  actual_departure?: string;
+  notes?: string;
+  order?: number;
+}
+
+export interface StopOption {
+  id: number;
+  stop_id: number;
+  name: string;
+  description?: string;
+  option_type: StopOptionType;
+  estimated_duration?: number;  // Duration in minutes
+  estimated_cost?: number;
+  currency: string;
+  url?: string;
+  notes?: string;
+  status: StopOptionStatus;
+  order: number;
+}
+
+export interface StopOptionFormData {
+  stop_id: number;
+  name: string;
+  description?: string;
+  option_type?: StopOptionType;
+  estimated_duration?: number;
+  estimated_cost?: number;
+  currency?: string;
+  url?: string;
+  notes?: string;
+  status?: StopOptionStatus;
+  order?: number;
+}
+
 // Summary Types
 export interface ExpenseSummary {
   total: number;

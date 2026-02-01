@@ -7,6 +7,12 @@ import {
   Expense,
   PackingItem,
   Journey,
+  JourneyStop,
+  JourneyStopWithOptions,
+  JourneyStopFormData,
+  StopOption,
+  StopOptionFormData,
+  StopOptionStatus,
   TripFormData,
   DestinationFormData,
   ExpenseFormData,
@@ -203,6 +209,80 @@ export const journeyApi = {
     return api.put<Journey>(`/journeys/${id}`, cleanedData);
   },
   delete: (id: number) => api.delete(`/journeys/${id}`),
+};
+
+// Journey Stop API
+export const journeyStopApi = {
+  getByJourneyId: (journeyId: number) =>
+    api.get<JourneyStop[]>(`/journeys/${journeyId}/stops/`),
+  getById: (journeyId: number, stopId: number) =>
+    api.get<JourneyStopWithOptions>(`/journeys/${journeyId}/stops/${stopId}`),
+  create: (data: JourneyStopFormData) => {
+    const cleanedData: Partial<JourneyStopFormData> = {};
+    (Object.keys(data) as Array<keyof JourneyStopFormData>).forEach((key) => {
+      const value = data[key];
+      if (value !== '' && value !== undefined && value !== null) {
+        cleanedData[key] = value as never;
+      }
+    });
+    return api.post<JourneyStop>(`/journeys/${data.journey_id}/stops/`, cleanedData);
+  },
+  update: (journeyId: number, stopId: number, data: Partial<JourneyStopFormData>) => {
+    const cleanedData: Partial<JourneyStopFormData> = {};
+    (Object.keys(data) as Array<keyof JourneyStopFormData>).forEach((key) => {
+      const value = data[key];
+      if (key === 'journey_id') return; // Don't update journey_id
+      if (value !== '' && value !== undefined && value !== null) {
+        cleanedData[key] = value as never;
+      }
+    });
+    return api.put<JourneyStop>(`/journeys/${journeyId}/stops/${stopId}`, cleanedData);
+  },
+  delete: (journeyId: number, stopId: number) =>
+    api.delete(`/journeys/${journeyId}/stops/${stopId}`),
+  reorder: (journeyId: number, stopIds: number[]) =>
+    api.patch<JourneyStop[]>(`/journeys/${journeyId}/stops/reorder`, { stop_ids: stopIds }),
+};
+
+// Stop Option API
+export const stopOptionApi = {
+  getByStopId: (stopId: number) =>
+    api.get<StopOption[]>(`/stops/${stopId}/options/`),
+  getById: (stopId: number, optionId: number) =>
+    api.get<StopOption>(`/stops/${stopId}/options/${optionId}`),
+  create: (data: StopOptionFormData) => {
+    const cleanedData: Partial<StopOptionFormData> = {};
+    (Object.keys(data) as Array<keyof StopOptionFormData>).forEach((key) => {
+      const value = data[key];
+      if (value !== '' && value !== undefined && value !== null) {
+        if (key === 'estimated_cost' && typeof value === 'string') {
+          cleanedData[key] = parseFloat(value) as never;
+        } else {
+          cleanedData[key] = value as never;
+        }
+      }
+    });
+    return api.post<StopOption>(`/stops/${data.stop_id}/options/`, cleanedData);
+  },
+  update: (stopId: number, optionId: number, data: Partial<StopOptionFormData>) => {
+    const cleanedData: Partial<StopOptionFormData> = {};
+    (Object.keys(data) as Array<keyof StopOptionFormData>).forEach((key) => {
+      const value = data[key];
+      if (key === 'stop_id') return; // Don't update stop_id
+      if (value !== '' && value !== undefined && value !== null) {
+        if (key === 'estimated_cost' && typeof value === 'string') {
+          cleanedData[key] = parseFloat(value) as never;
+        } else {
+          cleanedData[key] = value as never;
+        }
+      }
+    });
+    return api.put<StopOption>(`/stops/${stopId}/options/${optionId}`, cleanedData);
+  },
+  delete: (stopId: number, optionId: number) =>
+    api.delete(`/stops/${stopId}/options/${optionId}`),
+  updateStatus: (stopId: number, optionId: number, status: StopOptionStatus) =>
+    api.patch<StopOption>(`/stops/${stopId}/options/${optionId}/status`, { status }),
 };
 
 // Admin API
