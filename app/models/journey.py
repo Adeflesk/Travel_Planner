@@ -7,6 +7,7 @@ Author: Travel Planner Team
 """
 
 from sqlalchemy import (
+    Boolean,
     Column,
     Integer,
     String,
@@ -40,6 +41,15 @@ class Journey(Base):
     notes = Column(Text)
     status = Column(String(50), default="planned")
     order = Column(Integer, default=0)
+
+    # Route details (primarily for road trips)
+    distance_km = Column(Numeric(10, 2), nullable=True)
+    distance_miles = Column(Numeric(10, 2), nullable=True)
+    estimated_duration_minutes = Column(Integer, nullable=True)
+    route_type = Column(String(50), nullable=True)  # fastest, shortest, scenic, etc.
+    has_tolls = Column(Boolean, default=False)
+    toll_cost = Column(Numeric(10, 2), nullable=True)
+    route_notes = Column(Text, nullable=True)
 
     trip = relationship("Trip", back_populates="journeys")
     origin = relationship(

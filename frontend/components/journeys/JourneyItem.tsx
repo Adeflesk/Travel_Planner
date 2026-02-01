@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Journey } from '@/lib/types';
+import { Journey, RouteType } from '@/lib/types';
 import { format } from 'date-fns';
-import { Trash2, Edit2, ArrowRight, Plane, Train, Bus, Car, Ship, Footprints, Copy, Route, ChevronDown, ChevronUp, FileText } from 'lucide-react';
+import { Trash2, Edit2, ArrowRight, Plane, Train, Bus, Car, Ship, Footprints, Copy, Route, ChevronDown, ChevronUp, FileText, MapPin, Clock, DollarSign } from 'lucide-react';
 import { getStatusColor } from './useJourneys';
 import { JourneyStopsList } from '../journey-stops';
 import { JourneyDocuments } from './JourneyDocuments';
@@ -15,6 +15,37 @@ const transportIcons: Record<string, React.ComponentType<{ className?: string }>
   car: Car,
   ferry: Ship,
   walk: Footprints,
+};
+
+const routeTypeLabels: Record<RouteType, string> = {
+  fastest: 'Fastest',
+  shortest: 'Shortest',
+  scenic: 'Scenic',
+  avoid_highways: 'No Highways',
+  avoid_tolls: 'No Tolls',
+};
+
+// Format duration in minutes to human-readable format
+const formatDuration = (minutes?: number): string | null => {
+  if (!minutes) return null;
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  if (hours === 0) return `${mins}m`;
+  if (mins === 0) return `${hours}h`;
+  return `${hours}h ${mins}m`;
+};
+
+// Check if journey has any route details
+const hasRouteDetails = (journey: Journey): boolean => {
+  return !!(
+    journey.distance_km ||
+    journey.distance_miles ||
+    journey.estimated_duration_minutes ||
+    journey.route_type ||
+    journey.has_tolls ||
+    journey.toll_cost ||
+    journey.route_notes
+  );
 };
 
 interface JourneyItemProps {
@@ -96,6 +127,59 @@ export function JourneyItem({
                 </p>
               )}
             </div>
+
+            {/* Route Details */}
+            {hasRouteDetails(journey) && (
+              <div className="mt-3 ml-12 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                <div className="flex items-center gap-2 text-blue-700 text-sm font-medium mb-2">
+                  <MapPin className="w-4 h-4" />
+                  <span>Route Details</span>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                  {(journey.distance_miles || journey.distance_km) && (
+                    <div>
+                      <span className="text-gray-500">Distance:</span>{' '}
+                      <span className="font-medium">
+                        {journey.distance_miles && `${journey.distance_miles} mi`}
+                        {journey.distance_miles && journey.distance_km && ' / '}
+                        {journey.distance_km && `${journey.distance_km} km`}
+                      </span>
+                    </div>
+                  )}
+                  {journey.estimated_duration_minutes && (
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-gray-400" />
+                      <span className="text-gray-500">Drive:</span>{' '}
+                      <span className="font-medium">{formatDuration(journey.estimated_duration_minutes)}</span>
+                    </div>
+                  )}
+                  {journey.route_type && (
+                    <div>
+                      <span className="text-gray-500">Route:</span>{' '}
+                      <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium">
+                        {routeTypeLabels[journey.route_type]}
+                      </span>
+                    </div>
+                  )}
+                  {journey.has_tolls && (
+                    <div className="flex items-center gap-1">
+                      <DollarSign className="w-3 h-3 text-gray-400" />
+                      <span className="text-gray-500">Tolls:</span>{' '}
+                      <span className="font-medium">
+                        {journey.toll_cost
+                          ? `${journey.toll_cost.toFixed(2)} ${journey.currency || 'USD'}`
+                          : 'Yes'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                {journey.route_notes && (
+                  <p className="mt-2 text-sm text-gray-600 italic">
+                    {journey.route_notes}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
           <div className="flex gap-2">
             <button
