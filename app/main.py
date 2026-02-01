@@ -15,6 +15,7 @@ from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
 
 from app.core.rate_limit import limiter
+from app.core.migrations import run_migrations
 from app.routers import (
     health_router,
     auth_router,
@@ -34,6 +35,9 @@ from database import engine
 
 # Ensure tables exist (kept for compatibility)
 models.Base.metadata.create_all(bind=engine)
+
+# Run migrations to add any missing columns to existing databases
+run_migrations(engine)
 
 
 def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):

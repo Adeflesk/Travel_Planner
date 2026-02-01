@@ -66,6 +66,9 @@ export interface PackingItem {
   is_packed: boolean;
 }
 
+// Route type options for journeys
+export type RouteType = 'fastest' | 'shortest' | 'scenic' | 'avoid_highways' | 'avoid_tolls';
+
 export interface Journey {
   id: number;
   trip_id: number;
@@ -84,6 +87,14 @@ export interface Journey {
   notes?: string;
   status: 'planned' | 'booked' | 'completed';
   order: number;
+  // Route details (for road trips)
+  distance_km?: number;
+  distance_miles?: number;
+  estimated_duration_minutes?: number;
+  route_type?: RouteType;
+  has_tolls?: boolean;
+  toll_cost?: number;
+  route_notes?: string;
 }
 
 export interface TripFormData {
@@ -156,6 +167,14 @@ export interface JourneyFormData {
   notes?: string;
   status?: string;
   order?: number;
+  // Route details
+  distance_km?: number;
+  distance_miles?: number;
+  estimated_duration_minutes?: number;
+  route_type?: RouteType;
+  has_tolls?: boolean;
+  toll_cost?: number;
+  route_notes?: string;
 }
 
 // Journey Stop Types

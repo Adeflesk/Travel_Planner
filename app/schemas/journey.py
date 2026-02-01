@@ -10,7 +10,11 @@ Author: Travel Planner Team
 from pydantic import BaseModel, ConfigDict, model_validator
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional
+from typing import Literal, Optional
+
+
+# Route type options
+RouteType = Literal["fastest", "shortest", "scenic", "avoid_highways", "avoid_tolls"]
 
 
 class JourneyBase(BaseModel):
@@ -24,6 +28,14 @@ class JourneyBase(BaseModel):
     notes: Optional[str] = None
     status: str = "planned"
     order: int = 0
+    # Route details
+    distance_km: Optional[Decimal] = None
+    distance_miles: Optional[Decimal] = None
+    estimated_duration_minutes: Optional[int] = None
+    route_type: Optional[RouteType] = None
+    has_tolls: bool = False
+    toll_cost: Optional[Decimal] = None
+    route_notes: Optional[str] = None
 
     @model_validator(mode="after")
     def validate_departure_before_arrival(self):
@@ -57,6 +69,14 @@ class JourneyUpdate(BaseModel):
     destination_id: Optional[int] = None
     origin_name: Optional[str] = None
     destination_name: Optional[str] = None
+    # Route details
+    distance_km: Optional[Decimal] = None
+    distance_miles: Optional[Decimal] = None
+    estimated_duration_minutes: Optional[int] = None
+    route_type: Optional[RouteType] = None
+    has_tolls: Optional[bool] = None
+    toll_cost: Optional[Decimal] = None
+    route_notes: Optional[str] = None
 
     @model_validator(mode="after")
     def validate_departure_before_arrival(self):
