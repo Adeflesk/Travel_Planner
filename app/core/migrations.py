@@ -8,13 +8,15 @@ Author: Travel Planner Team
 """
 
 import logging
+from typing import Optional, Set
+
 from sqlalchemy import text, inspect
 from sqlalchemy.engine import Engine
 
 logger = logging.getLogger(__name__)
 
 
-def get_existing_columns(engine: Engine, table_name: str) -> set[str]:
+def get_existing_columns(engine: Engine, table_name: str) -> Set[str]:
     """Get the set of existing column names for a table."""
     inspector = inspect(engine)
     try:
@@ -29,7 +31,7 @@ def add_column_if_not_exists(
     table_name: str,
     column_name: str,
     column_type: str,
-    default: str | None = None,
+    default: Optional[str] = None,
 ) -> bool:
     """Add a column to a table if it doesn't already exist."""
     existing_columns = get_existing_columns(engine, table_name)
