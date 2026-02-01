@@ -163,7 +163,7 @@ test.describe('Trip Timeline', () => {
     await authenticatedPage.getByRole('button', { name: /Timeline/i }).click();
 
     // Verify cost is displayed
-    await expect(authenticatedPage.getByText('$75.50')).toBeVisible();
+    await expect(authenticatedPage.getByText('75.50 USD')).toBeVisible();
   });
 
   test('should show destination dates in timeline', async ({ authenticatedPage, authApiRequest }) => {
