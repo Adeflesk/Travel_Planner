@@ -47,6 +47,7 @@ export default function TripTimeline({ tripId }: TripTimelineProps) {
                 journey={item.data}
                 getDestinationName={getDestinationName}
                 getStatusColor={getStatusColor}
+                conflict={item.conflict}
               />
             ) : (
               <TimelineAccommodation accommodation={item.data} />

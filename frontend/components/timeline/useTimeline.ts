@@ -10,12 +10,90 @@ import {
 import { tripApi, expenseApi } from '@/lib/api';
 import { Plane, Train, Bus, Car, Ship, Footprints } from 'lucide-react';
 
+export interface ConflictInfo {
+  type: 'overlap' | 'gap';
+  message: string;
+  hours: number;
+}
+
 export type TimelineItem =
-  | { type: 'destination'; data: Destination; sortDate: Date }
-  | { type: 'journey'; data: Journey; sortDate: Date }
-  | { type: 'accommodation'; data: Expense; sortDate: Date };
+  | { type: 'destination'; data: Destination; sortDate: Date; conflict?: ConflictInfo }
+  | { type: 'journey'; data: Journey; sortDate: Date; conflict?: ConflictInfo }
+  | { type: 'accommodation'; data: Expense; sortDate: Date; conflict?: ConflictInfo };
 
 const ACCOMMODATION_CATEGORIES = ['accommodation', 'lodging', 'hotel', 'hostel', 'airbnb'];
+const GAP_THRESHOLD_HOURS = 24; // Warn if gap > 24 hours between journeys
+
+function detectConflicts(items: TimelineItem[]): TimelineItem[] {
+  const result: TimelineItem[] = [];
+  let lastJourneyEnd: Date | null = null;
+
+  for (let i = 0; i < items.length; i++) {
+    const item = { ...items[i] };
+
+    // Only check conflicts for journeys with datetime info
+    if (item.type === 'journey') {
+      const journey = item.data as Journey;
+      const departureTime = journey.departure_datetime
+        ? new Date(journey.departure_datetime)
+        : null;
+      const arrivalTime = journey.arrival_datetime
+        ? new Date(journey.arrival_datetime)
+        : null;
+
+      if (departureTime && lastJourneyEnd) {
+        const timeDiffMs = departureTime.getTime() - lastJourneyEnd.getTime();
+        const timeDiffHours = timeDiffMs / (1000 * 60 * 60);
+
+        if (timeDiffHours < 0) {
+          // Overlap detected
+          const overlapHours = Math.abs(timeDiffHours);
+          item.conflict = {
+            type: 'overlap',
+            message: `Overlaps with previous journey by ${formatDuration(overlapHours)}`,
+            hours: overlapHours,
+          };
+        } else if (timeDiffHours > GAP_THRESHOLD_HOURS) {
+          // Large gap detected
+          item.conflict = {
+            type: 'gap',
+            message: `${formatDuration(timeDiffHours)} gap before this journey`,
+            hours: timeDiffHours,
+          };
+        }
+      }
+
+      // Update lastJourneyEnd for next iteration
+      if (arrivalTime) {
+        lastJourneyEnd = arrivalTime;
+      } else if (departureTime) {
+        // If no arrival time, estimate based on departure
+        lastJourneyEnd = departureTime;
+      }
+    }
+
+    result.push(item);
+  }
+
+  return result;
+}
+
+function formatDuration(hours: number): string {
+  if (hours < 1) {
+    return `${Math.round(hours * 60)} minutes`;
+  } else if (hours < 24) {
+    const h = Math.floor(hours);
+    const m = Math.round((hours - h) * 60);
+    return m > 0 ? `${h}h ${m}m` : `${h} hour${h !== 1 ? 's' : ''}`;
+  } else {
+    const days = Math.floor(hours / 24);
+    const remainingHours = Math.round(hours % 24);
+    if (remainingHours > 0) {
+      return `${days} day${days !== 1 ? 's' : ''} ${remainingHours}h`;
+    }
+    return `${days} day${days !== 1 ? 's' : ''}`;
+  }
+}
 
 export const transportIcons: Record<string, typeof Plane> = {
   flight: Plane,
@@ -72,7 +150,10 @@ export function useTimeline(tripId: number) {
         (a, b) => a.sortDate.getTime() - b.sortDate.getTime()
       );
 
-      setTimeline(allItems);
+      // Detect conflicts between consecutive journeys
+      const itemsWithConflicts = detectConflicts(allItems);
+
+      setTimeline(itemsWithConflicts);
     } catch (error) {
       console.error('Error loading timeline data:', error);
     } finally {
