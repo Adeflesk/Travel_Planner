@@ -267,3 +267,26 @@ export interface TripShare {
 export interface TripShareCreate {
   email: string;
 }
+
+// Trip Statistics Types
+export interface TripStatsCounts {
+  destinations: number;
+  journeys: number;
+  activities: number;
+  expenses: number;
+  packing_items: number;
+}
+
+export interface TripStats {
+  total_cost: number;
+  journey_cost: number;
+  expense_cost: number;
+  days_until_departure: number | null;
+  duration_days: number;
+  completion_percentage: number;
+  booked_journeys: number;
+  total_journeys: number;
+  packed_items: number;
+  total_packing_items: number;
+  counts: TripStatsCounts;
+}

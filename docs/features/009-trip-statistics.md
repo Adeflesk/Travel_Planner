@@ -1,6 +1,6 @@
 # Feature: Trip Statistics API Endpoints
 
-**Status:** Planned
+**Status:** Complete
 **Priority:** Low
 **Complexity:** Medium
 
@@ -17,39 +17,55 @@ Add backend endpoints for trip statistics (total costs, days until departure, co
    - Completion percentage (booked vs planned items)
    - Item counts by category
 
-## Approach
+## Implementation
 
-### New Endpoint
+### Backend Schema (`app/schemas/trip.py`)
 ```python
-@router.get("/{trip_id}/stats")
-def get_trip_stats(trip_id: int, db: Session):
-    # Query and aggregate data
-    return {
-        "total_cost": ...,
-        "days_until_departure": ...,
-        "duration_days": ...,
-        "completion_percentage": ...,
-        "counts": {
-            "destinations": ...,
-            "journeys": ...,
-            "activities": ...,
-        }
-    }
+class TripStatsCounts(BaseModel):
+    destinations: int = 0
+    journeys: int = 0
+    activities: int = 0
+    expenses: int = 0
+    packing_items: int = 0
+
+class TripStats(BaseModel):
+    total_cost: Decimal = Decimal("0")
+    journey_cost: Decimal = Decimal("0")
+    expense_cost: Decimal = Decimal("0")
+    days_until_departure: Optional[int] = None
+    duration_days: int = 0
+    completion_percentage: float = 0.0
+    booked_journeys: int = 0
+    total_journeys: int = 0
+    packed_items: int = 0
+    total_packing_items: int = 0
+    counts: TripStatsCounts = TripStatsCounts()
 ```
 
-### Frontend Hook
-- Create `useTripStats(tripId)` hook
-- Call endpoint and return stats
+### Backend Endpoint (`app/routers/trips.py`)
+```python
+@router.get("/trips/{trip_id}/stats/", response_model=schemas.TripStats)
+def get_trip_stats(trip_id: int, db: Session, current_user: User):
+    # Returns aggregated trip statistics
+```
 
-## Files to Modify
+### Frontend Hook (`frontend/components/trips/useTripStats.ts`)
+```typescript
+export function useTripStats(tripId: number) {
+  // Returns { stats, loading, error, reload }
+}
+```
 
-- `app/routers/trips.py`
-- `app/schemas/trip.py` (new TripStats schema)
-- `frontend/lib/api.ts`
-- New: `frontend/hooks/useTripStats.ts`
+## Files Modified
+
+- `app/routers/trips.py` - Added `/trips/{id}/stats/` endpoint
+- `app/schemas/trip.py` - Added TripStats and TripStatsCounts schemas
+- `frontend/lib/api.ts` - Added `tripApi.getStats()` method
+- `frontend/lib/types.ts` - Added TripStats and TripStatsCounts types
+- `frontend/components/trips/useTripStats.ts` - New hook for fetching stats
 
 ## Acceptance Criteria
 
-- [ ] Stats endpoint returns correct data
-- [ ] Frontend can fetch and display stats
-- [ ] Handles edge cases (no data, past trips)
+- [x] Stats endpoint returns correct data
+- [x] Frontend can fetch and display stats
+- [x] Handles edge cases (no data, past trips)

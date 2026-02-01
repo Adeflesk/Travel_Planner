@@ -19,6 +19,7 @@ import {
   DestinationWithActivities,
   TimelineItem,
   DestinationAccommodation,
+  TripStats,
 } from './types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -50,6 +51,8 @@ export const tripApi = {
     api.get<DestinationAccommodation[]>(
       `/trips/${tripId}/accommodation-expenses/`
     ),
+  getStats: (tripId: number) =>
+    api.get<TripStats>(`/trips/${tripId}/stats/`),
 };
 
 // Destination API
