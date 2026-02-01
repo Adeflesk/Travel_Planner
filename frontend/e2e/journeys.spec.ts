@@ -254,7 +254,7 @@ test.describe('Journey Management', () => {
     await authenticatedPage.locator('.space-y-3 button').filter({ has: authenticatedPage.locator('svg') }).first().click();
 
     // Change status to booked using the status select in the form
-    await authenticatedPage.locator('select').last().selectOption('booked');
+    await authenticatedPage.locator('form select').last().selectOption('booked');
 
     // Save
     await authenticatedPage.getByRole('button', { name: /Update Journey/i }).click();
