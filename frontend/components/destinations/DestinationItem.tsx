@@ -56,13 +56,15 @@ export function DestinationItem({
         <div className="flex gap-2">
           <button
             onClick={() => onEdit(destination)}
-            className="text-blue-600 hover:text-blue-700 p-2"
+            className="text-blue-600 hover:text-blue-700 p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 focus-visible:ring-offset-2"
+            aria-label="Edit destination"
           >
             <Edit2 className="w-4 h-4" />
           </button>
           <button
             onClick={() => onDelete(destination.id)}
-            className="text-red-600 hover:text-red-700 p-2"
+            className="text-red-600 hover:text-red-700 p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 focus-visible:ring-offset-2"
+            aria-label="Delete destination"
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -72,7 +74,7 @@ export function DestinationItem({
       {/* Expand/Collapse Activities Button */}
       <button
         onClick={() => onToggleExpanded(destination.id)}
-        className="mt-3 flex items-center gap-2 text-sm text-purple-600 hover:text-purple-700 font-medium"
+        className="mt-3 flex items-center gap-2 text-sm text-purple-600 hover:text-purple-700 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/60 focus-visible:ring-offset-2"
       >
         {isExpanded ? (
           <ChevronDown className="w-4 h-4" />

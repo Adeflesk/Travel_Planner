@@ -1,97 +1,21 @@
 // app/page.tsx
+// Redirects to the dashboard as the default landing page.
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Trip } from '@/lib/types';
-import { tripApi } from '@/lib/api';
-import { TripCard, TripForm } from '@/components/trips';
-import { Plus } from 'lucide-react';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { useAuth } from '@/lib/auth-context';
 
-function TripsContent() {
-  const { isAuthenticated } = useAuth();
-  const [trips, setTrips] = useState<Trip[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
+function HomeRedirect() {
+  const router = useRouter();
 
   useEffect(() => {
-    if (isAuthenticated) {
-      loadTrips();
-    }
-  }, [isAuthenticated]);
-
-  const loadTrips = async () => {
-    try {
-      const response = await tripApi.getAll();
-      setTrips(response.data);
-    } catch (error) {
-      console.error('Error loading trips:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleTripCreated = () => {
-    loadTrips();
-    setShowForm(false);
-  };
-
-  const handleTripDeleted = () => {
-    loadTrips();
-  };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="text-xl text-gray-600">Loading trips...</div>
-      </div>
-    );
-  }
+    router.replace('/dashboard');
+  }, [router]);
 
   return (
-    <div>
-      <div className="bg-white rounded-md shadow-md p-12  ">
-        <div className="flex justify-between items-center mb-4 ">
-          <h2 className="text-2xl font-bold text-gray-800 ">
-            Your Trips
-          </h2>
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2
-                     rounded-lg hover:bg-blue-700 transition"
-          >
-            <Plus className="w-5 h-5" />
-            {showForm ? 'Cancel' : 'New Trip'}
-          </button>
-        </div>
-
-        {showForm && (
-          <div className=" flex items-center
-                        justify-center bg-gray-100">
-            <TripForm
-              onTripCreated={handleTripCreated}
-              onCancel={() => setShowForm(false)}
-            />
-          </div>
-        )}
-
-        {trips.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">
-            No trips yet. Create your first trip by clicking the New Trip button above!
-          </p>
-        ) : (
-          <div className="space-y-4">
-            {trips.map((trip) => (
-              <TripCard
-                key={trip.id}
-                trip={trip}
-                onDelete={handleTripDeleted}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+    <div className="flex justify-center items-center min-h-screen">
+      <div className="text-xl text-slate-600">Redirecting to dashboard...</div>
     </div>
   );
 }
@@ -99,7 +23,7 @@ function TripsContent() {
 export default function Home() {
   return (
     <ProtectedRoute>
-      <TripsContent />
+      <HomeRedirect />
     </ProtectedRoute>
   );
 }

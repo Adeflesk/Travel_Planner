@@ -13,9 +13,13 @@ import { JourneyList } from '@/components/journeys';
 import { TripTimeline } from '@/components/timeline';
 import { PackingList } from '@/components/packing';
 import { ShareTripModal } from '@/components/sharing';
-import { TripSummary } from '@/components/trips';
+import { BudgetProgress, useBudget } from '@/components/budget';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/lib/auth-context';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { Badge, StatusBadge } from '@/components/ui/Badge';
+import TripSidebar from '@/components/trips/TripSidebar';
 
 function TripDetailContent() {
   const { isAuthenticated } = useAuth();
@@ -27,6 +31,7 @@ function TripDetailContent() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'destinations' | 'journeys' | 'timeline' | 'expenses' | 'activities' | 'packing'>('destinations');
   const [showShareModal, setShowShareModal] = useState(false);
+  const { budget, loading: budgetLoading } = useBudget(tripId);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -46,223 +51,174 @@ function TripDetailContent() {
     loadTrip();
   }, [tripId, isAuthenticated]);
 
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      planning: 'bg-blue-100 text-blue-800',
-      booked: 'bg-green-100 text-green-800',
-      ongoing: 'bg-purple-100 text-purple-800',
-      completed: 'bg-gray-100 text-gray-800',
-    };
-    return colors[status] || 'bg-gray-100 text-gray-800';
-  };
-
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="text-xl text-gray-600">Loading...</div>
+      <div className="flex justify-center items-center min-h-screen bg-slate-100">
+        <div className="text-xl text-slate-600">Loading...</div>
       </div>
     );
   }
 
   if (!trip) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="text-xl text-gray-600">Trip not found</div>
+      <div className="flex justify-center items-center min-h-screen bg-slate-100">
+        <div className="text-xl text-slate-600">Trip not found</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flesk items-center justify-center  bg-gray-100 p-8">
-      <button
-        onClick={() => router.push('/')}
-        className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-6"
+    <div className="min-h-screen bg-slate-100">
+      <div className="max-w-6xl mx-auto px-6 py-8">
+      <Button
+        variant="link"
+        onClick={() => router.push('/trips')}
+        leftIcon={<ArrowLeft />}
+        className="mb-6"
       >
-        <ArrowLeft className="w-4 h-4" />
         Back to Trips
-      </button>
+      </Button>
 
       {/* Trip Header */}
-      <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
-        <div className="flex justify-between items-start mb-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="w-full px-4 py-2 border
-                                         border-gray-300 rounded-md
-                                         focus:outline-none focus:ring-2
-                                         focus:ring-indigo-500">
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex-1 space-y-4">
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-semibold text-slate-900">
                 {trip.name}
               </h1>
               {trip.is_owner === false && (
-                <span className="flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-800 text-sm rounded-full">
-                  <Users className="w-4 h-4" />
+                <Badge variant="info" icon={<Users />}>
                   Shared
-                </span>
+                </Badge>
               )}
             </div>
-            <div className="flex items-center gap-2 mt-2">
-              <span
-                className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
-                  trip.status
-                )}`}
-              >
-                {trip.status.charAt(0).toUpperCase() + trip.status.slice(1)}
-              </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <StatusBadge status={trip.status as 'planning' | 'booked' | 'ongoing' | 'completed'} />
               {trip.shared_by && (
-                <span className="text-sm text-purple-600">
+                <span className="text-sm text-primary-600">
                   Shared by {trip.shared_by}
                 </span>
               )}
             </div>
-          </div>
-          {trip.is_owner !== false && (
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowShareModal(true)}
-                className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
-              >
-                <Share2 className="w-4 h-4" />
-                Share
-              </button>
-              <button
-                onClick={() => router.push(`/trips/${tripId}/edit`)}
-                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-              >
-                <Edit className="w-4 h-4" />
-                Edit Trip
-              </button>
-            </div>
-          )}
-        </div>
 
-        {trip.description && (
-          <p className="text-gray-600 mb-4">{trip.description}</p>
-        )}
+            {trip.description && (
+              <p className="text-slate-600">{trip.description}</p>
+            )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="flex items-center gap-3 text-gray-700">
-            <Calendar className="w-5 h-5 text-blue-600" />
-            <div>
-              <p className="text-sm text-gray-500">Start Date</p>
-              <p className="font-medium">{trip.start_date}</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 text-gray-700">
-            <Calendar className="w-5 h-5 text-blue-600" />
-            <div>
-              <p className="text-sm text-gray-500">End Date</p>
-              <p className="font-medium">{trip.end_date}</p>
-            </div>
-          </div>
-
-          {trip.budget && (
-            <div className="flex items-center gap-3 text-gray-700">
-              <DollarSign className="w-5 h-5 text-green-600" />
-              <div>
-                <p className="text-sm text-gray-500">Budget</p>
-                <p className="font-medium">${trip.budget.toLocaleString()}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="flex items-center gap-3 text-slate-700">
+                <Calendar className="w-5 h-5 text-primary-600" />
+                <div>
+                  <p className="text-sm text-slate-500">Start Date</p>
+                  <p className="font-medium">{trip.start_date}</p>
+                </div>
               </div>
+
+              <div className="flex items-center gap-3 text-slate-700">
+                <Calendar className="w-5 h-5 text-primary-600" />
+                <div>
+                  <p className="text-sm text-slate-500">End Date</p>
+                  <p className="font-medium">{trip.end_date}</p>
+                </div>
+              </div>
+
+              {trip.budget && (
+                <div className="flex items-center gap-3 text-slate-700">
+                  <DollarSign className="w-5 h-5 text-success-600" />
+                  <div>
+                    <p className="text-sm text-slate-500">Budget</p>
+                    <p className="font-medium">${trip.budget.toLocaleString()}</p>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+          </div>
+
+          <div className="w-full lg:max-w-sm">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm font-semibold text-slate-800 mb-2">Budget Progress</p>
+              {budgetLoading ? (
+                <div className="space-y-3 animate-pulse">
+                  <div className="h-2 bg-slate-200 rounded"></div>
+                  <div className="h-2 bg-slate-200 rounded w-2/3"></div>
+                </div>
+              ) : budget ? (
+                <BudgetProgress
+                  totalBudget={budget.total_budget}
+                  totalSpent={budget.total_spent}
+                  percentageUsed={budget.percentage_used}
+                  remaining={budget.remaining}
+                  status={budget.status}
+                  bookedAmount={budget.booked_amount}
+                  estimatedAmount={budget.estimated_amount}
+                  showDetails={true}
+                />
+              ) : (
+                <p className="text-sm text-slate-500">No budget data available.</p>
+              )}
+            </div>
+          </div>
         </div>
+
+        {trip.is_owner !== false && (
+          <div className="mt-5 flex flex-wrap gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => setShowShareModal(true)}
+              leftIcon={<Share2 />}
+            >
+              Share
+            </Button>
+            <Button
+              onClick={() => router.push(`/trips/${tripId}/edit`)}
+              leftIcon={<Edit />}
+            >
+              Edit Trip
+            </Button>
+          </div>
+        )}
       </div>
 
-      {/* Trip Budget Summary */}
-      <div className="mt-6 max-w-md">
-        <TripSummary tripId={tripId} budget={trip.budget} />
-      </div>
+      <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px]">
+        <div>
+          {/* Tabs */}
+          <div className="flex flex-wrap gap-2 mb-6">
+            {[
+              { id: 'destinations', label: 'Destinations', icon: MapPin },
+              { id: 'journeys', label: 'Journeys', icon: Route },
+              { id: 'timeline', label: 'Timeline', icon: Clock },
+              { id: 'expenses', label: 'Expenses', icon: Receipt },
+              { id: 'activities', label: 'Activities', icon: Compass },
+              { id: 'packing', label: 'Packing List', icon: Package },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <Button
+                  key={tab.id}
+                  variant={isActive ? 'primary' : 'secondary'}
+                  onClick={() => setActiveTab(tab.id as typeof activeTab)}
+                  leftIcon={<Icon />}
+                >
+                  {tab.label}
+                </Button>
+              );
+            })}
+          </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6 mt-6">
-        <button
-          onClick={() => setActiveTab('destinations')}
-          className={`px-6 py-3 rounded-lg font-medium transition ${
-            activeTab === 'destinations'
-              ? 'bg-blue-600 text-white'
-              : 'bg-white text-gray-700 hover:bg-gray-50'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            <MapPin className="w-4 h-4" />
-            Destinations
-          </div>
-        </button>
-        <button
-          onClick={() => setActiveTab('journeys')}
-          className={`px-6 py-3 rounded-lg font-medium transition ${
-            activeTab === 'journeys'
-              ? 'bg-blue-600 text-white'
-              : 'bg-white text-gray-700 hover:bg-gray-50'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            <Route className="w-4 h-4" />
-            Journeys
-          </div>
-        </button>
-        <button
-          onClick={() => setActiveTab('timeline')}
-          className={`px-6 py-3 rounded-lg font-medium transition ${
-            activeTab === 'timeline'
-              ? 'bg-blue-600 text-white'
-              : 'bg-white text-gray-700 hover:bg-gray-50'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4" />
-            Timeline
-          </div>
-        </button>
-        <button
-          onClick={() => setActiveTab('expenses')}
-          className={`px-6 py-3 rounded-lg font-medium transition ${
-            activeTab === 'expenses'
-              ? 'bg-blue-600 text-white'
-              : 'bg-white text-gray-700 hover:bg-gray-50'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            <Receipt className="w-4 h-4" />
-            Expenses
-          </div>
-        </button>
-        <button
-          onClick={() => setActiveTab('activities')}
-          className={`px-6 py-3 rounded-lg font-medium transition ${
-            activeTab === 'activities'
-              ? 'bg-blue-600 text-white'
-              : 'bg-white text-gray-700 hover:bg-gray-50'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            <Compass className="w-4 h-4" />
-            Activities
-          </div>
-        </button>
-        <button
-          onClick={() => setActiveTab('packing')}
-          className={`px-6 py-3 rounded-lg font-medium transition ${
-            activeTab === 'packing'
-              ? 'bg-blue-600 text-white'
-              : 'bg-white text-gray-700 hover:bg-gray-50'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            <Package className="w-4 h-4" />
-            Packing List
-          </div>
-        </button>
-      </div>
+          {/* Tab Content */}
+          <Card padding="lg">
+            {activeTab === 'destinations' && <DestinationList tripId={tripId} />}
+            {activeTab === 'journeys' && <JourneyList tripId={tripId} />}
+            {activeTab === 'timeline' && <TripTimeline tripId={tripId} />}
+            {activeTab === 'expenses' && <ExpenseList tripId={tripId} />}
+            {activeTab === 'activities' && <TripActivityList tripId={tripId} />}
+            {activeTab === 'packing' && <PackingList tripId={tripId} />}
+          </Card>
+        </div>
 
-      {/* Tab Content */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        {activeTab === 'destinations' && <DestinationList tripId={tripId} />}
-        {activeTab === 'journeys' && <JourneyList tripId={tripId} />}
-        {activeTab === 'timeline' && <TripTimeline tripId={tripId} />}
-        {activeTab === 'expenses' && <ExpenseList tripId={tripId} />}
-        {activeTab === 'activities' && <TripActivityList tripId={tripId} />}
-        {activeTab === 'packing' && <PackingList tripId={tripId} />}
+        <TripSidebar tripId={tripId} trip={trip} />
       </div>
 
       {/* Share Modal */}
@@ -272,6 +228,7 @@ function TripDetailContent() {
         isOpen={showShareModal}
         onClose={() => setShowShareModal(false)}
       />
+    </div>
     </div>
   );
 }

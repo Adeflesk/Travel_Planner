@@ -35,6 +35,7 @@ from app.routers import (  # noqa: E402
     journey_stops_router,
     stop_options_router,
     journey_documents_router,
+    dashboard_router,
 )
 import models  # noqa: E402
 from database import engine  # noqa: E402
@@ -104,6 +105,7 @@ def create_app() -> FastAPI:
     app.include_router(journey_stops_router)
     app.include_router(stop_options_router)
     app.include_router(journey_documents_router)
+    app.include_router(dashboard_router)
 
     return app
 

@@ -4,6 +4,7 @@ import { Expense } from '@/lib/types';
 import { format } from 'date-fns';
 import { Trash2, Edit2 } from 'lucide-react';
 import { getCategoryIcon } from './useExpenses';
+import { Badge } from '@/components/ui/Badge';
 
 interface ExpenseItemProps {
   expense: Expense;
@@ -45,25 +46,14 @@ export function ExpenseItem({ expense, onEdit, onDelete }: ExpenseItemProps) {
           <span className="text-xl">{getCategoryIcon(expense.category)}</span>
           <div>
             <p className="font-medium">{expense.description}</p>
-            <div className="flex items-center gap-3 text-sm text-gray-500 mt-1">
+            <div className="flex items-center gap-3 text-sm text-gray-500 mt-1 flex-wrap">
               <span className="capitalize">{expense.category}</span>
               <span>•</span>
               <span>{format(new Date(expense.date), 'MMM dd, yyyy')}</span>
-              {expense.booked && (
-                <>
-                  <span>•</span>
-                  <span className="text-blue-600 font-medium">📅 Booked</span>
-                </>
-              )}
-              {expense.paid && (
-                <>
-                  <span>•</span>
-                  <span className="text-green-600 font-medium">✓ Paid</span>
-                </>
-              )}
+              {expense.booked && <Badge variant="info" size="sm">Booked</Badge>}
+              {expense.paid && <Badge variant="success" size="sm">Paid</Badge>}
               {expense.cancel_by_date && !expense.paid && (
                 <>
-                  <span>•</span>
                   <span
                     className={`font-medium ${getCancelStatus(expense.cancel_by_date).color}`}
                   >
@@ -86,13 +76,15 @@ export function ExpenseItem({ expense, onEdit, onDelete }: ExpenseItemProps) {
         <div className="flex gap-1">
           <button
             onClick={() => onEdit(expense)}
-            className="text-blue-600 hover:text-blue-700 p-2"
+            className="text-blue-600 hover:text-blue-700 p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 focus-visible:ring-offset-2"
+            aria-label="Edit expense"
           >
             <Edit2 className="w-4 h-4" />
           </button>
           <button
             onClick={() => onDelete(expense.id)}
-            className="text-red-600 hover:text-red-700 p-2"
+            className="text-red-600 hover:text-red-700 p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 focus-visible:ring-offset-2"
+            aria-label="Delete expense"
           >
             <Trash2 className="w-4 h-4" />
           </button>
