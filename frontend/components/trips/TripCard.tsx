@@ -5,18 +5,14 @@ import { tripApi } from '@/lib/api';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { Trash2, Edit, Calendar, DollarSign, Users } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { Badge, StatusBadge } from '@/components/ui/Badge';
 
 interface TripCardProps {
   trip: Trip;
   onDelete: () => void;
 }
-
-const statusColors: Record<string, string> = {
-  planning: 'bg-yellow-100 text-yellow-800',
-  booked: 'bg-blue-100 text-blue-800',
-  ongoing: 'bg-green-100 text-green-800',
-  completed: 'bg-gray-100 text-gray-800',
-};
 
 export default function TripCard({ trip, onDelete }: TripCardProps) {
   const router = useRouter();
@@ -49,92 +45,80 @@ export default function TripCard({ trip, onDelete }: TripCardProps) {
     router.push(`/trips/${trip.id}`);
   };
 
-  const getStatusColor = (status: string) => {
-    return statusColors[status] || statusColors.planning;
-  };
-
   return (
-    <div
+    <Card
+      hover
+      padding="md"
       onClick={handleClick}
-      className="border border-gray-200 rounded-lg p-4 hover:shadow-lg
-                 transition cursor-pointer"
     >
       <div className="flex justify-between items-start">
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <h3 className="text-xl font-semibold text-gray-800">
+            <h3 className="text-lg font-semibold text-slate-900">
               {trip.name}
             </h3>
             {trip.is_owner === false && (
-              <span className="flex items-center gap-1 px-2 py-0.5 bg-purple-100 text-purple-800 text-xs rounded-full">
-                <Users className="w-3 h-3" />
+              <Badge variant="info" size="sm" icon={<Users />}>
                 Shared
-              </span>
+              </Badge>
             )}
           </div>
 
-          <div className="flex items-center gap-2 text-gray-600 mt-2">
-            <Calendar className="w-4 h-4" />
-            <p>
+          <div className="flex items-center gap-2 text-slate-600 mt-2">
+            <Calendar className="w-4 h-4 text-primary-500" />
+            <p className="text-sm">
               {format(new Date(trip.start_date), 'MMM dd, yyyy')} -{' '}
               {format(new Date(trip.end_date), 'MMM dd, yyyy')}
             </p>
           </div>
 
           {trip.shared_by && (
-            <p className="text-purple-600 mt-1 text-sm">
+            <p className="text-primary-600 mt-1 text-sm">
               Shared by {trip.shared_by}
             </p>
           )}
 
           {trip.description && (
-            <p className="text-gray-500 mt-2 text-sm">
+            <p className="text-slate-500 mt-2 text-sm line-clamp-2">
               {trip.description}
             </p>
           )}
         </div>
 
-        <div className="text-right">
-          <span
-            className={`inline-block px-3 py-1 text-sm rounded-full
-                       ${getStatusColor(trip.status)}`}
-          >
-            {trip.status}
-          </span>
+        <div className="text-right flex flex-col items-end">
+          <StatusBadge status={trip.status as 'planning' | 'booked' | 'ongoing' | 'completed'} />
 
           {trip.budget && (
-            <div className="flex items-center justify-end gap-1 mt-2">
-              <DollarSign className="w-4 h-4 text-gray-600" />
-              <p className="text-gray-600 font-medium">
-                {parseFloat(trip.budget.toString()).toFixed(2)}
+            <div className="flex items-center gap-1 mt-2 text-slate-600">
+              <DollarSign className="w-4 h-4 text-success-500" />
+              <p className="font-medium">
+                {parseFloat(trip.budget.toString()).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
           )}
 
           {trip.is_owner !== false && (
             <div className="flex gap-2 mt-3">
-              <button
+              <Button
+                size="sm"
+                variant="secondary"
                 onClick={handleEdit}
-                className="px-3 py-1 bg-blue-600 text-white text-sm
-                         rounded hover:bg-blue-700 transition flex
-                         items-center gap-1"
+                leftIcon={<Edit />}
               >
-                <Edit className="w-3 h-3" />
                 Edit
-              </button>
-              <button
+              </Button>
+              <Button
+                size="sm"
+                variant="danger"
                 onClick={handleDelete}
-                className="px-3 py-1 bg-red-600 text-white text-sm
-                         rounded hover:bg-red-700 transition flex
-                         items-center gap-1"
+                leftIcon={<Trash2 />}
               >
-                <Trash2 className="w-3 h-3" />
                 Delete
-              </button>
+              </Button>
             </div>
           )}
         </div>
       </div>
-    </div>
+    </Card>
   );
 }

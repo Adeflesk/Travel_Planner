@@ -139,11 +139,15 @@ export function useTimeline(tripId: number) {
         .filter((expense: Expense) =>
           ACCOMMODATION_CATEGORIES.includes(expense.category.toLowerCase())
         )
-        .map((expense: Expense) => ({
-          type: 'accommodation' as const,
-          data: expense,
-          sortDate: expense.date ? new Date(expense.date) : new Date(0),
-        }));
+        .map((expense: Expense) => {
+          const baseDate = expense.date ? new Date(expense.date) : new Date(0);
+          baseDate.setHours(23, 59, 59, 999);
+          return {
+            type: 'accommodation' as const,
+            data: expense,
+            sortDate: baseDate,
+          };
+        });
 
       // Merge and sort all items by date
       const allItems = [...items, ...accommodations].sort(

@@ -21,6 +21,9 @@ from app.services.journey_service import (
     update_journey as svc_update_journey,
     delete_journey as svc_delete_journey,
 )
+from app.services.journey_timeline_service import (
+    get_journey_timeline as svc_get_journey_timeline,
+)
 
 router = APIRouter()
 
@@ -128,3 +131,24 @@ def delete_journey(
         return None
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.get(
+    "/journeys/{journey_id}/timeline",
+    response_model=schemas.JourneyTimelineResponse,
+    tags=["journeys"],
+)
+def get_journey_timeline(
+    journey_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    journey = svc_get_journey(journey_id, db)
+    if not journey:
+        raise HTTPException(status_code=404, detail="Journey not found")
+
+    check_trip_access(journey.trip_id, db, current_user)
+    timeline = svc_get_journey_timeline(journey_id, db)
+    if not timeline:
+        raise HTTPException(status_code=404, detail="Journey not found")
+    return timeline

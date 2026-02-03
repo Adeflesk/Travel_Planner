@@ -1,117 +1,92 @@
 'use client';
 
 import { useTripForm } from './useTripForm';
+import { Input, Textarea } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { DollarSign } from 'lucide-react';
 
 interface TripFormProps {
   onTripCreated: () => void;
   onCancel?: () => void;
 }
 
-export default function TripForm({ onTripCreated }: TripFormProps) {
+export default function TripForm({ onTripCreated, onCancel }: TripFormProps) {
   const { formData, loading, handleSubmit, handleChange } = useTripForm(onTripCreated);
 
   return (
-    <div className="w-3/5  p-6  rounded-md  shadow-xs">
-      <h2 className="text-xl font-semibold text-heading mb-6">
+    <div className="w-full max-w-2xl">
+      <h2 className="text-xl font-semibold text-slate-900 mb-6">
         Create New Trip
       </h2>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="mb-4">
-          <div>
-            <label className="block mb-2.5 text-sm font-medium text-heading">
-              Trip Name *
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-              className= "bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-3/5 px-3 py-2.5 shadow-xs placeholder:text-body"
-              placeholder="e.g., Summer Europe Adventure"
-            />
-          </div>
-
-          <div>
-            <label className="block mb-2.5 text-sm font-medium text-heading">
-              Budget
-            </label>
-            <input
-              type="number"
-              name="budget"
-              value={formData.budget || ''}
-              onChange={handleChange}
-              step="0.01"
-              className="bg-sky-400 border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-3/5 px-3 py-2.5 shadow-xs placeholder:text-body"
-              placeholder="e.g., 5000"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Start Date *
-            </label>
-            <input
-              type="date"
-              name="start_date"
-              value={formData.start_date}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg
-                       focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                       transition"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              End Date *
-            </label>
-            <input
-              type="date"
-              name="end_date"
-              value={formData.end_date}
-              onChange={handleChange}
-              required
-              className=" px-4 py-2 border border-gray-300 rounded-lg
-                       focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                       transition"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Description
-          </label>
-          <textarea
-            name="description"
-            value={formData.description}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Input
+            label="Trip Name"
+            type="text"
+            name="name"
+            value={formData.name}
             onChange={handleChange}
-            rows={3}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg
-                     focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                     transition resize-none"
-            placeholder="Describe your trip..."
+            required
+            placeholder="e.g., Summer Europe Adventure"
+          />
+
+          <Input
+            label="Budget"
+            type="number"
+            name="budget"
+            value={formData.budget || ''}
+            onChange={handleChange}
+            step="0.01"
+            placeholder="e.g., 5000"
+            leftIcon={<DollarSign className="w-4 h-4" />}
           />
         </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Input
+            label="Start Date"
+            type="date"
+            name="start_date"
+            value={formData.start_date}
+            onChange={handleChange}
+            required
+          />
+
+          <Input
+            label="End Date"
+            type="date"
+            name="end_date"
+            value={formData.end_date}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        <Textarea
+          label="Description"
+          name="description"
+          value={formData.description}
+          onChange={handleChange}
+          rows={3}
+          placeholder="Describe your trip..."
+        />
+
         <div className="flex items-center gap-3 pt-2">
-          <button
+          <Button
             type="submit"
-            disabled={loading}
-            className="bg-blue-600 text-white px-8 py-3
-                     rounded-lg font-medium hover:bg-blue-700
-                     transition-colors shadow-sm hover:shadow-md
-                     disabled:bg-gray-400 disabled:cursor-not-allowed"
+            loading={loading}
           >
             {loading ? 'Creating...' : 'Create Trip'}
-          </button>
-          {loading && (
-            <span className="text-gray-500 text-sm">
-              Please wait...
-            </span>
+          </Button>
+          {onCancel && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={onCancel}
+            >
+              Cancel
+            </Button>
           )}
         </div>
       </form>
