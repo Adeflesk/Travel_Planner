@@ -17,9 +17,9 @@ def create_user_and_token(db, email="other@example.com"):
     return user, token
 
 
-def test_create_destination(client, test_user, testing_session_local):
+def test_create_destination(client, test_user, db_session):
     """Test creating a destination"""
-    db = testing_session_local()
+    db = db_session
 
     trip = models.Trip(
         name="TestTrip",
@@ -48,11 +48,9 @@ def test_create_destination(client, test_user, testing_session_local):
     assert data["trip_id"] == trip.id
 
 
-def test_create_destination_non_owner_forbidden(
-    client, test_user, testing_session_local
-):
+def test_create_destination_non_owner_forbidden(client, test_user, db_session):
     """Test non-owner cannot create destination"""
-    db = testing_session_local()
+    db = db_session
 
     other, _ = create_user_and_token(db, "owner@example.com")
     trip = models.Trip(
@@ -85,9 +83,9 @@ def test_create_destination_non_owner_forbidden(
     assert resp.status_code == 404
 
 
-def test_get_trip_destinations(client, test_user, testing_session_local):
+def test_get_trip_destinations(client, test_user, db_session):
     """Test listing destinations for a trip"""
-    db = testing_session_local()
+    db = db_session
 
     trip = models.Trip(
         name="TestTrip",

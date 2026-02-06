@@ -17,9 +17,9 @@ def create_user_and_token(db, email="other@example.com"):
     return user, token
 
 
-def test_create_activity(client, test_user, testing_session_local):
+def test_create_activity(client, test_user, db_session):
     """Test creating an activity on a destination"""
-    db = testing_session_local()
+    db = db_session
 
     # Create trip and destination
     trip = models.Trip(
@@ -62,9 +62,9 @@ def test_create_activity(client, test_user, testing_session_local):
     assert data["destination_id"] == dest.id
 
 
-def test_create_activity_non_owner_forbidden(client, test_user, testing_session_local):
+def test_create_activity_non_owner_forbidden(client, test_user, db_session):
     """Test non-owner cannot create activity on shared trip"""
-    db = testing_session_local()
+    db = db_session
 
     # Create trip as another user
     other, _ = create_user_and_token(db, "owner@example.com")
@@ -108,9 +108,9 @@ def test_create_activity_non_owner_forbidden(client, test_user, testing_session_
     assert resp.status_code == 404  # Non-owner can't create
 
 
-def test_get_destination_activities(client, test_user, testing_session_local):
+def test_get_destination_activities(client, test_user, db_session):
     """Test listing activities for a destination"""
-    db = testing_session_local()
+    db = db_session
 
     trip = models.Trip(
         name="TestTrip",
@@ -149,9 +149,9 @@ def test_get_destination_activities(client, test_user, testing_session_local):
     assert any(a["name"] == "Colosseum" for a in activities)
 
 
-def test_get_destination_activities_shared(client, test_user, testing_session_local):
+def test_get_destination_activities_shared(client, test_user, db_session):
     """Test reading activities on shared trip"""
-    db = testing_session_local()
+    db = db_session
 
     other, _ = create_user_and_token(db, "owner@example.com")
     trip = models.Trip(
@@ -201,9 +201,9 @@ def test_get_destination_activities_not_found(client, test_user):
     assert resp.status_code == 404
 
 
-def test_update_activity(client, test_user, testing_session_local):
+def test_update_activity(client, test_user, db_session):
     """Test updating an activity"""
-    db = testing_session_local()
+    db = db_session
 
     trip = models.Trip(
         name="TestTrip",
@@ -242,9 +242,9 @@ def test_update_activity(client, test_user, testing_session_local):
     assert data["status"] == "scheduled"
 
 
-def test_update_activity_non_owner_forbidden(client, test_user, testing_session_local):
+def test_update_activity_non_owner_forbidden(client, test_user, db_session):
     """Test non-owner cannot update activity"""
-    db = testing_session_local()
+    db = db_session
 
     other, _ = create_user_and_token(db, "owner@example.com")
     trip = models.Trip(
@@ -295,9 +295,9 @@ def test_update_activity_not_found(client, test_user):
     assert resp.status_code == 404
 
 
-def test_delete_activity(client, test_user, testing_session_local):
+def test_delete_activity(client, test_user, db_session):
     """Test deleting an activity"""
-    db = testing_session_local()
+    db = db_session
 
     trip = models.Trip(
         name="TestTrip",
@@ -336,9 +336,9 @@ def test_delete_activity(client, test_user, testing_session_local):
     assert deleted_act is None
 
 
-def test_delete_activity_non_owner_forbidden(client, test_user, testing_session_local):
+def test_delete_activity_non_owner_forbidden(client, test_user, db_session):
     """Test non-owner cannot delete activity"""
-    db = testing_session_local()
+    db = db_session
 
     other, _ = create_user_and_token(db, "owner@example.com")
     trip = models.Trip(

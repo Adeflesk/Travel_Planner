@@ -18,9 +18,9 @@ def create_user_and_token(db, email="other@example.com"):
     return user, token
 
 
-def test_create_expense(client, test_user, testing_session_local):
+def test_create_expense(client, test_user, db_session):
     """Test creating an expense"""
-    db = testing_session_local()
+    db = db_session
 
     trip = models.Trip(
         name="TestTrip",
@@ -63,9 +63,9 @@ def test_create_expense(client, test_user, testing_session_local):
     assert data["destination_id"] == dest.id
 
 
-def test_create_expense_non_owner_forbidden(client, test_user, testing_session_local):
+def test_create_expense_non_owner_forbidden(client, test_user, db_session):
     """Test non-owner cannot create expense"""
-    db = testing_session_local()
+    db = db_session
 
     other, _ = create_user_and_token(db, "owner@example.com")
     trip = models.Trip(
@@ -109,9 +109,9 @@ def test_create_expense_non_owner_forbidden(client, test_user, testing_session_l
     assert resp.status_code == 404
 
 
-def test_get_destination_expenses(client, test_user, testing_session_local):
+def test_get_destination_expenses(client, test_user, db_session):
     """Test listing expenses for a destination"""
-    db = testing_session_local()
+    db = db_session
 
     trip = models.Trip(
         name="TestTrip",
@@ -168,9 +168,9 @@ def test_get_destination_expenses_not_found(client, test_user):
     assert resp.status_code == 404
 
 
-def test_update_expense(client, test_user, testing_session_local):
+def test_update_expense(client, test_user, db_session):
     """Test updating an expense"""
-    db = testing_session_local()
+    db = db_session
 
     trip = models.Trip(
         name="TestTrip",
@@ -216,9 +216,9 @@ def test_update_expense(client, test_user, testing_session_local):
     assert data["category"] == "entertainment"
 
 
-def test_update_expense_non_owner_forbidden(client, test_user, testing_session_local):
+def test_update_expense_non_owner_forbidden(client, test_user, db_session):
     """Test non-owner cannot update expense"""
-    db = testing_session_local()
+    db = db_session
 
     other, _ = create_user_and_token(db, "owner@example.com")
     trip = models.Trip(
@@ -273,9 +273,9 @@ def test_update_expense_not_found(client, test_user):
     assert resp.status_code == 404
 
 
-def test_delete_expense(client, test_user, testing_session_local):
+def test_delete_expense(client, test_user, db_session):
     """Test deleting an expense"""
-    db = testing_session_local()
+    db = db_session
 
     trip = models.Trip(
         name="TestTrip",
@@ -321,9 +321,9 @@ def test_delete_expense(client, test_user, testing_session_local):
     assert deleted_exp is None
 
 
-def test_delete_expense_non_owner_forbidden(client, test_user, testing_session_local):
+def test_delete_expense_non_owner_forbidden(client, test_user, db_session):
     """Test non-owner cannot delete expense"""
-    db = testing_session_local()
+    db = db_session
 
     other, _ = create_user_and_token(db, "owner@example.com")
     trip = models.Trip(

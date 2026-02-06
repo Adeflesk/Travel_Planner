@@ -7,7 +7,7 @@ Author: Travel Planner Team
 """
 
 from datetime import datetime
-from typing import List, Literal, Optional
+from typing import List, Literal, Optional, Union
 
 from pydantic import BaseModel
 
@@ -44,7 +44,7 @@ class JourneyTimelineActivity(BaseModel):
     order: int = 0
 
 
-JourneyTimelineItem = JourneyTimelineStop | JourneyTimelineActivity
+JourneyTimelineItem = Union[JourneyTimelineStop, JourneyTimelineActivity]
 
 
 class JourneyTimelineResponse(BaseModel):
