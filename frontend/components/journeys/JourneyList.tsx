@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useJourneys, sortOptions } from './useJourneys';
 import { useJourneyForm } from './useJourneyForm';
 import { JourneyForm } from './JourneyForm';
@@ -36,12 +36,7 @@ export default function JourneyList({ tripId }: JourneyListProps) {
   } = useJourneyForm(tripId, reload);
 
   const [showForm, setShowForm] = useState(false);
-
-  useEffect(() => {
-    if (isEditing) {
-      setShowForm(true);
-    }
-  }, [isEditing]);
+  const shouldShowForm = showForm || isEditing;
 
   const handleDelete = async (id: number) => {
     if (confirm('Delete this journey?')) {
@@ -85,7 +80,7 @@ export default function JourneyList({ tripId }: JourneyListProps) {
         </div>
       )}
 
-      {showForm && (
+      {shouldShowForm && (
         <div className="mb-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
           <JourneyForm
             formData={formData}
