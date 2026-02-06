@@ -1,7 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import { Activity, Destination } from '@/lib/types';
-import { MapPin } from 'lucide-react';
+import { ChevronDown, ChevronRight, MapPin } from 'lucide-react';
 import { ActivityRow } from './ActivityRow';
 
 interface DestinationActivitiesSectionProps {
@@ -17,6 +18,8 @@ export function DestinationActivitiesSection({
   onToggleComplete,
   onDelete,
 }: DestinationActivitiesSectionProps) {
+  const [isExpanded, setIsExpanded] = useState(true);
+
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden">
       {/* Destination Header */}
@@ -30,11 +33,29 @@ export function DestinationActivitiesSection({
           <span className="ml-auto text-sm text-gray-500">
             {activities.length} {activities.length === 1 ? 'activity' : 'activities'}
           </span>
+          <button
+            onClick={() => setIsExpanded((prev) => !prev)}
+            className="ml-2 flex items-center gap-1 text-sm text-purple-600 hover:text-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/60 focus-visible:ring-offset-2"
+            aria-label={isExpanded ? 'Hide activities' : 'Show activities'}
+          >
+            {isExpanded ? (
+              <>
+                <ChevronDown className="w-4 h-4" />
+                <span>Hide</span>
+              </>
+            ) : (
+              <>
+                <ChevronRight className="w-4 h-4" />
+                <span>Show</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 
       {/* Activities List */}
-      <div className="divide-y divide-gray-100">
+      {isExpanded && (
+        <div className="divide-y divide-gray-100">
         {activities.length === 0 ? (
           <p className="px-4 py-3 text-sm text-gray-500 italic">
             No activities for this destination
@@ -49,7 +70,8 @@ export function DestinationActivitiesSection({
             />
           ))
         )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

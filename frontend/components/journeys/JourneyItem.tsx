@@ -4,9 +4,10 @@ import { useState } from 'react';
 import { Journey, RouteType } from '@/lib/types';
 import { format } from 'date-fns';
 import { Trash2, Edit2, ArrowRight, Plane, Train, Bus, Car, Ship, Footprints, Copy, Route, ChevronDown, ChevronUp, FileText, MapPin, Clock, DollarSign } from 'lucide-react';
-import { getStatusColor } from './useJourneys';
 import { JourneyStopsList } from '../journey-stops';
 import { JourneyDocuments } from './JourneyDocuments';
+import { Badge } from '@/components/ui/Badge';
+import { JourneyTimeline } from './JourneyTimeline';
 
 const transportIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   flight: Plane,
@@ -15,6 +16,21 @@ const transportIcons: Record<string, React.ComponentType<{ className?: string }>
   car: Car,
   ferry: Ship,
   walk: Footprints,
+};
+
+const transportStyles: Record<string, string> = {
+  flight: 'bg-sky-100 text-sky-700',
+  train: 'bg-violet-100 text-violet-700',
+  bus: 'bg-green-100 text-green-700',
+  car: 'bg-amber-100 text-amber-700',
+  ferry: 'bg-cyan-100 text-cyan-700',
+  walk: 'bg-stone-100 text-stone-700',
+};
+
+const journeyStatusVariant: Record<string, 'default' | 'success' | 'warning' | 'info'> = {
+  planned: 'info',
+  booked: 'success',
+  completed: 'default',
 };
 
 const routeTypeLabels: Record<RouteType, string> = {
@@ -65,7 +81,10 @@ export function JourneyItem({
 }: JourneyItemProps) {
   const [showStops, setShowStops] = useState(false);
   const [showDocuments, setShowDocuments] = useState(false);
+  const [showTimeline, setShowTimeline] = useState(false);
   const TransportIcon = transportIcons[journey.transport_mode] || Plane;
+  const transportClass = transportStyles[journey.transport_mode] || 'bg-blue-100 text-blue-700';
+  const statusVariant = journeyStatusVariant[journey.status] || 'info';
 
   // Only show stops for ground transport (car, bus, train)
   const canHaveStops = ['car', 'bus', 'train'].includes(journey.transport_mode);
@@ -77,7 +96,7 @@ export function JourneyItem({
         <div className="flex justify-between items-start">
           <div className="flex-1">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-full text-blue-600">
+              <div className={`p-2 rounded-full ${transportClass}`}>
                 <TransportIcon className="w-5 h-5" />
               </div>
               <div className="flex items-center gap-2">
@@ -89,13 +108,9 @@ export function JourneyItem({
                   {journey.destination_name || getDestinationName(journey.destination_id)}
                 </span>
               </div>
-              <span
-                className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                  journey.status
-                )}`}
-              >
+              <Badge variant={statusVariant} size="sm">
                 {journey.status.charAt(0).toUpperCase() + journey.status.slice(1)}
-              </span>
+              </Badge>
             </div>
             <div className="mt-2 ml-12 text-sm text-gray-600 space-y-1">
               {journey.carrier && (
@@ -130,8 +145,8 @@ export function JourneyItem({
 
             {/* Route Details */}
             {hasRouteDetails(journey) && (
-              <div className="mt-3 ml-12 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                <div className="flex items-center gap-2 text-blue-700 text-sm font-medium mb-2">
+              <div className="mt-3 ml-12 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                <div className="flex items-center gap-2 text-slate-700 text-sm font-medium mb-2">
                   <MapPin className="w-4 h-4" />
                   <span>Route Details</span>
                 </div>
@@ -184,21 +199,24 @@ export function JourneyItem({
           <div className="flex gap-2">
             <button
               onClick={() => onEdit(journey)}
-              className="text-blue-600 hover:text-blue-700 p-2"
+              className="text-blue-600 hover:text-blue-700 p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 focus-visible:ring-offset-2"
+              aria-label="Edit journey"
               title="Edit journey"
             >
               <Edit2 className="w-4 h-4" />
             </button>
             <button
               onClick={() => onDuplicateReturn(journey)}
-              className="text-green-600 hover:text-green-700 p-2"
+              className="text-green-600 hover:text-green-700 p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 focus-visible:ring-offset-2"
+              aria-label="Duplicate as return trip"
               title="Duplicate as return trip"
             >
               <Copy className="w-4 h-4" />
             </button>
             <button
               onClick={() => onDelete(journey.id)}
-              className="text-red-600 hover:text-red-700 p-2"
+              className="text-red-600 hover:text-red-700 p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 focus-visible:ring-offset-2"
+              aria-label="Delete journey"
               title="Delete journey"
             >
               <Trash2 className="w-4 h-4" />
@@ -207,12 +225,12 @@ export function JourneyItem({
         </div>
 
         {/* Toggle Buttons */}
-        <div className="mt-3 ml-12 flex gap-4">
+        <div className="mt-3 ml-12 flex flex-wrap gap-4">
           {/* Stops Toggle - only for ground transport */}
           {canHaveStops && (
             <button
               onClick={() => setShowStops(!showStops)}
-              className="flex items-center gap-2 text-sm text-orange-600 hover:text-orange-700"
+              className="flex items-center gap-2 text-sm text-orange-600 hover:text-orange-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/60 focus-visible:ring-offset-2"
             >
               <Route className="w-4 h-4" />
               {showStops ? (
@@ -232,7 +250,7 @@ export function JourneyItem({
           {/* Documents Toggle */}
           <button
             onClick={() => setShowDocuments(!showDocuments)}
-            className="flex items-center gap-2 text-sm text-purple-600 hover:text-purple-700"
+            className="flex items-center gap-2 text-sm text-purple-600 hover:text-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/60 focus-visible:ring-offset-2"
           >
             <FileText className="w-4 h-4" />
             {showDocuments ? (
@@ -247,6 +265,24 @@ export function JourneyItem({
               </>
             )}
           </button>
+          {canHaveStops && (
+            <button
+              onClick={() => setShowTimeline(!showTimeline)}
+              className="flex items-center gap-2 text-sm text-sky-600 hover:text-sky-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60 focus-visible:ring-offset-2"
+            >
+              {showTimeline ? (
+                <>
+                  <span>Hide Journey Timeline</span>
+                  <ChevronUp className="w-4 h-4" />
+                </>
+              ) : (
+                <>
+                  <span>Journey Timeline</span>
+                  <ChevronDown className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
 
@@ -261,6 +297,12 @@ export function JourneyItem({
       {showDocuments && (
         <div className="border-t border-gray-200 p-4 bg-purple-50">
           <JourneyDocuments journeyId={journey.id} />
+        </div>
+      )}
+
+      {showTimeline && (
+        <div className="border-t border-slate-200 p-4 bg-slate-50">
+          <JourneyTimeline journeyId={journey.id} />
         </div>
       )}
     </div>

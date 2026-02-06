@@ -37,7 +37,7 @@ def testing_session_local():
     return TestingSessionLocal
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def base_client(testing_session_local):
     """TestClient with `get_db` dependency overridden to use testing session."""
 
@@ -54,9 +54,10 @@ def base_client(testing_session_local):
     test_client.close()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="function", autouse=True)
 def db_setup(db_engine, testing_session_local):
     """Create and drop schema around each test when used."""
+    Base.metadata.drop_all(bind=db_engine)
     Base.metadata.create_all(bind=db_engine)
     yield
     Base.metadata.drop_all(bind=db_engine)
@@ -142,3 +143,13 @@ def client(base_client, test_user):
 def unauthenticated_client(base_client):
     """Return unauthenticated client for testing auth-required endpoints."""
     return base_client
+
+
+@pytest.fixture(scope="function")
+def db_session(testing_session_local):
+    """Provide a database session that is automatically closed after use."""
+    db = testing_session_local()
+    try:
+        yield db
+    finally:
+        db.close()

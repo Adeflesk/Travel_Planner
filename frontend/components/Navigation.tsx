@@ -2,66 +2,77 @@
 
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
-import { Shield } from 'lucide-react';
+import { Shield, Plane } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 
 export default function Navigation() {
   const { user, isAuthenticated, logout, isLoading } = useAuth();
 
   return (
     <nav className="flex items-center justify-between">
-      <Link href="/" className="flex items-center space-x-2">
-        <span className="text-2xl">🌍</span>
-        <span className="text-xl font-bold">Travel Planner</span>
+      <Link href="/dashboard" className="flex items-center space-x-2 group">
+        <Plane className="w-6 h-6 text-white group-hover:text-primary-200 transition-colors" />
+        <span className="text-xl font-bold text-white">Travel Planner</span>
       </Link>
 
       <div className="flex items-center space-x-4">
         {isLoading ? (
-          <span className="text-blue-200">Loading...</span>
+          <span className="text-primary-200">Loading...</span>
         ) : isAuthenticated ? (
           <>
             <Link
-              href="/"
-              className="text-white hover:text-blue-200 transition-colors"
+              href="/dashboard"
+              className="text-white hover:text-primary-200 transition-colors font-medium"
+            >
+              Dashboard
+            </Link>
+            <Link
+              href="/trips"
+              className="text-white hover:text-primary-200 transition-colors font-medium"
             >
               My Trips
             </Link>
             {user?.role === 'admin' && (
               <>
-                <span className="text-blue-200">|</span>
+                <span className="text-primary-300">|</span>
                 <Link
                   href="/admin"
-                  className="flex items-center gap-1 text-white hover:text-blue-200 transition-colors"
+                  className="flex items-center gap-1 text-white hover:text-primary-200 transition-colors font-medium"
                 >
                   <Shield className="w-4 h-4" />
                   Admin
                 </Link>
               </>
             )}
-            <span className="text-blue-200">|</span>
-            <span className="text-blue-100 text-sm">
+            <span className="text-primary-300">|</span>
+            <span className="text-primary-100 text-sm">
               {user?.full_name || user?.email}
             </span>
-            <button
+            <Button
+              size="sm"
+              variant="ghost"
               onClick={logout}
-              className="bg-blue-500 hover:bg-blue-400 px-3 py-1 rounded text-sm transition-colors"
+              className="text-white hover:bg-primary-500"
             >
               Logout
-            </button>
+            </Button>
           </>
         ) : (
           <>
             <Link
               href="/login"
-              className="text-white hover:text-blue-200 transition-colors"
+              className="text-white hover:text-primary-200 transition-colors font-medium"
             >
               Login
             </Link>
-            <Link
-              href="/register"
-              className="bg-white text-blue-600 hover:bg-blue-50 px-3 py-1 rounded text-sm transition-colors"
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => window.location.href = '/register'}
+              className="bg-white text-primary-600 hover:bg-primary-50"
             >
               Sign Up
-            </Link>
+            </Button>
           </>
         )}
       </div>

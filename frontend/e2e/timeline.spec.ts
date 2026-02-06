@@ -135,8 +135,8 @@ test.describe('Trip Timeline', () => {
     await authenticatedPage.goto(`/trips/${tripId}`);
     await authenticatedPage.getByRole('button', { name: /Timeline/i }).click();
 
-    // Verify booked status is displayed
-    await expect(authenticatedPage.getByText('Booked')).toBeVisible();
+    // Verify booked status is displayed - timeline uses custom status styling, not Badge component
+    await expect(authenticatedPage.locator('.rounded-full', { hasText: 'Booked' })).toBeVisible();
   });
 
   test('should display journey cost in timeline', async ({ authenticatedPage, authApiRequest }) => {

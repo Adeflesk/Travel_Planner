@@ -2,6 +2,7 @@
 
 import { PackingItem } from '@/lib/types';
 import { Trash2, CheckCircle2, Circle } from 'lucide-react';
+import { Badge } from '@/components/ui/Badge';
 
 interface PackingItemRowProps {
   item: PackingItem;
@@ -25,7 +26,8 @@ export function PackingItemRow({
       <div className="flex items-center gap-3 flex-1">
         <button
           onClick={() => onTogglePacked(item.id, item.is_packed)}
-          className="focus:outline-none"
+          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 focus-visible:ring-offset-2"
+          aria-label={item.is_packed ? 'Mark item unpacked' : 'Mark item packed'}
         >
           {item.is_packed ? (
             <CheckCircle2 className="w-6 h-6 text-green-600" />
@@ -42,15 +44,21 @@ export function PackingItemRow({
           >
             {item.item_name}
           </p>
+          <div className="flex items-center gap-2 mt-1">
+            <Badge variant={item.is_packed ? 'success' : 'warning'} size="sm">
+              {item.is_packed ? 'Packed' : 'To pack'}
+            </Badge>
           {item.quantity > 1 && (
             <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
           )}
+          </div>
         </div>
       </div>
 
       <button
         onClick={() => onDelete(item.id)}
-        className="text-red-600 hover:text-red-700 p-2 ml-2"
+        className="text-red-600 hover:text-red-700 p-2 ml-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 focus-visible:ring-offset-2"
+        aria-label="Delete packing item"
       >
         <Trash2 className="w-4 h-4" />
       </button>

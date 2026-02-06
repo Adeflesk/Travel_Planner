@@ -12,7 +12,7 @@ from decimal import Decimal
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import func
+from sqlalchemy import case, func
 from sqlalchemy.orm import Session
 
 from app import models, schemas
@@ -21,6 +21,7 @@ from app.services.activity_service import (
     get_destinations_with_activities as svc_get_destinations_with_activities,
     get_trip_progress as svc_get_trip_progress,
 )
+from app.services.budget_service import get_budget_status as svc_get_budget_status
 from app.services.expense_service import get_expense_summary as svc_get_expense_summary
 from app.services.timeline_service import (
     get_accommodation_expenses as svc_get_accommodation_expenses,
@@ -212,6 +213,24 @@ def get_expense_summary(
 
 
 @router.get(
+    "/trips/{trip_id}/budget-status/",
+    response_model=schemas.BudgetStatusResponse,
+    tags=["trips"],
+)
+def get_budget_status(
+    trip_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Get budget status with progress, category breakdown, and alerts."""
+    get_trip_or_404(trip_id, db, current_user)  # Check access
+    result = svc_get_budget_status(trip_id, db)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Trip not found")
+    return result
+
+
+@router.get(
     "/trips/{trip_id}/progress/", response_model=schemas.TripProgress, tags=["trips"]
 )
 def get_trip_progress(
@@ -312,7 +331,7 @@ def get_trip_stats(
         db.query(
             func.count(models.Journey.id),
             func.coalesce(func.sum(models.Journey.cost), 0),
-            func.sum(func.case((models.Journey.status == "booked", 1), else_=0)),
+            func.sum(case((models.Journey.status == "booked", 1), else_=0)),
         )
         .filter(models.Journey.trip_id == trip_id)
         .first()
@@ -348,7 +367,7 @@ def get_trip_stats(
     packing_stats = (
         db.query(
             func.count(models.PackingItem.id),
-            func.sum(func.case((models.PackingItem.is_packed.is_(True), 1), else_=0)),
+            func.sum(case((models.PackingItem.is_packed.is_(True), 1), else_=0)),
         )
         .filter(models.PackingItem.trip_id == trip_id)
         .first()

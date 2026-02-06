@@ -3,6 +3,7 @@
 import { Activity } from '@/lib/types';
 import { format } from 'date-fns';
 import { Trash2, Edit2, CheckCircle2, Circle } from 'lucide-react';
+import { Badge } from '@/components/ui/Badge';
 
 interface ActivityItemProps {
   activity: Activity;
@@ -31,7 +32,8 @@ export function ActivityItem({
         <div className="flex items-center gap-3 flex-1">
           <button
             onClick={() => onToggleCompleted?.(activity)}
-            className="focus:outline-none"
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 focus-visible:ring-offset-2"
+            aria-label={activity.is_completed ? 'Mark activity incomplete' : 'Mark activity complete'}
           >
             {activity.is_completed ? (
               <CheckCircle2 className="w-6 h-6 text-green-600" />
@@ -64,7 +66,15 @@ export function ActivityItem({
   return (
     <div className="flex justify-between items-start border border-gray-200 p-3 rounded-lg bg-white hover:bg-gray-50 transition">
       <div className="flex-1">
-        <p className="font-medium text-gray-800">{activity.name}</p>
+        <div className="flex items-center gap-2">
+          <p className="font-medium text-gray-800">{activity.name}</p>
+          <Badge
+            variant={activity.status === 'booked' ? 'success' : activity.status === 'completed' ? 'default' : 'info'}
+            size="sm"
+          >
+            {activity.status}
+          </Badge>
+        </div>
         {activity.description && (
           <p className="text-sm text-gray-600 mt-1">{activity.description}</p>
         )}
@@ -92,13 +102,15 @@ function ActionButtons({
     <div className="flex gap-1 ml-2">
       <button
         onClick={() => onEdit(activity)}
-        className="text-blue-600 hover:text-blue-700 p-2"
+        className="text-blue-600 hover:text-blue-700 p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 focus-visible:ring-offset-2"
+        aria-label="Edit activity"
       >
         <Edit2 className="w-4 h-4" />
       </button>
       <button
         onClick={() => onDelete(activity.id)}
-        className="text-red-600 hover:text-red-700 p-2"
+        className="text-red-600 hover:text-red-700 p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 focus-visible:ring-offset-2"
+        aria-label="Delete activity"
       >
         <Trash2 className="w-4 h-4" />
       </button>

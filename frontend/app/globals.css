@@ -1,18 +1,101 @@
+@config "../tailwind.config.js";
 @import "tailwindcss";
-:root {
-  --background: #f6f3f3;
+@import "../styles/design-tokens.css";
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-text);
+  font-family: var(--font-sans);
 }
 
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-body {
-  color: var(--foreground);
-  padding: 1rem;
-  font-family: Arial, Helvetica, sans-serif;
+.animate-fade-in-up {
+  animation: fade-in-up 320ms ease-out;
 }
 
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Status badge utilities */
+.badge-planned {
+  background-color: var(--color-status-planned-bg);
+  color: var(--color-status-planned);
+}
+
+.badge-booked {
+  background-color: var(--color-status-booked-bg);
+  color: var(--color-status-booked);
+}
+
+.badge-active {
+  background-color: var(--color-status-active-bg);
+  color: var(--color-status-active);
+}
+
+.badge-completed {
+  background-color: var(--color-status-completed-bg);
+  color: var(--color-status-completed);
+}
+
+.badge-cancelled {
+  background-color: var(--color-status-cancelled-bg);
+  color: var(--color-status-cancelled);
+}
+
+/* Transport mode badge utilities */
+.transport-flight {
+  color: var(--color-transport-flight);
+}
+
+.transport-train {
+  color: var(--color-transport-train);
+}
+
+.transport-car {
+  color: var(--color-transport-car);
+}
+
+.transport-bus {
+  color: var(--color-transport-bus);
+}
+
+.transport-ferry {
+  color: var(--color-transport-ferry);
+}
+
+/* Budget status utilities */
+.budget-under {
+  color: var(--color-budget-under);
+}
+
+.budget-near {
+  color: var(--color-budget-near);
+}
+
+.budget-limit {
+  color: var(--color-budget-limit);
+}
+
+.budget-over {
+  color: var(--color-budget-over);
+}
+
+/* Tabular numbers for prices/dates */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}

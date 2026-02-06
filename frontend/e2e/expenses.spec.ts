@@ -215,8 +215,8 @@ test.describe('Expense Management', () => {
     // Wait for expense to load with increased timeout
     await expect(authenticatedPage.getByText('Airbnb Booking')).toBeVisible({ timeout: 15000 });
 
-    // Verify booked status is shown (use specific locator to avoid matching form checkbox label)
-    await expect(authenticatedPage.locator('.space-y-2').getByText('Booked')).toBeVisible();
+    // Verify booked status is shown - use exact match with inline-flex class to target badge
+    await expect(authenticatedPage.locator('.inline-flex.items-center.gap-1', { hasText: 'Booked' }).first()).toBeVisible();
   });
 
   test('should show paid status', async ({ authenticatedPage, authApiRequest }) => {
@@ -236,8 +236,8 @@ test.describe('Expense Management', () => {
     // Wait for expense to load with increased timeout
     await expect(authenticatedPage.getByText('Paid Expense')).toBeVisible({ timeout: 15000 });
 
-    // Verify paid status is shown (use exact text match with emoji to target the status badge)
-    await expect(authenticatedPage.getByText('✓ Paid')).toBeVisible();
+    // Verify paid status is shown - use inline-flex class to target badge (no emoji in the badge text)
+    await expect(authenticatedPage.locator('.inline-flex.items-center.gap-1', { hasText: 'Paid' }).first()).toBeVisible();
   });
 
   test('should toggle booked checkbox in form', async ({ authenticatedPage }) => {

@@ -34,17 +34,17 @@ export default defineConfig({
   webServer: [
     {
       command: process.env.CI
-        ? 'sh -c "cd .. && uvicorn app.main:app --host 0.0.0.0 --port 8000"'
-        : 'uvicorn app.main:app --reload --port 8000',
+        ? 'sh -c "cd .. && RATE_LIMIT_ENABLED=false uvicorn app.main:app --host 0.0.0.0 --port 8000"'
+        : 'sh -c "cd .. && RATE_LIMIT_ENABLED=false uvicorn app.main:app --reload --port 8000"',
       url: 'http://localhost:8000/health',
       reuseExistingServer: !process.env.CI,
-      timeout: 60000, // Reduced from 120s to 60s
+      timeout: 60000,
     },
     {
       command: 'npm run dev',
       url: 'http://localhost:3000',
       reuseExistingServer: !process.env.CI,
-      timeout: 60000, // Reduced from 120s to 60s
+      timeout: 60000,
     },
   ],
 });

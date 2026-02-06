@@ -28,6 +28,9 @@ import {
   TimelineItem,
   DestinationAccommodation,
   TripStats,
+  BudgetStatusResponse,
+  DashboardData,
+  JourneyTimelineResponse,
 } from './types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -37,6 +40,31 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+});
+
+const TOKEN_KEY = 'travel_planner_tokens';
+
+function getAccessToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  const stored = localStorage.getItem(TOKEN_KEY);
+  if (!stored) return null;
+  try {
+    const parsed = JSON.parse(stored) as { access_token?: string };
+    return parsed.access_token ?? null;
+  } catch {
+    return null;
+  }
+}
+
+api.interceptors.request.use((config) => {
+  const token = getAccessToken();
+  if (token) {
+    config.headers = config.headers ?? {};
+    if (!config.headers['Authorization']) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+  }
+  return config;
 });
 
 // Trip API
@@ -61,6 +89,12 @@ export const tripApi = {
     ),
   getStats: (tripId: number) =>
     api.get<TripStats>(`/trips/${tripId}/stats/`),
+  getBudgetStatus: (tripId: number) =>
+    api.get<BudgetStatusResponse>(`/trips/${tripId}/budget-status/`),
+};
+
+export const dashboardApi = {
+  get: () => api.get<DashboardData>('/api/dashboard'),
 };
 
 // Destination API
@@ -211,6 +245,8 @@ export const journeyApi = {
     return api.put<Journey>(`/journeys/${id}`, cleanedData);
   },
   delete: (id: number) => api.delete(`/journeys/${id}`),
+  getTimeline: (journeyId: number) =>
+    api.get<JourneyTimelineResponse>(`/journeys/${journeyId}/timeline`),
 };
 
 // Journey Stop API

@@ -30,7 +30,11 @@ def get_timeline(trip_id: int, db: Session) -> Optional[List[Dict]]:
     for dest in destinations:
         sort_date = None
         if dest.arrival_date:
-            sort_date = datetime.combine(dest.arrival_date, time.min)
+            # Use end-of-day so same-day journeys appear before arrival destination.
+            sort_date = datetime.combine(dest.arrival_date, time.max)
+        elif dest.departure_date:
+            # Fallback to departure date end-of-day when arrival is missing.
+            sort_date = datetime.combine(dest.departure_date, time.max)
         timeline.append(
             {"type": "destination", "sort_date": sort_date, "destination": dest}
         )

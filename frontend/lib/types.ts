@@ -13,6 +13,42 @@ export interface Trip {
   shared_by?: string;
 }
 
+export interface DashboardData {
+  user: {
+    name: string;
+  };
+  next_trip: {
+    id: number;
+    name: string;
+    start_date: string;
+    days_until: number;
+    destinations: string[];
+    budget_used: number;
+    budget_total: number;
+  } | null;
+  stats: {
+    total_trips: number;
+    countries_visited: number;
+    spent_this_year: number;
+    upcoming_trips: number;
+  };
+  action_items: Array<{
+    type: 'booking' | 'packing' | 'budget' | 'deadline';
+    title: string;
+    trip_name: string;
+    trip_id: number;
+    urgency: 'low' | 'medium' | 'high';
+    detail: string;
+  }>;
+  recent_trips: Array<{
+    id: number;
+    name: string;
+    dates: string;
+    status: 'completed' | 'in_progress';
+    country_code?: string;
+  }>;
+}
+
 export interface Destination {
   id: number;
   trip_id: number;
@@ -95,6 +131,45 @@ export interface Journey {
   has_tolls?: boolean;
   toll_cost?: number;
   route_notes?: string;
+}
+
+export type JourneyTimelineItemType = 'stop' | 'activity';
+
+export interface JourneyTimelineStop {
+  type: 'stop';
+  id: number;
+  journey_id: number;
+  name: string;
+  location?: string;
+  planned_arrival?: string;
+  planned_departure?: string;
+  actual_arrival?: string;
+  actual_departure?: string;
+  notes?: string;
+  order: number;
+}
+
+export interface JourneyTimelineActivity {
+  type: 'activity';
+  id: number;
+  stop_id: number;
+  name: string;
+  description?: string;
+  option_type: StopOptionType;
+  estimated_duration?: number;
+  estimated_cost?: number;
+  currency: string;
+  url?: string;
+  notes?: string;
+  status: StopOptionStatus;
+  order: number;
+}
+
+export type JourneyTimelineItem = JourneyTimelineStop | JourneyTimelineActivity;
+
+export interface JourneyTimelineResponse {
+  journey_id: number;
+  items: JourneyTimelineItem[];
 }
 
 export interface TripFormData {
@@ -392,4 +467,36 @@ export interface TripStats {
   packed_items: number;
   total_packing_items: number;
   counts: TripStatsCounts;
+}
+
+// Budget Types
+export type BudgetStatus = 'normal' | 'warning' | 'danger' | 'over';
+
+export interface CategoryBudget {
+  category: string;
+  spent: number;
+  booked: number;
+  estimated: number;
+  percentage: number;
+  status: BudgetStatus;
+}
+
+export interface BudgetAlert {
+  type: 'over_budget' | 'over_category' | 'approaching_limit';
+  message: string;
+  category?: string;
+  amount?: number;
+  percentage?: number;
+}
+
+export interface BudgetStatusResponse {
+  total_budget: number | null;
+  total_spent: number;
+  booked_amount: number;
+  estimated_amount: number;
+  percentage_used: number;
+  remaining: number;
+  status: BudgetStatus;
+  by_category: CategoryBudget[];
+  alerts: BudgetAlert[];
 }
