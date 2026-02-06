@@ -13,6 +13,42 @@ export interface Trip {
   shared_by?: string;
 }
 
+export interface DashboardData {
+  user: {
+    name: string;
+  };
+  next_trip: {
+    id: number;
+    name: string;
+    start_date: string;
+    days_until: number;
+    destinations: string[];
+    budget_used: number;
+    budget_total: number;
+  } | null;
+  stats: {
+    total_trips: number;
+    countries_visited: number;
+    spent_this_year: number;
+    upcoming_trips: number;
+  };
+  action_items: Array<{
+    type: 'booking' | 'packing' | 'budget' | 'deadline';
+    title: string;
+    trip_name: string;
+    trip_id: number;
+    urgency: 'low' | 'medium' | 'high';
+    detail: string;
+  }>;
+  recent_trips: Array<{
+    id: number;
+    name: string;
+    dates: string;
+    status: 'completed' | 'in_progress';
+    country_code?: string;
+  }>;
+}
+
 export interface Destination {
   id: number;
   trip_id: number;
@@ -66,6 +102,9 @@ export interface PackingItem {
   is_packed: boolean;
 }
 
+// Route type options for journeys
+export type RouteType = 'fastest' | 'shortest' | 'scenic' | 'avoid_highways' | 'avoid_tolls';
+
 export interface Journey {
   id: number;
   trip_id: number;
@@ -84,6 +123,53 @@ export interface Journey {
   notes?: string;
   status: 'planned' | 'booked' | 'completed';
   order: number;
+  // Route details (for road trips)
+  distance_km?: number;
+  distance_miles?: number;
+  estimated_duration_minutes?: number;
+  route_type?: RouteType;
+  has_tolls?: boolean;
+  toll_cost?: number;
+  route_notes?: string;
+}
+
+export type JourneyTimelineItemType = 'stop' | 'activity';
+
+export interface JourneyTimelineStop {
+  type: 'stop';
+  id: number;
+  journey_id: number;
+  name: string;
+  location?: string;
+  planned_arrival?: string;
+  planned_departure?: string;
+  actual_arrival?: string;
+  actual_departure?: string;
+  notes?: string;
+  order: number;
+}
+
+export interface JourneyTimelineActivity {
+  type: 'activity';
+  id: number;
+  stop_id: number;
+  name: string;
+  description?: string;
+  option_type: StopOptionType;
+  estimated_duration?: number;
+  estimated_cost?: number;
+  currency: string;
+  url?: string;
+  notes?: string;
+  status: StopOptionStatus;
+  order: number;
+}
+
+export type JourneyTimelineItem = JourneyTimelineStop | JourneyTimelineActivity;
+
+export interface JourneyTimelineResponse {
+  journey_id: number;
+  items: JourneyTimelineItem[];
 }
 
 export interface TripFormData {
@@ -156,6 +242,14 @@ export interface JourneyFormData {
   notes?: string;
   status?: string;
   order?: number;
+  // Route details
+  distance_km?: number;
+  distance_miles?: number;
+  estimated_duration_minutes?: number;
+  route_type?: RouteType;
+  has_tolls?: boolean;
+  toll_cost?: number;
+  route_notes?: string;
 }
 
 // Journey Stop Types
@@ -374,3 +468,62 @@ export interface TripStats {
   total_packing_items: number;
   counts: TripStatsCounts;
 }
+
+// Budget Types
+export type BudgetStatus = 'normal' | 'warning' | 'danger' | 'over';
+
+export interface CategoryBudget {
+  category: string;
+  spent: number;
+  booked: number;
+  estimated: number;
+  percentage: number;
+  status: BudgetStatus;
+}
+
+export interface BudgetAlert {
+  type: 'over_budget' | 'over_category' | 'approaching_limit';
+  message: string;
+  category?: string;
+  amount?: number;
+  percentage?: number;
+}
+
+export interface BudgetStatusResponse {
+  total_budget: number | null;
+  total_spent: number;
+  booked_amount: number;
+  estimated_amount: number;
+  percentage_used: number;
+  remaining: number;
+  status: BudgetStatus;
+  by_category: CategoryBudget[];
+  alerts: BudgetAlert[];
+}
+
+// ============== Weather ==============
+
+export interface WeatherDay {
+  date: string;
+  temp_high_f: number;
+  temp_low_f: number;
+  temp_high_c: number;
+  temp_low_c: number;
+  condition: string;
+  description: string;
+  precipitation_chance: number;
+  humidity: number;
+  wind_speed_mph: number;
+  wind_speed_kmh: number;
+  icon: string;
+}
+
+export interface WeatherForecast {
+  location: string;
+  current?: WeatherDay;
+  forecast: WeatherDay[];
+  packing_suggestions: string[];
+  cached: boolean;
+}
+
+export type TemperatureUnit = 'F' | 'C';

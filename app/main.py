@@ -8,14 +8,21 @@ Author: Travel Planner Team
 """
 
 import os
+from pathlib import Path
+from dotenv import load_dotenv
 
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from slowapi.errors import RateLimitExceeded
+# Load environment variables from .env file in project root
+project_root = Path(__file__).parent.parent
+env_path = project_root / ".env"
+load_dotenv(dotenv_path=env_path)
 
-from app.core.rate_limit import limiter
-from app.routers import (
+from fastapi import FastAPI, Request  # noqa: E402
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from fastapi.responses import JSONResponse  # noqa: E402
+from slowapi.errors import RateLimitExceeded  # noqa: E402
+
+from app.core.rate_limit import limiter  # noqa: E402
+from app.routers import (  # noqa: E402
     health_router,
     auth_router,
     admin_router,
@@ -29,8 +36,8 @@ from app.routers import (
     stop_options_router,
     journey_documents_router,
 )
-import models
-from database import engine
+import models  # noqa: E402
+from database import engine  # noqa: E402
 
 # Ensure tables exist (kept for compatibility)
 models.Base.metadata.create_all(bind=engine)
