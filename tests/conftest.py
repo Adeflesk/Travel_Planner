@@ -27,6 +27,20 @@ engine = create_engine(
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
+@pytest.fixture(scope="session", autouse=True)
+def cleanup_test_db():
+    """Clean up test database before and after test session."""
+    # Remove test.db before tests start to ensure clean state
+    import os
+
+    if os.path.exists("./test.db"):
+        os.remove("./test.db")
+    yield
+    # Clean up after all tests complete
+    if os.path.exists("./test.db"):
+        os.remove("./test.db")
+
+
 @pytest.fixture(scope="session")
 def db_engine():
     return engine
@@ -142,3 +156,30 @@ def client(base_client, test_user):
 def unauthenticated_client(base_client):
     """Return unauthenticated client for testing auth-required endpoints."""
     return base_client
+
+
+@pytest.fixture(scope="function")
+def db_session(testing_session_local, db_setup):
+    """
+    Provide a database session for tests with automatic cleanup.
+
+    This fixture creates a new session, yields it for test use,
+    and ensures it's properly closed after the test completes.
+    """
+    session = testing_session_local()
+    try:
+        yield session
+    finally:
+        session.close()
+
+
+def pytest_runtest_teardown(item):
+    """
+    Hook that runs after each test to ensure all sessions are closed.
+
+    This helps prevent connection pool exhaustion from tests that create
+    sessions directly without proper cleanup.
+    """
+    from sqlalchemy.orm import close_all_sessions
+
+    close_all_sessions()

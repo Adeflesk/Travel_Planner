@@ -524,7 +524,7 @@ def test_get_destination_weather_unauthorized(
 
     # User doesn't have access to trip
     resp = client.get(f"/destinations/{dest.id}/weather")
-    assert resp.status_code == 403
+    assert resp.status_code == 404  # Returns 404 to avoid leaking trip existence
 
 
 @patch("app.services.weather_service.fetch_weather")
