@@ -27,6 +27,7 @@ def setup_function():
 
 def teardown_function():
     models.Base.metadata.drop_all(bind=engine)
+    models.Base.metadata.create_all(bind=engine)
 
 
 def test_get_trip_progress_no_activities():

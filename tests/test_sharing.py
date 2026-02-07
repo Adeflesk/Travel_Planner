@@ -45,10 +45,14 @@ def setup_database():
 @pytest.fixture
 def client():
     """Create test client with overridden database."""
+    previous_override = app.dependency_overrides.get(get_db)
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as c:
         yield c
-    app.dependency_overrides.clear()
+    if previous_override is not None:
+        app.dependency_overrides[get_db] = previous_override
+    else:
+        app.dependency_overrides.pop(get_db, None)
 
 
 @pytest.fixture
