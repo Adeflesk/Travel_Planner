@@ -20,8 +20,6 @@ export interface TripCostSummary {
   grandTotal: number;
 }
 
-const ACCOMMODATION_CATEGORIES = ['accommodation', 'lodging', 'hotel', 'hostel', 'airbnb'];
-
 export function useTripSummary(tripId: number, budget?: number) {
   const [summary, setSummary] = useState<TripCostSummary | null>(null);
   const [loading, setLoading] = useState(true);
