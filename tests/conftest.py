@@ -68,12 +68,56 @@ def base_client(testing_session_local):
     test_client.close()
 
 
-@pytest.fixture(scope="function")
-def db_setup(db_engine, testing_session_local):
-    """Create and drop schema around each test when used."""
+@pytest.fixture(scope="session", autouse=True)
+def setup_database(db_engine):
+    """Create database schema once for the entire test session."""
     Base.metadata.create_all(bind=db_engine)
     yield
     Base.metadata.drop_all(bind=db_engine)
+
+
+@pytest.fixture(scope="function")
+def db_setup(db_engine, testing_session_local, setup_database):
+    """
+    Clean database tables before each test for isolation.
+
+    Instead of dropping/recreating tables (which causes connection pool issues),
+    we delete all rows from each table while preserving the schema.
+    """
+    from sqlalchemy import text
+
+    # Tables in reverse dependency order to avoid foreign key constraints
+    tables_to_clean = [
+        "trip_shares",
+        "packing_items",
+        "expenses",
+        "activities",
+        "stop_options",
+        "journey_stops",
+        "journey_documents",
+        "journeys",
+        "destinations",
+        "trips",
+        "users",
+    ]
+
+    db = testing_session_local()
+    try:
+        # Delete all data from tables (setup_database ensures tables exist)
+        for table_name in tables_to_clean:
+            try:
+                db.execute(text(f"DELETE FROM {table_name}"))
+            except Exception:
+                # Ignore errors for tables that don't exist or can't be cleaned
+                pass
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+    yield
 
 
 @pytest.fixture(scope="function")
