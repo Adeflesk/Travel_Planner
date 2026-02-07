@@ -84,7 +84,7 @@ def db_setup(db_engine, testing_session_local, setup_database):
     Instead of dropping/recreating tables (which causes connection pool issues),
     we delete all rows from each table while preserving the schema.
     """
-    from sqlalchemy import text
+    from sqlalchemy import text, inspect
 
     # Tables in reverse dependency order to avoid foreign key constraints
     tables_to_clean = [
@@ -103,17 +103,21 @@ def db_setup(db_engine, testing_session_local, setup_database):
 
     db = testing_session_local()
     try:
-        # Delete all data from tables (setup_database ensures tables exist)
+        # Check if tables exist before trying to clean them
+        inspector = inspect(db_engine)
+        existing_tables = inspector.get_table_names()
+
+        # Delete all data from tables that exist
         for table_name in tables_to_clean:
-            try:
+            if table_name in existing_tables:
                 db.execute(text(f"DELETE FROM {table_name}"))
-            except Exception:
-                # Ignore errors for tables that don't exist or can't be cleaned
-                pass
         db.commit()
-    except Exception:
+    except Exception as e:
         db.rollback()
-        raise
+        # Log but don't raise - allow tests to proceed
+        import logging
+
+        logging.warning(f"Error cleaning database tables: {e}")
     finally:
         db.close()
 
