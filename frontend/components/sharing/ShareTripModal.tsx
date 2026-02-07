@@ -70,7 +70,7 @@ export default function ShareTripModal({
       await tripShareApi.delete(tripId, share.id);
       loadShares();
       setSuccess(`Removed access for ${share.user_email}`);
-    } catch (err) {
+    } catch {
       setError('Failed to remove share');
     }
   };

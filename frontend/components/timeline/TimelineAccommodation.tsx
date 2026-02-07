@@ -1,8 +1,8 @@
 'use client';
 
 import { Expense } from '@/lib/types';
-import { format, differenceInDays } from 'date-fns';
-import { Bed, Calendar, MapPin } from 'lucide-react';
+import { format } from 'date-fns';
+import { Bed, Calendar } from 'lucide-react';
 
 interface TimelineAccommodationProps {
   accommodation: Expense;
