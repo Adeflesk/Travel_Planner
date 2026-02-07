@@ -72,9 +72,9 @@ test.describe('Destination Management', () => {
 
     await authenticatedPage.goto(`/trips/${tripId}`);
 
-    // Verify destination details
-    await expect(authenticatedPage.getByText('London')).toBeVisible();
-    await expect(authenticatedPage.getByText(/UK/)).toBeVisible();
+    // Verify destination details (scoped to main content area to avoid sidebar matches)
+    await expect(authenticatedPage.locator('.space-y-3').getByText('London')).toBeVisible();
+    await expect(authenticatedPage.locator('.space-y-3').getByText(/UK/)).toBeVisible();
   });
 
   test('should edit a destination', async ({ authenticatedPage, authApiRequest }) => {
@@ -88,8 +88,8 @@ test.describe('Destination Management', () => {
 
     await authenticatedPage.goto(`/trips/${tripId}`);
 
-    // Wait for destination to load with increased timeout
-    await expect(authenticatedPage.getByText('Barcelona')).toBeVisible({ timeout: 15000 });
+    // Wait for destination to load with increased timeout (scoped to main content area)
+    await expect(authenticatedPage.locator('.space-y-3').getByText('Barcelona')).toBeVisible({ timeout: 15000 });
 
     // Click edit button using a more reliable selector
     await authenticatedPage.locator('.space-y-3 button').filter({ has: authenticatedPage.locator('svg') }).first().click();
@@ -119,8 +119,8 @@ test.describe('Destination Management', () => {
 
     await authenticatedPage.goto(`/trips/${tripId}`);
 
-    // Wait for destination to load with increased timeout
-    await expect(authenticatedPage.getByText('Rome')).toBeVisible({ timeout: 15000 });
+    // Wait for destination to load with increased timeout (scoped to main content area)
+    await expect(authenticatedPage.locator('.space-y-3').getByText('Rome')).toBeVisible({ timeout: 15000 });
 
     // Click edit button using a more reliable selector
     await authenticatedPage.locator('.space-y-3 button').filter({ has: authenticatedPage.locator('svg') }).first().click();
@@ -146,8 +146,8 @@ test.describe('Destination Management', () => {
 
     await authenticatedPage.goto(`/trips/${tripId}`);
 
-    // Verify destination exists with increased timeout
-    await expect(authenticatedPage.getByText('Amsterdam')).toBeVisible({ timeout: 15000 });
+    // Verify destination exists with increased timeout (scoped to main content area)
+    await expect(authenticatedPage.locator('.space-y-3').getByText('Amsterdam')).toBeVisible({ timeout: 15000 });
 
     // Handle the confirm dialog
     authenticatedPage.on('dialog', (dialog) => dialog.accept());
@@ -156,7 +156,7 @@ test.describe('Destination Management', () => {
     await authenticatedPage.locator('.space-y-3 button').filter({ has: authenticatedPage.locator('svg') }).nth(1).click();
 
     // Verify destination is removed
-    await expect(authenticatedPage.getByText('Amsterdam')).not.toBeVisible({ timeout: 5000 });
+    await expect(authenticatedPage.locator('.space-y-3').getByText('Amsterdam')).not.toBeVisible({ timeout: 5000 });
     await expect(authenticatedPage.getByText('No destinations yet')).toBeVisible();
   });
 
@@ -175,10 +175,10 @@ test.describe('Destination Management', () => {
 
     await authenticatedPage.goto(`/trips/${tripId}`);
 
-    // Verify all destinations are displayed with increased timeout
-    await expect(authenticatedPage.getByText('Vienna')).toBeVisible({ timeout: 15000 });
-    await expect(authenticatedPage.getByText('Prague')).toBeVisible({ timeout: 15000 });
-    await expect(authenticatedPage.getByText('Budapest')).toBeVisible({ timeout: 15000 });
+    // Verify all destinations are displayed with increased timeout (scoped to main content area)
+    await expect(authenticatedPage.locator('.space-y-3').getByText('Vienna')).toBeVisible({ timeout: 15000 });
+    await expect(authenticatedPage.locator('.space-y-3').getByText('Prague')).toBeVisible({ timeout: 15000 });
+    await expect(authenticatedPage.locator('.space-y-3').getByText('Budapest')).toBeVisible({ timeout: 15000 });
   });
 
   test('should expand and show activities section', async ({ authenticatedPage, authApiRequest }) => {
