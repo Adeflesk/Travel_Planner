@@ -51,7 +51,7 @@ def testing_session_local():
     return TestingSessionLocal
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def base_client(testing_session_local):
     """TestClient with `get_db` dependency overridden to use testing session."""
 

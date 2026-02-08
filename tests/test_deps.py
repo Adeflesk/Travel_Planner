@@ -9,9 +9,9 @@ from app import models
 
 
 @pytest.mark.anyio
-async def test_get_current_user_success(testing_session_local, test_user):
+async def test_get_current_user_success(db_session, test_user):
     # test_user fixture created a user and token
-    db = testing_session_local()
+    db = db_session
     creds = HTTPAuthorizationCredentials(
         scheme="Bearer", credentials=test_user["token"]
     )
@@ -21,16 +21,16 @@ async def test_get_current_user_success(testing_session_local, test_user):
 
 
 @pytest.mark.anyio
-async def test_get_current_user_no_credentials(testing_session_local, db_setup):
-    db = testing_session_local()
+async def test_get_current_user_no_credentials(db_session, db_setup):
+    db = db_session
     with pytest.raises(HTTPException) as exc:
         await deps.get_current_user(None, db)
     assert exc.value.status_code == 401
 
 
 @pytest.mark.anyio
-async def test_get_current_user_invalid_token(testing_session_local, db_setup):
-    db = testing_session_local()
+async def test_get_current_user_invalid_token(db_session, db_setup):
+    db = db_session
     creds = HTTPAuthorizationCredentials(scheme="Bearer", credentials="invalid")
     with pytest.raises(HTTPException) as exc:
         await deps.get_current_user(creds, db)
@@ -38,9 +38,9 @@ async def test_get_current_user_invalid_token(testing_session_local, db_setup):
 
 
 @pytest.mark.anyio
-async def test_get_current_user_wrong_token_type(testing_session_local, db_setup):
+async def test_get_current_user_wrong_token_type(db_session, db_setup):
     # Create a user to point token at
-    db = testing_session_local()
+    db = db_session
     user = models.User(
         email="u2@example.com", hashed_password="x", full_name="U2", is_active=True
     )
@@ -58,8 +58,8 @@ async def test_get_current_user_wrong_token_type(testing_session_local, db_setup
 
 
 @pytest.mark.anyio
-async def test_get_current_user_nonexistent_user(testing_session_local, db_setup):
-    db = testing_session_local()
+async def test_get_current_user_nonexistent_user(db_session, db_setup):
+    db = db_session
     token = create_access_token({"sub": "9999", "email": "no@one", "role": "user"})
     creds = HTTPAuthorizationCredentials(scheme="Bearer", credentials=token)
     with pytest.raises(HTTPException) as exc:
@@ -68,8 +68,8 @@ async def test_get_current_user_nonexistent_user(testing_session_local, db_setup
 
 
 @pytest.mark.anyio
-async def test_get_current_active_user_and_admin(testing_session_local, db_setup):
-    db = testing_session_local()
+async def test_get_current_active_user_and_admin(db_session, db_setup):
+    db = db_session
     # create inactive user
     u = models.User(
         email="inactive@example.com",

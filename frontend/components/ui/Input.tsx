@@ -97,6 +97,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
       label,
       error,
       hint,
+      inputSize = 'md',
       className = '',
       ...props
     },

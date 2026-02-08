@@ -64,6 +64,9 @@ test.describe('Journey Management', () => {
     // Navigate to Journeys tab
     await authenticatedPage.getByRole('button', { name: /Journeys/i }).click();
 
+    // Click "Add Journey" button to show the form
+    await authenticatedPage.getByRole('button', { name: 'Add Journey' }).click();
+
     // Wait for the form to load
     await expect(authenticatedPage.getByRole('heading', { name: 'Add Journey' })).toBeVisible();
 
@@ -158,11 +161,11 @@ test.describe('Journey Management', () => {
     // Verify edit mode
     await expect(authenticatedPage.getByRole('heading', { name: 'Edit Journey' })).toBeVisible();
 
-    // Click cancel
-    await authenticatedPage.getByRole('button', { name: /Cancel/i }).click();
+    // Click cancel - use form-specific cancel button
+    await authenticatedPage.locator('form').getByRole('button', { name: /Cancel/i }).click();
 
-    // Verify back to add mode
-    await expect(authenticatedPage.getByRole('heading', { name: 'Add Journey' })).toBeVisible();
+    // Verify form is hidden (heading should not be visible)
+    await expect(authenticatedPage.getByRole('heading', { name: 'Add Journey' })).not.toBeVisible();
   });
 
   test('should delete a journey', async ({ authenticatedPage, authApiRequest }) => {

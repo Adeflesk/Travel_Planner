@@ -7,7 +7,7 @@ Author: Travel Planner Team
 """
 
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 from sqlalchemy.orm import Session
 
@@ -30,7 +30,7 @@ def _get_sort_key_for_option(option: models.StopOption) -> tuple:
 
 def get_journey_timeline(
     journey_id: int, db: Session
-) -> schemas.JourneyTimelineResponse | None:
+) -> Optional[schemas.JourneyTimelineResponse]:
     journey = db.query(models.Journey).filter(models.Journey.id == journey_id).first()
     if not journey:
         return None

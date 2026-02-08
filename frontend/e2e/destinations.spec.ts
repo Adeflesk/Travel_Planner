@@ -72,9 +72,9 @@ test.describe('Destination Management', () => {
 
     await authenticatedPage.goto(`/trips/${tripId}`);
 
-    // Verify destination details (scoped to main content area to avoid sidebar matches)
-    await expect(authenticatedPage.locator('.space-y-3').getByText('London')).toBeVisible();
-    await expect(authenticatedPage.locator('.space-y-3').getByText(/UK/)).toBeVisible();
+    // Verify destination details - use heading role for destination name (avoids sidebar matches)
+    await expect(authenticatedPage.getByRole('heading', { name: /London/ })).toBeVisible();
+    await expect(authenticatedPage.getByRole('heading', { name: /UK/ })).toBeVisible();
   });
 
   test('should edit a destination', async ({ authenticatedPage, authApiRequest }) => {
@@ -88,11 +88,11 @@ test.describe('Destination Management', () => {
 
     await authenticatedPage.goto(`/trips/${tripId}`);
 
-    // Wait for destination to load with increased timeout (scoped to main content area)
-    await expect(authenticatedPage.locator('.space-y-3').getByText('Barcelona')).toBeVisible({ timeout: 15000 });
+    // Wait for destination to load with increased timeout
+    await expect(authenticatedPage.getByRole('heading', { name: /Barcelona/ })).toBeVisible({ timeout: 15000 });
 
-    // Click edit button using a more reliable selector
-    await authenticatedPage.locator('.space-y-3 button').filter({ has: authenticatedPage.locator('svg') }).first().click();
+    // Click edit button using aria-label
+    await authenticatedPage.getByRole('button', { name: 'Edit destination' }).click();
 
     // Verify edit mode
     await expect(authenticatedPage.getByRole('heading', { name: 'Edit Destination' })).toBeVisible();
@@ -103,9 +103,9 @@ test.describe('Destination Management', () => {
     // Save changes
     await authenticatedPage.getByRole('button', { name: /Update Destination/i }).click();
 
-    // Verify updated destination (scoped to main content area; sidebar may still show old name briefly)
-    await expect(authenticatedPage.locator('.space-y-3').getByText('Madrid')).toBeVisible({ timeout: 10000 });
-    await expect(authenticatedPage.locator('.space-y-3').getByText('Barcelona')).not.toBeVisible();
+    // Verify updated destination - use heading role
+    await expect(authenticatedPage.getByRole('heading', { name: /Madrid/ })).toBeVisible({ timeout: 10000 });
+    await expect(authenticatedPage.getByRole('heading', { name: /Barcelona/ })).not.toBeVisible();
   });
 
   test('should cancel editing a destination', async ({ authenticatedPage, authApiRequest }) => {
@@ -119,11 +119,11 @@ test.describe('Destination Management', () => {
 
     await authenticatedPage.goto(`/trips/${tripId}`);
 
-    // Wait for destination to load with increased timeout (scoped to main content area)
-    await expect(authenticatedPage.locator('.space-y-3').getByText('Rome')).toBeVisible({ timeout: 15000 });
+    // Wait for destination to load with increased timeout
+    await expect(authenticatedPage.getByRole('heading', { name: /Rome/ })).toBeVisible({ timeout: 15000 });
 
-    // Click edit button using a more reliable selector
-    await authenticatedPage.locator('.space-y-3 button').filter({ has: authenticatedPage.locator('svg') }).first().click();
+    // Click edit button using aria-label
+    await authenticatedPage.getByRole('button', { name: 'Edit destination' }).click();
 
     // Verify edit mode
     await expect(authenticatedPage.getByRole('heading', { name: 'Edit Destination' })).toBeVisible();
@@ -146,17 +146,17 @@ test.describe('Destination Management', () => {
 
     await authenticatedPage.goto(`/trips/${tripId}`);
 
-    // Verify destination exists with increased timeout (scoped to main content area)
-    await expect(authenticatedPage.locator('.space-y-3').getByText('Amsterdam')).toBeVisible({ timeout: 15000 });
+    // Verify destination exists with increased timeout
+    await expect(authenticatedPage.getByRole('heading', { name: /Amsterdam/ })).toBeVisible({ timeout: 15000 });
 
     // Handle the confirm dialog
     authenticatedPage.on('dialog', (dialog) => dialog.accept());
 
-    // Click delete button using a more reliable selector (second button in the row)
-    await authenticatedPage.locator('.space-y-3 button').filter({ has: authenticatedPage.locator('svg') }).nth(1).click();
+    // Click delete button using aria-label
+    await authenticatedPage.getByRole('button', { name: 'Delete destination' }).click();
 
     // Verify destination is removed
-    await expect(authenticatedPage.locator('.space-y-3').getByText('Amsterdam')).not.toBeVisible({ timeout: 5000 });
+    await expect(authenticatedPage.getByRole('heading', { name: /Amsterdam/ })).not.toBeVisible({ timeout: 5000 });
     await expect(authenticatedPage.getByText('No destinations yet')).toBeVisible();
   });
 
@@ -175,10 +175,10 @@ test.describe('Destination Management', () => {
 
     await authenticatedPage.goto(`/trips/${tripId}`);
 
-    // Verify all destinations are displayed with increased timeout (scoped to main content area)
-    await expect(authenticatedPage.locator('.space-y-3').getByText('Vienna')).toBeVisible({ timeout: 15000 });
-    await expect(authenticatedPage.locator('.space-y-3').getByText('Prague')).toBeVisible({ timeout: 15000 });
-    await expect(authenticatedPage.locator('.space-y-3').getByText('Budapest')).toBeVisible({ timeout: 15000 });
+    // Verify all destinations are displayed with increased timeout - use heading role
+    await expect(authenticatedPage.getByRole('heading', { name: /Vienna/ })).toBeVisible({ timeout: 15000 });
+    await expect(authenticatedPage.getByRole('heading', { name: /Prague/ })).toBeVisible({ timeout: 15000 });
+    await expect(authenticatedPage.getByRole('heading', { name: /Budapest/ })).toBeVisible({ timeout: 15000 });
   });
 
   test('should expand and show activities section', async ({ authenticatedPage, authApiRequest }) => {

@@ -501,6 +501,7 @@ export interface BudgetStatusResponse {
   alerts: BudgetAlert[];
 }
 
+
 // ============== Weather ==============
 
 export interface WeatherDay {

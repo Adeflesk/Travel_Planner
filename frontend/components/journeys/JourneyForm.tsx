@@ -1,9 +1,18 @@
 'use client';
 
-import { JourneyFormData, Destination } from '@/lib/types';
+import { useState } from 'react';
+import { JourneyFormData, Destination, RouteType } from '@/lib/types';
 import { transportModes } from './useJourneys';
 import { ValidationErrors, ValidationWarnings } from './useJourneyForm';
-import { AlertCircle, AlertTriangle } from 'lucide-react';
+import { AlertCircle, AlertTriangle, ChevronDown, ChevronUp, Route } from 'lucide-react';
+
+const routeTypes: { value: RouteType; label: string }[] = [
+  { value: 'fastest', label: 'Fastest (Highways)' },
+  { value: 'shortest', label: 'Shortest Distance' },
+  { value: 'scenic', label: 'Scenic Route' },
+  { value: 'avoid_highways', label: 'Avoid Highways' },
+  { value: 'avoid_tolls', label: 'Avoid Tolls' },
+];
 
 interface JourneyFormProps {
   formData: JourneyFormData;
@@ -29,6 +38,31 @@ export function JourneyForm({
   onCancel,
   updateField,
 }: JourneyFormProps) {
+  const [showRouteDetails, setShowRouteDetails] = useState(
+    // Auto-expand if route details exist
+    !!(formData.distance_km || formData.distance_miles || formData.estimated_duration_minutes || formData.route_type || formData.has_tolls || formData.toll_cost || formData.route_notes)
+  );
+
+  // Route details are primarily for ground transport
+  const canHaveRouteDetails = ['car', 'bus', 'train'].includes(formData.transport_mode);
+
+  // Format duration for display (hours and minutes)
+  const formatDurationForInput = (minutes?: number): { hours: string; mins: string } => {
+    if (!minutes) return { hours: '', mins: '' };
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return { hours: hours.toString(), mins: mins.toString() };
+  };
+
+  const handleDurationChange = (hours: string, mins: string) => {
+    const h = parseInt(hours) || 0;
+    const m = parseInt(mins) || 0;
+    const totalMinutes = h * 60 + m;
+    updateField('estimated_duration_minutes', totalMinutes > 0 ? totalMinutes : undefined);
+  };
+
+  const durationParts = formatDurationForInput(formData.estimated_duration_minutes);
+
   return (
     <form onSubmit={onSubmit} className="bg-gray-50 p-4 rounded-lg mb-4">
       <h3 className="font-semibold mb-3">
@@ -225,6 +259,146 @@ export function JourneyForm({
           />
         </div>
       </div>
+
+      {/* Route Details Section (expandable, for ground transport) */}
+      {canHaveRouteDetails && (
+        <div className="mt-4 border border-gray-200 rounded-lg">
+          <button
+            type="button"
+            onClick={() => setShowRouteDetails(!showRouteDetails)}
+            className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 rounded-lg"
+          >
+            <div className="flex items-center gap-2">
+              <Route className="w-4 h-4 text-gray-600" />
+              <span className="font-medium text-gray-700">Route Details</span>
+              <span className="text-sm text-gray-400">(optional)</span>
+            </div>
+            {showRouteDetails ? (
+              <ChevronUp className="w-4 h-4 text-gray-500" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-gray-500" />
+            )}
+          </button>
+
+          {showRouteDetails && (
+            <div className="px-4 pb-4 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-200 pt-4">
+              {/* Distance */}
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-gray-700">Distance</label>
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <input
+                      type="number"
+                      value={formData.distance_miles || ''}
+                      onChange={(e) => updateField('distance_miles', e.target.value ? parseFloat(e.target.value) : undefined)}
+                      placeholder="0"
+                      step="0.1"
+                      className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+                    />
+                    <span className="text-xs text-gray-500 mt-1">miles</span>
+                  </div>
+                  <div className="flex-1">
+                    <input
+                      type="number"
+                      value={formData.distance_km || ''}
+                      onChange={(e) => updateField('distance_km', e.target.value ? parseFloat(e.target.value) : undefined)}
+                      placeholder="0"
+                      step="0.1"
+                      className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+                    />
+                    <span className="text-xs text-gray-500 mt-1">km</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Estimated Duration */}
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-gray-700">Driving Time (without stops)</label>
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="number"
+                    value={durationParts.hours}
+                    onChange={(e) => handleDurationChange(e.target.value, durationParts.mins)}
+                    placeholder="0"
+                    min="0"
+                    className="w-20 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block px-3 py-2.5 shadow-xs placeholder:text-body"
+                  />
+                  <span className="text-sm text-gray-600">h</span>
+                  <input
+                    type="number"
+                    value={durationParts.mins}
+                    onChange={(e) => handleDurationChange(durationParts.hours, e.target.value)}
+                    placeholder="0"
+                    min="0"
+                    max="59"
+                    className="w-20 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block px-3 py-2.5 shadow-xs placeholder:text-body"
+                  />
+                  <span className="text-sm text-gray-600">min</span>
+                </div>
+              </div>
+
+              {/* Route Type */}
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-gray-700">Route Type</label>
+                <select
+                  value={formData.route_type || ''}
+                  onChange={(e) => updateField('route_type', e.target.value as RouteType || undefined)}
+                  className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs"
+                >
+                  <option value="">Not specified</option>
+                  {routeTypes.map((rt) => (
+                    <option key={rt.value} value={rt.value}>
+                      {rt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Tolls */}
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-gray-700">Tolls</label>
+                <div className="flex gap-3 items-center">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={formData.has_tolls || false}
+                      onChange={(e) => updateField('has_tolls', e.target.checked)}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-600">Has toll roads</span>
+                  </label>
+                  {formData.has_tolls && (
+                    <div className="flex items-center gap-1">
+                      <span className="text-sm text-gray-500">{formData.currency || 'USD'}</span>
+                      <input
+                        type="number"
+                        value={formData.toll_cost || ''}
+                        onChange={(e) => updateField('toll_cost', e.target.value ? parseFloat(e.target.value) : undefined)}
+                        placeholder="0.00"
+                        step="0.01"
+                        className="w-24 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block px-3 py-2 shadow-xs placeholder:text-body"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Route Notes */}
+              <div className="md:col-span-2 flex flex-col gap-1">
+                <label className="text-sm font-medium text-gray-700">Route Notes</label>
+                <textarea
+                  value={formData.route_notes || ''}
+                  onChange={(e) => updateField('route_notes', e.target.value || undefined)}
+                  placeholder="e.g., Take I-70 through Glenwood Canyon for scenic views"
+                  rows={2}
+                  className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body resize-none"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="mt-3 flex gap-4 items-center">
         <label className="flex items-center gap-2">
           <span className="text-sm font-medium text-gray-700">Status:</span>

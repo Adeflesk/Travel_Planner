@@ -34,8 +34,8 @@ def test_create_trip(client, test_user):
     assert "id" in data
 
 
-def test_get_trips_owned_and_shared(client, testing_session_local, test_user):
-    db = testing_session_local()
+def test_get_trips_owned_and_shared(client, db_session, test_user):
+    db = db_session
     # create another user and a trip owned by them
     other, _ = create_user_and_token(db, "owner@example.com")
     trip = models.Trip(
@@ -70,8 +70,8 @@ def test_get_trip_not_found(client, test_user):
     assert resp.status_code == 404
 
 
-def test_get_trip_shared_access(client, testing_session_local, test_user):
-    db = testing_session_local()
+def test_get_trip_shared_access(client, db_session, test_user):
+    db = db_session
     other, _ = create_user_and_token(db, "owner2@example.com")
     trip = models.Trip(
         name="OwnerTrip2",
@@ -99,8 +99,8 @@ def test_get_trip_shared_access(client, testing_session_local, test_user):
     assert data["shared_by"] == "owner2@example.com"
 
 
-def test_update_trip_non_owner_forbidden(client, testing_session_local, test_user):
-    db = testing_session_local()
+def test_update_trip_non_owner_forbidden(client, db_session, test_user):
+    db = db_session
     other, _ = create_user_and_token(db, "owner3@example.com")
     trip = models.Trip(
         name="OwnerTrip3",
@@ -129,9 +129,9 @@ def test_update_trip_non_owner_forbidden(client, testing_session_local, test_use
 
 
 def test_share_trip_errors_and_create_and_delete(
-    client, testing_session_local, test_user, base_client
+    client, db_session, test_user, base_client
 ):
-    db = testing_session_local()
+    db = db_session
     # create a trip as test user
     resp = client.post(
         "/trips/",

@@ -1,7 +1,7 @@
 import { test, expect, generateTripData, API_URL } from './fixtures';
 
 test.describe('Trip Management', () => {
-  test.beforeEach(async ({ authApiRequest }) => {
+  test.beforeEach(async ({ authenticatedPage, authApiRequest }) => {
     // Clean up all trips before each test
     const response = await authApiRequest('get', `${API_URL}/trips/`);
     if (response.ok()) {
@@ -10,6 +10,9 @@ test.describe('Trip Management', () => {
         await authApiRequest('delete', `${API_URL}/trips/${trip.id}`);
       }
     }
+
+    // Navigate to trips page
+    await authenticatedPage.goto('/trips');
   });
 
   test.afterEach(async ({ authApiRequest }) => {
@@ -28,8 +31,8 @@ test.describe('Trip Management', () => {
   });
 
   test('should display empty state when no trips exist', async ({ authenticatedPage }) => {
-    await expect(authenticatedPage.getByText('Your Trips')).toBeVisible();
-    await expect(authenticatedPage.getByText('No trips yet')).toBeVisible();
+    await expect(authenticatedPage.getByRole('heading', { name: 'Your Trips' })).toBeVisible();
+    await expect(authenticatedPage.getByText(/No trips yet/)).toBeVisible();
   });
 
   test('should create a new trip', async ({ authenticatedPage }) => {
@@ -63,8 +66,8 @@ test.describe('Trip Management', () => {
     // Refresh the page to see the new trip
     await authenticatedPage.reload();
 
-    // Verify trip card content with increased timeout
-    await expect(authenticatedPage.getByText('Display Test Trip')).toBeVisible({ timeout: 15000 });
+    // Verify trip card content with increased timeout - use heading role for trip name
+    await expect(authenticatedPage.getByRole('heading', { name: /Display Test Trip/ })).toBeVisible({ timeout: 15000 });
     await expect(authenticatedPage.getByText('planning')).toBeVisible({ timeout: 15000 });
   });
 
@@ -80,12 +83,12 @@ test.describe('Trip Management', () => {
     // Refresh the page to see the new trip
     await authenticatedPage.reload();
 
-    // Click on the trip card
-    await authenticatedPage.getByText('Navigate Test Trip').click();
+    // Click on the trip card (using the heading)
+    await authenticatedPage.getByRole('heading', { name: /Navigate Test Trip/ }).click();
 
     // Verify navigation to trip detail page
     await expect(authenticatedPage).toHaveURL(`/trips/${trip.id}`);
-    await expect(authenticatedPage.getByText('Navigate Test Trip')).toBeVisible();
+    await expect(authenticatedPage.getByRole('heading', { name: /Navigate Test Trip/ })).toBeVisible();
   });
 
   test('should delete a trip', async ({ authenticatedPage, authApiRequest }) => {
@@ -97,7 +100,7 @@ test.describe('Trip Management', () => {
     await authenticatedPage.reload();
 
     // Verify trip exists
-    await expect(authenticatedPage.getByText('Delete Test Trip')).toBeVisible();
+    await expect(authenticatedPage.getByRole('heading', { name: /Delete Test Trip/ })).toBeVisible();
 
     // Handle the confirm dialog
     authenticatedPage.on('dialog', (dialog) => dialog.accept());
@@ -106,8 +109,8 @@ test.describe('Trip Management', () => {
     await authenticatedPage.getByRole('button', { name: /Delete/i }).click();
 
     // Verify trip is removed
-    await expect(authenticatedPage.getByText('Delete Test Trip')).not.toBeVisible({ timeout: 5000 });
-    await expect(authenticatedPage.getByText('No trips yet')).toBeVisible();
+    await expect(authenticatedPage.getByRole('heading', { name: /Delete Test Trip/ })).not.toBeVisible({ timeout: 5000 });
+    await expect(authenticatedPage.getByText(/No trips yet/)).toBeVisible();
   });
 
   test('should navigate to edit page', async ({ authenticatedPage, authApiRequest }) => {
@@ -120,7 +123,7 @@ test.describe('Trip Management', () => {
     await authenticatedPage.reload();
 
     // Wait for the trip to appear
-    await expect(authenticatedPage.getByText('Edit Test Trip')).toBeVisible({ timeout: 15000 });
+    await expect(authenticatedPage.getByRole('heading', { name: /Edit Test Trip/ })).toBeVisible({ timeout: 15000 });
 
     // Click edit button
     await authenticatedPage.getByRole('button', { name: /Edit/i }).click();
@@ -134,8 +137,8 @@ test.describe('Trip Management', () => {
     await authenticatedPage.getByRole('button', { name: /New Trip/i }).click();
     await expect(authenticatedPage.getByText('Create New Trip')).toBeVisible();
 
-    // Cancel form
-    await authenticatedPage.getByRole('button', { name: /Cancel/i }).click();
+    // Cancel form - use form-specific cancel button
+    await authenticatedPage.locator('form').getByRole('button', { name: /Cancel/i }).click();
     await expect(authenticatedPage.getByText('Create New Trip')).not.toBeVisible();
   });
 
@@ -162,9 +165,9 @@ test.describe('Trip Management', () => {
     // Refresh the page to see the new trips
     await authenticatedPage.reload();
 
-    // Verify all trips are displayed
-    await expect(authenticatedPage.getByText('Trip One')).toBeVisible();
-    await expect(authenticatedPage.getByText('Trip Two')).toBeVisible();
-    await expect(authenticatedPage.getByText('Trip Three')).toBeVisible();
+    // Verify all trips are displayed - use heading role
+    await expect(authenticatedPage.getByRole('heading', { name: /Trip One/ })).toBeVisible();
+    await expect(authenticatedPage.getByRole('heading', { name: /Trip Two/ })).toBeVisible();
+    await expect(authenticatedPage.getByRole('heading', { name: /Trip Three/ })).toBeVisible();
   });
 });

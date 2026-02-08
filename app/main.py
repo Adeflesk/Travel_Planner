@@ -22,6 +22,7 @@ from fastapi.responses import JSONResponse  # noqa: E402
 from slowapi.errors import RateLimitExceeded  # noqa: E402
 
 from app.core.rate_limit import limiter  # noqa: E402
+from app.core.migrations import run_migrations  # noqa: E402
 from app.routers import (  # noqa: E402
     health_router,
     auth_router,
@@ -42,6 +43,9 @@ from database import engine  # noqa: E402
 
 # Ensure tables exist (kept for compatibility)
 models.Base.metadata.create_all(bind=engine)
+
+# Run migrations to add any missing columns to existing databases
+run_migrations(engine)
 
 
 def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):

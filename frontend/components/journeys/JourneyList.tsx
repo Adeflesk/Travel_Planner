@@ -35,10 +35,8 @@ export default function JourneyList({ tripId }: JourneyListProps) {
     duplicateAsReturn,
   } = useJourneyForm(tripId, reload);
 
-  const [localShowForm, setLocalShowForm] = useState(false);
-
-  // Show form when editing or when user clicks "Add Journey"
-  const showForm = isEditing || localShowForm;
+  const [showForm, setShowForm] = useState(false);
+  const shouldShowForm = showForm || isEditing;
 
   const handleDelete = async (id: number) => {
     if (confirm('Delete this journey?')) {
@@ -51,16 +49,16 @@ export default function JourneyList({ tripId }: JourneyListProps) {
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <h3 className="text-lg font-semibold text-slate-900">Journeys</h3>
         <button
-          onClick={() => setLocalShowForm((prev) => !prev)}
+          onClick={() => setShowForm((prev) => !prev)}
           type="button"
           className={`relative z-10 inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition ${
-            showForm
+            shouldShowForm
               ? 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
               : 'border-[color:var(--color-primary-600)] bg-[color:var(--color-primary-600)] text-white hover:bg-[color:var(--color-primary-700)]'
           }`}
         >
-          {showForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-          {showForm ? 'Cancel' : 'Add Journey'}
+          {shouldShowForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+          {shouldShowForm ? 'Cancel' : 'Add Journey'}
         </button>
       </div>
 
@@ -82,7 +80,7 @@ export default function JourneyList({ tripId }: JourneyListProps) {
         </div>
       )}
 
-      {showForm && (
+      {shouldShowForm && (
         <div className="mb-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
           <JourneyForm
             formData={formData}
@@ -93,7 +91,7 @@ export default function JourneyList({ tripId }: JourneyListProps) {
             onSubmit={handleSubmit}
             onCancel={() => {
               resetForm();
-              setLocalShowForm(false);
+              setShowForm(false);
             }}
             updateField={updateField}
           />

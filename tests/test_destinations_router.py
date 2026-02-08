@@ -128,9 +128,9 @@ def test_get_trip_destinations(client, test_user, db_session):
     assert destinations[1]["name"] == "London"
 
 
-def test_get_trip_destinations_shared(client, test_user, testing_session_local):
+def test_get_trip_destinations_shared(client, test_user, db_session):
     """Test reading destinations on shared trip"""
-    db = testing_session_local()
+    db = db_session
 
     other, _ = create_user_and_token(db, "owner@example.com")
     trip = models.Trip(
@@ -173,9 +173,9 @@ def test_get_trip_destinations_not_found(client, test_user):
     assert resp.status_code == 404
 
 
-def test_get_destination(client, test_user, testing_session_local):
+def test_get_destination(client, test_user, db_session):
     """Test getting a single destination"""
-    db = testing_session_local()
+    db = db_session
 
     trip = models.Trip(
         name="TestTrip",
@@ -207,9 +207,9 @@ def test_get_destination(client, test_user, testing_session_local):
     assert data["name"] == "Berlin"
 
 
-def test_get_destination_shared(client, test_user, testing_session_local):
+def test_get_destination_shared(client, test_user, db_session):
     """Test reading destination on shared trip"""
-    db = testing_session_local()
+    db = db_session
 
     other, _ = create_user_and_token(db, "owner@example.com")
     trip = models.Trip(
@@ -253,9 +253,9 @@ def test_get_destination_not_found(client, test_user):
     assert resp.status_code == 404
 
 
-def test_update_destination(client, test_user, testing_session_local):
+def test_update_destination(client, test_user, db_session):
     """Test updating a destination"""
-    db = testing_session_local()
+    db = db_session
 
     trip = models.Trip(
         name="TestTrip",
@@ -288,11 +288,9 @@ def test_update_destination(client, test_user, testing_session_local):
     assert data["name"] == "Venice (City of Canals)"
 
 
-def test_update_destination_non_owner_forbidden(
-    client, test_user, testing_session_local
-):
+def test_update_destination_non_owner_forbidden(client, test_user, db_session):
     """Test non-owner cannot update destination"""
-    db = testing_session_local()
+    db = db_session
 
     other, _ = create_user_and_token(db, "owner@example.com")
     trip = models.Trip(
@@ -336,9 +334,9 @@ def test_update_destination_not_found(client, test_user):
     assert resp.status_code == 404
 
 
-def test_delete_destination(client, test_user, testing_session_local):
+def test_delete_destination(client, test_user, db_session):
     """Test deleting a destination"""
-    db = testing_session_local()
+    db = db_session
 
     trip = models.Trip(
         name="TestTrip",
@@ -375,11 +373,9 @@ def test_delete_destination(client, test_user, testing_session_local):
     assert deleted_dest is None
 
 
-def test_delete_destination_non_owner_forbidden(
-    client, test_user, testing_session_local
-):
+def test_delete_destination_non_owner_forbidden(client, test_user, db_session):
     """Test non-owner cannot delete destination"""
-    db = testing_session_local()
+    db = db_session
 
     other, _ = create_user_and_token(db, "owner@example.com")
     trip = models.Trip(
@@ -422,11 +418,9 @@ def test_delete_destination_not_found(client, test_user):
 
 # Weather endpoint tests
 @patch("app.services.weather_service.fetch_weather")
-def test_get_destination_weather_success(
-    mock_fetch, client, test_user, testing_session_local
-):
+def test_get_destination_weather_success(mock_fetch, client, test_user, db_session):
     """Test getting weather for a destination"""
-    db = testing_session_local()
+    db = db_session
 
     trip = models.Trip(
         name="TestTrip",
@@ -492,10 +486,10 @@ def test_get_destination_weather_not_found(mock_fetch, client, test_user):
 
 @patch("app.services.weather_service.fetch_weather")
 def test_get_destination_weather_unauthorized(
-    mock_fetch, client, test_user, testing_session_local
+    mock_fetch, client, test_user, db_session
 ):
     """Test weather endpoint requires access to trip"""
-    db = testing_session_local()
+    db = db_session
 
     other, _ = create_user_and_token(db, "owner@example.com")
     trip = models.Trip(
@@ -528,11 +522,9 @@ def test_get_destination_weather_unauthorized(
 
 
 @patch("app.services.weather_service.fetch_weather")
-def test_get_destination_weather_shared_trip(
-    mock_fetch, client, test_user, testing_session_local
-):
+def test_get_destination_weather_shared_trip(mock_fetch, client, test_user, db_session):
     """Test getting weather for destination on shared trip"""
-    db = testing_session_local()
+    db = db_session
 
     other, _ = create_user_and_token(db, "owner@example.com")
     trip = models.Trip(
@@ -583,10 +575,10 @@ def test_get_destination_weather_shared_trip(
 
 @patch("app.services.weather_service.fetch_weather")
 def test_get_destination_weather_service_unavailable(
-    mock_fetch, client, test_user, testing_session_local
+    mock_fetch, client, test_user, db_session
 ):
     """Test 503 when weather service is unavailable"""
-    db = testing_session_local()
+    db = db_session
 
     trip = models.Trip(
         name="TestTrip",
