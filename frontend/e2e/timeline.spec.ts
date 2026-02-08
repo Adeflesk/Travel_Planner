@@ -135,8 +135,8 @@ test.describe('Trip Timeline', () => {
     await authenticatedPage.goto(`/trips/${tripId}`);
     await authenticatedPage.getByRole('button', { name: /Timeline/i }).click();
 
-    // Verify booked status is displayed
-    await expect(authenticatedPage.getByText('Booked')).toBeVisible();
+    // Verify booked status is displayed (scope to main-content to avoid BudgetProgress "Booked/Confirmed")
+    await expect(authenticatedPage.locator('[data-testid="main-content"]').getByText('Booked', { exact: true })).toBeVisible();
   });
 
   test('should display journey cost in timeline', async ({ authenticatedPage, authApiRequest }) => {

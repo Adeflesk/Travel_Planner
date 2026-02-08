@@ -181,7 +181,7 @@ function TripDetailContent() {
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px]">
-        <div>
+        <div data-testid="main-content">
           {/* Tabs */}
           <div className="flex flex-wrap gap-2 mb-6">
             {[

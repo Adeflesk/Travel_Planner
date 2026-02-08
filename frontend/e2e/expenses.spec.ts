@@ -215,8 +215,8 @@ test.describe('Expense Management', () => {
     // Wait for expense to load with increased timeout
     await expect(authenticatedPage.getByText('Airbnb Booking')).toBeVisible({ timeout: 15000 });
 
-    // Verify booked status is shown (use specific locator to avoid matching form checkbox label)
-    await expect(authenticatedPage.locator('.space-y-2').getByText('Booked')).toBeVisible();
+    // Verify booked status is shown (scope to main-content to avoid BudgetProgress "Booked/Confirmed")
+    await expect(authenticatedPage.locator('[data-testid="main-content"] .space-y-2').getByText('Booked')).toBeVisible();
   });
 
   test('should show paid status', async ({ authenticatedPage, authApiRequest }) => {
@@ -236,8 +236,8 @@ test.describe('Expense Management', () => {
     // Wait for expense to load with increased timeout
     await expect(authenticatedPage.getByText('Paid Expense')).toBeVisible({ timeout: 15000 });
 
-    // Verify paid status is shown (use exact text match with emoji to target the status badge)
-    await expect(authenticatedPage.getByText('✓ Paid')).toBeVisible();
+    // Verify paid status badge is shown (scope to expense list to avoid form checkbox label)
+    await expect(authenticatedPage.locator('[data-testid="main-content"] .space-y-2').getByText('Paid')).toBeVisible();
   });
 
   test('should toggle booked checkbox in form', async ({ authenticatedPage }) => {
@@ -256,8 +256,8 @@ test.describe('Expense Management', () => {
     // Submit
     await authenticatedPage.getByRole('button', { name: /Add Expense/i }).click();
 
-    // Verify booked status (use specific locator to avoid matching form checkbox label)
-    await expect(authenticatedPage.locator('.space-y-2').getByText('Booked')).toBeVisible({ timeout: 10000 });
+    // Verify booked status (scope to main-content to avoid BudgetProgress "Booked/Confirmed")
+    await expect(authenticatedPage.locator('[data-testid="main-content"] .space-y-2').getByText('Booked')).toBeVisible({ timeout: 10000 });
   });
 
   test('should display category breakdown in summary', async ({ authenticatedPage, authApiRequest }) => {

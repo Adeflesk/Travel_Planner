@@ -103,9 +103,9 @@ test.describe('Destination Management', () => {
     // Save changes
     await authenticatedPage.getByRole('button', { name: /Update Destination/i }).click();
 
-    // Verify updated destination
-    await expect(authenticatedPage.getByText('Madrid')).toBeVisible({ timeout: 10000 });
-    await expect(authenticatedPage.getByText('Barcelona')).not.toBeVisible();
+    // Verify updated destination (scoped to main content area; sidebar may still show old name briefly)
+    await expect(authenticatedPage.locator('.space-y-3').getByText('Madrid')).toBeVisible({ timeout: 10000 });
+    await expect(authenticatedPage.locator('.space-y-3').getByText('Barcelona')).not.toBeVisible();
   });
 
   test('should cancel editing a destination', async ({ authenticatedPage, authApiRequest }) => {
