@@ -61,7 +61,7 @@ function AdminDashboardContent() {
         is_active: true,
       });
       loadData();
-    } catch (err) {
+    } catch {
       setError('Failed to create user');
     }
   };
@@ -75,7 +75,7 @@ function AdminDashboardContent() {
     try {
       await adminApi.updateUser(user.id, { is_active: !user.is_active });
       loadData();
-    } catch (err) {
+    } catch {
       setError('Failed to update user');
     }
   };
@@ -91,7 +91,7 @@ function AdminDashboardContent() {
         role: user.role === 'admin' ? 'user' : 'admin',
       });
       loadData();
-    } catch (err) {
+    } catch {
       setError('Failed to update user role');
     }
   };
@@ -109,7 +109,7 @@ function AdminDashboardContent() {
     try {
       await adminApi.deleteUser(user.id);
       loadData();
-    } catch (err) {
+    } catch {
       setError('Failed to delete user');
     }
   };

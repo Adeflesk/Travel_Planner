@@ -45,6 +45,13 @@ export const getStatusColor = (status: string) => {
   }
 };
 
+// Status order for sorting
+const statusOrder: Record<string, number> = {
+  planned: 0,
+  booked: 1,
+  completed: 2,
+};
+
 export function useJourneys(tripId: number) {
   const [journeys, setJourneys] = useState<Journey[]>([]);
   const [destinations, setDestinations] = useState<Destination[]>([]);
@@ -65,13 +72,6 @@ export function useJourneys(tripId: number) {
       localStorage.setItem(SORT_STORAGE_KEY, sortOption);
     }
   }, [sortOption]);
-
-  // Status order for sorting
-  const statusOrder: Record<string, number> = {
-    planned: 0,
-    booked: 1,
-    completed: 2,
-  };
 
   // Sort journeys based on selected option
   const sortedJourneys = useMemo(() => {

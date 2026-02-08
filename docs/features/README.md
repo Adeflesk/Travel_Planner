@@ -53,6 +53,24 @@ See [../design/README.md](../design/README.md) for the design system documentati
 - Layout principles
 - Implementation plan
 
+### Planned Features
+
+| # | Feature | Priority | Complexity | Status |
+|---|---------|----------|------------|--------|
+| 017 | [Weather Integration](./017-weather-integration.md) | Medium | Medium | Planned |
+| 018 | [Budget Alerts](./018-budget-alerts.md) | High | Low | Planned |
+| 019 | [Trip Templates](./019-trip-templates.md) | Medium | Medium | Planned |
+| 020 | [Dashboard](./020-dashboard.md) | High | Medium | Planned |
+
+### Design System
+
+See [../design/README.md](../design/README.md) for the design system documentation including:
+- Color palette and design tokens
+- Typography and spacing
+- Component guidelines
+- Layout principles
+- Implementation plan
+
 ### Infrastructure & Deployment
 
 See [deployment/README.md](./deployment/README.md) for detailed deployment documentation.

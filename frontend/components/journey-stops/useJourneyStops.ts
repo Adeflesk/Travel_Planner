@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { JourneyStop, JourneyStopWithOptions, StopOption, StopOptionStatus } from '@/lib/types';
+import { JourneyStop, StopOption, StopOptionStatus } from '@/lib/types';
 import { journeyStopApi, stopOptionApi } from '@/lib/api';
 
 export function useJourneyStops(journeyId: number) {

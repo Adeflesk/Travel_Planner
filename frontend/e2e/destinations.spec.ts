@@ -72,7 +72,7 @@ test.describe('Destination Management', () => {
 
     await authenticatedPage.goto(`/trips/${tripId}`);
 
-    // Verify destination details - use heading role for destination name
+    // Verify destination details - use heading role for destination name (avoids sidebar matches)
     await expect(authenticatedPage.getByRole('heading', { name: /London/ })).toBeVisible();
     await expect(authenticatedPage.getByRole('heading', { name: /UK/ })).toBeVisible();
   });

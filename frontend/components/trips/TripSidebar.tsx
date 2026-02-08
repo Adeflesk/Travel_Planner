@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CalendarDays, CloudSun, MapPin, Package, Route } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
-import { destinationApi, packingApi } from '@/lib/api';
-import { Destination, PackingSummary, Trip } from '@/lib/types';
+import { destinationApi, packingApi, weatherApi } from '@/lib/api';
+import { Destination, PackingSummary, Trip, WeatherForecast } from '@/lib/types';
 import { useTripStats } from '@/components/trips/useTripStats';
 import { Card } from '@/components/ui/Card';
 import { ProgressBar } from '@/components/ui/ProgressBar';
@@ -271,20 +271,114 @@ function DestinationsCard({ tripId }: TripSidebarProps) {
   );
 }
 
-function WeatherPreviewCard() {
+function WeatherPreviewCard({ tripId }: TripSidebarProps) {
+  const [destinations, setDestinations] = useState<Destination[]>([]);
+  const [weather, setWeather] = useState<Record<number, WeatherForecast>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadWeatherData = async () => {
+      try {
+        setLoading(true);
+        // Load destinations
+        const destResponse = await destinationApi.getByTripId(tripId);
+        const dests = destResponse.data || [];
+        setDestinations(dests);
+
+        // Load weather for each destination (limit to first 3 for sidebar)
+        const weatherPromises = dests.slice(0, 3).map(async (dest) => {
+          try {
+            const weatherResponse = await weatherApi.getByDestinationId(dest.id);
+            return { id: dest.id, data: weatherResponse.data };
+          } catch (err) {
+            console.error(`Failed to load weather for ${dest.name}:`, err);
+            return null;
+          }
+        });
+
+        const weatherResults = await Promise.all(weatherPromises);
+        const weatherMap: Record<number, WeatherForecast> = {};
+        weatherResults.forEach((result) => {
+          if (result && result.data) {
+            weatherMap[result.id] = result.data;
+          }
+        });
+        setWeather(weatherMap);
+      } catch (err) {
+        console.error('Error loading weather data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadWeatherData();
+  }, [tripId]);
+
+  if (loading) {
+    return (
+      <Card padding="md" className="animate-pulse">
+        <div className="h-4 w-1/3 bg-slate-200 rounded mb-4"></div>
+        <div className="space-y-2">
+          <div className="h-8 bg-slate-200 rounded"></div>
+          <div className="h-8 bg-slate-200 rounded"></div>
+        </div>
+      </Card>
+    );
+  }
+
+  const destinationsWithWeather = destinations
+    .slice(0, 3)
+    .filter((dest) => weather[dest.id]?.forecast?.length > 0);
+
+  if (destinationsWithWeather.length === 0) {
+    return (
+      <Card padding="md">
+        <div className="flex items-center gap-2 mb-2">
+          <CloudSun className="w-4 h-4 text-sky-500" />
+          <h3 className="text-sm font-semibold text-slate-900">Weather Preview</h3>
+        </div>
+        <p className="text-xs text-slate-500">
+          Add destinations with dates to see weather forecasts
+        </p>
+      </Card>
+    );
+  }
+
   return (
     <Card padding="md">
-      <div className="flex items-center gap-2 mb-2">
+      <div className="flex items-center gap-2 mb-3">
         <CloudSun className="w-4 h-4 text-sky-500" />
         <h3 className="text-sm font-semibold text-slate-900">Weather Preview</h3>
       </div>
-      <p className="text-sm text-slate-600">
-        Weather forecasts will appear here once destination weather is enabled.
-      </p>
-      <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
-        <CalendarDays className="w-3.5 h-3.5" />
-        <span>Based on trip dates</span>
+      <div className="space-y-2">
+        {destinationsWithWeather.map((dest) => {
+          const forecast = weather[dest.id]?.current || weather[dest.id]?.forecast?.[0];
+          if (!forecast) return null;
+
+          return (
+            <div
+              key={dest.id}
+              className="flex items-center justify-between text-xs border-b border-slate-100 pb-2 last:border-0 last:pb-0"
+            >
+              <div className="flex-1">
+                <p className="font-medium text-slate-800">{dest.name}</p>
+                <p className="text-slate-500 capitalize">{forecast.condition}</p>
+              </div>
+              <div className="text-right">
+                <p className="font-semibold text-slate-900">
+                  {Math.round(forecast.temp_high_f)}°F
+                </p>
+                <p className="text-slate-500">{forecast.precipitation_chance}% rain</p>
+              </div>
+            </div>
+          );
+        })}
       </div>
+      {destinations.length > 3 && (
+        <p className="mt-2 text-xs text-slate-500">
+          +{destinations.length - 3} more destinations
+        </p>
+      )}
     </Card>
   );
 }
@@ -296,7 +390,7 @@ export function TripSidebar({ tripId, trip }: TripSidebarProps) {
       <TripStatsCard tripId={tripId} />
       <PackingSummaryCard tripId={tripId} />
       <DestinationsCard tripId={tripId} />
-      <WeatherPreviewCard />
+      <WeatherPreviewCard tripId={tripId} />
     </aside>
   );
 }

@@ -172,9 +172,7 @@ def _get_action_items_for_trip(
     return items
 
 
-def get_dashboard_data(
-    db: Session, current_user: models.User
-) -> schemas.DashboardData:
+def get_dashboard_data(db: Session, current_user: models.User) -> schemas.DashboardData:
     today = date.today()
     trip_ids = _get_accessible_trip_ids(db, current_user.id)
 

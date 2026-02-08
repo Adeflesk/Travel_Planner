@@ -500,3 +500,31 @@ export interface BudgetStatusResponse {
   by_category: CategoryBudget[];
   alerts: BudgetAlert[];
 }
+
+
+// ============== Weather ==============
+
+export interface WeatherDay {
+  date: string;
+  temp_high_f: number;
+  temp_low_f: number;
+  temp_high_c: number;
+  temp_low_c: number;
+  condition: string;
+  description: string;
+  precipitation_chance: number;
+  humidity: number;
+  wind_speed_mph: number;
+  wind_speed_kmh: number;
+  icon: string;
+}
+
+export interface WeatherForecast {
+  location: string;
+  current?: WeatherDay;
+  forecast: WeatherDay[];
+  packing_suggestions: string[];
+  cached: boolean;
+}
+
+export type TemperatureUnit = 'F' | 'C';

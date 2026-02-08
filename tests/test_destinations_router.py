@@ -1,4 +1,5 @@
 from datetime import date
+from unittest.mock import patch
 
 from app.core.security import create_access_token
 from app import models
@@ -127,9 +128,9 @@ def test_get_trip_destinations(client, test_user, db_session):
     assert destinations[1]["name"] == "London"
 
 
-def test_get_trip_destinations_shared(client, test_user, testing_session_local):
+def test_get_trip_destinations_shared(client, test_user, db_session):
     """Test reading destinations on shared trip"""
-    db = testing_session_local()
+    db = db_session
 
     other, _ = create_user_and_token(db, "owner@example.com")
     trip = models.Trip(
@@ -172,9 +173,9 @@ def test_get_trip_destinations_not_found(client, test_user):
     assert resp.status_code == 404
 
 
-def test_get_destination(client, test_user, testing_session_local):
+def test_get_destination(client, test_user, db_session):
     """Test getting a single destination"""
-    db = testing_session_local()
+    db = db_session
 
     trip = models.Trip(
         name="TestTrip",
@@ -206,9 +207,9 @@ def test_get_destination(client, test_user, testing_session_local):
     assert data["name"] == "Berlin"
 
 
-def test_get_destination_shared(client, test_user, testing_session_local):
+def test_get_destination_shared(client, test_user, db_session):
     """Test reading destination on shared trip"""
-    db = testing_session_local()
+    db = db_session
 
     other, _ = create_user_and_token(db, "owner@example.com")
     trip = models.Trip(
@@ -252,9 +253,9 @@ def test_get_destination_not_found(client, test_user):
     assert resp.status_code == 404
 
 
-def test_update_destination(client, test_user, testing_session_local):
+def test_update_destination(client, test_user, db_session):
     """Test updating a destination"""
-    db = testing_session_local()
+    db = db_session
 
     trip = models.Trip(
         name="TestTrip",
@@ -287,11 +288,9 @@ def test_update_destination(client, test_user, testing_session_local):
     assert data["name"] == "Venice (City of Canals)"
 
 
-def test_update_destination_non_owner_forbidden(
-    client, test_user, testing_session_local
-):
+def test_update_destination_non_owner_forbidden(client, test_user, db_session):
     """Test non-owner cannot update destination"""
-    db = testing_session_local()
+    db = db_session
 
     other, _ = create_user_and_token(db, "owner@example.com")
     trip = models.Trip(
@@ -335,9 +334,9 @@ def test_update_destination_not_found(client, test_user):
     assert resp.status_code == 404
 
 
-def test_delete_destination(client, test_user, testing_session_local):
+def test_delete_destination(client, test_user, db_session):
     """Test deleting a destination"""
-    db = testing_session_local()
+    db = db_session
 
     trip = models.Trip(
         name="TestTrip",
@@ -374,11 +373,9 @@ def test_delete_destination(client, test_user, testing_session_local):
     assert deleted_dest is None
 
 
-def test_delete_destination_non_owner_forbidden(
-    client, test_user, testing_session_local
-):
+def test_delete_destination_non_owner_forbidden(client, test_user, db_session):
     """Test non-owner cannot delete destination"""
-    db = testing_session_local()
+    db = db_session
 
     other, _ = create_user_and_token(db, "owner@example.com")
     trip = models.Trip(
@@ -417,3 +414,200 @@ def test_delete_destination_not_found(client, test_user):
     """Test 404 for deleting non-existent destination"""
     resp = client.delete("/destinations/99999")
     assert resp.status_code == 404
+
+
+# Weather endpoint tests
+@patch("app.services.weather_service.fetch_weather")
+def test_get_destination_weather_success(mock_fetch, client, test_user, db_session):
+    """Test getting weather for a destination"""
+    db = db_session
+
+    trip = models.Trip(
+        name="TestTrip",
+        description="x",
+        start_date=date(2030, 1, 1),
+        end_date=date(2030, 1, 10),
+        budget=1000,
+        status="planning",
+        user_id=test_user["user"].id,
+    )
+    db.add(trip)
+    db.commit()
+    db.refresh(trip)
+
+    dest = models.Destination(
+        name="Paris",
+        trip_id=trip.id,
+        country="France",
+        arrival_date=date(2030, 1, 1),
+        departure_date=date(2030, 1, 5),
+    )
+    db.add(dest)
+    db.commit()
+    db.refresh(dest)
+
+    # Mock weather service response
+    mock_weather = {
+        "location": "Paris, France",
+        "current": {
+            "date": "2030-01-01",
+            "temp_high_f": 50,
+            "temp_low_f": 40,
+            "temp_high_c": 10,
+            "temp_low_c": 4.4,
+            "condition": "clear",
+            "description": "clear sky",
+            "precipitation_chance": 10,
+            "humidity": 65,
+            "wind_speed_mph": 5,
+            "wind_speed_kmh": 8,
+            "icon": "01d",
+        },
+        "forecast": [],
+        "packing_suggestions": ["Light jacket"],
+        "cached": False,
+    }
+    mock_fetch.return_value = mock_weather
+
+    resp = client.get(f"/destinations/{dest.id}/weather")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["location"] == "Paris, France"
+    assert data["current"]["temp_high_f"] == 50
+    assert "packing_suggestions" in data
+
+
+@patch("app.services.weather_service.fetch_weather")
+def test_get_destination_weather_not_found(mock_fetch, client, test_user):
+    """Test 404 for weather of non-existent destination"""
+    resp = client.get("/destinations/99999/weather")
+    assert resp.status_code == 404
+
+
+@patch("app.services.weather_service.fetch_weather")
+def test_get_destination_weather_unauthorized(
+    mock_fetch, client, test_user, db_session
+):
+    """Test weather endpoint requires access to trip"""
+    db = db_session
+
+    other, _ = create_user_and_token(db, "owner@example.com")
+    trip = models.Trip(
+        name="OtherTrip",
+        description="x",
+        start_date=date(2030, 1, 1),
+        end_date=date(2030, 1, 10),
+        budget=1000,
+        status="planning",
+        user_id=other.id,
+    )
+    db.add(trip)
+    db.commit()
+    db.refresh(trip)
+
+    dest = models.Destination(
+        name="London",
+        trip_id=trip.id,
+        country="UK",
+        arrival_date=date(2030, 1, 1),
+        departure_date=date(2030, 1, 5),
+    )
+    db.add(dest)
+    db.commit()
+    db.refresh(dest)
+
+    # User doesn't have access to trip
+    resp = client.get(f"/destinations/{dest.id}/weather")
+    assert resp.status_code == 404  # Returns 404 to avoid leaking trip existence
+
+
+@patch("app.services.weather_service.fetch_weather")
+def test_get_destination_weather_shared_trip(mock_fetch, client, test_user, db_session):
+    """Test getting weather for destination on shared trip"""
+    db = db_session
+
+    other, _ = create_user_and_token(db, "owner@example.com")
+    trip = models.Trip(
+        name="SharedTrip",
+        description="x",
+        start_date=date(2030, 1, 1),
+        end_date=date(2030, 1, 10),
+        budget=1000,
+        status="planning",
+        user_id=other.id,
+    )
+    db.add(trip)
+    db.commit()
+    db.refresh(trip)
+
+    share = models.TripShare(
+        trip_id=trip.id, user_id=test_user["user"].id, permission="view"
+    )
+    db.add(share)
+    db.commit()
+
+    dest = models.Destination(
+        name="Rome",
+        trip_id=trip.id,
+        country="Italy",
+        arrival_date=date(2030, 1, 1),
+        departure_date=date(2030, 1, 5),
+    )
+    db.add(dest)
+    db.commit()
+    db.refresh(dest)
+
+    mock_weather = {
+        "location": "Rome, Italy",
+        "current": None,
+        "forecast": [],
+        "packing_suggestions": [],
+        "cached": False,
+    }
+    mock_fetch.return_value = mock_weather
+
+    # Shared user can view weather
+    resp = client.get(f"/destinations/{dest.id}/weather")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["location"] == "Rome, Italy"
+
+
+@patch("app.services.weather_service.fetch_weather")
+def test_get_destination_weather_service_unavailable(
+    mock_fetch, client, test_user, db_session
+):
+    """Test 503 when weather service is unavailable"""
+    db = db_session
+
+    trip = models.Trip(
+        name="TestTrip",
+        description="x",
+        start_date=date(2030, 1, 1),
+        end_date=date(2030, 1, 10),
+        budget=1000,
+        status="planning",
+        user_id=test_user["user"].id,
+    )
+    db.add(trip)
+    db.commit()
+    db.refresh(trip)
+
+    dest = models.Destination(
+        name="Tokyo",
+        trip_id=trip.id,
+        country="Japan",
+        arrival_date=date(2030, 1, 1),
+        departure_date=date(2030, 1, 5),
+    )
+    db.add(dest)
+    db.commit()
+    db.refresh(dest)
+
+    # Mock weather service returning None (unavailable)
+    mock_fetch.return_value = None
+
+    resp = client.get(f"/destinations/{dest.id}/weather")
+    assert resp.status_code == 503
+    data = resp.json()
+    assert "temporarily unavailable" in data["detail"].lower()

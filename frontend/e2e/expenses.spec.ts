@@ -256,8 +256,8 @@ test.describe('Expense Management', () => {
     // Submit
     await authenticatedPage.getByRole('button', { name: /Add Expense/i }).click();
 
-    // Verify booked status (use specific locator to avoid matching form checkbox label)
-    await expect(authenticatedPage.locator('.space-y-2').getByText('Booked')).toBeVisible({ timeout: 10000 });
+    // Verify booked status - use inline-flex class to target badge
+    await expect(authenticatedPage.locator('.inline-flex.items-center.gap-1', { hasText: 'Booked' }).first()).toBeVisible({ timeout: 10000 });
   });
 
   test('should display category breakdown in summary', async ({ authenticatedPage, authApiRequest }) => {

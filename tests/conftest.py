@@ -27,6 +27,20 @@ engine = create_engine(
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
+@pytest.fixture(scope="session", autouse=True)
+def cleanup_test_db():
+    """Clean up test database before and after test session."""
+    # Remove test.db before tests start to ensure clean state
+    import os
+
+    if os.path.exists("./test.db"):
+        os.remove("./test.db")
+    yield
+    # Clean up after all tests complete
+    if os.path.exists("./test.db"):
+        os.remove("./test.db")
+
+
 @pytest.fixture(scope="session")
 def db_engine():
     return engine
@@ -54,13 +68,60 @@ def base_client(testing_session_local):
     test_client.close()
 
 
-@pytest.fixture(scope="function", autouse=True)
-def db_setup(db_engine, testing_session_local):
-    """Create and drop schema around each test when used."""
-    Base.metadata.drop_all(bind=db_engine)
+@pytest.fixture(scope="session", autouse=True)
+def setup_database(db_engine):
+    """Create database schema once for the entire test session."""
     Base.metadata.create_all(bind=db_engine)
     yield
     Base.metadata.drop_all(bind=db_engine)
+
+
+@pytest.fixture(scope="function")
+def db_setup(db_engine, testing_session_local, setup_database):
+    """
+    Clean database tables before each test for isolation.
+
+    Instead of dropping/recreating tables (which causes connection pool issues),
+    we delete all rows from each table while preserving the schema.
+    """
+    from sqlalchemy import text, inspect
+
+    # Tables in reverse dependency order to avoid foreign key constraints
+    tables_to_clean = [
+        "trip_shares",
+        "packing_items",
+        "expenses",
+        "activities",
+        "stop_options",
+        "journey_stops",
+        "journey_documents",
+        "journeys",
+        "destinations",
+        "trips",
+        "users",
+    ]
+
+    db = testing_session_local()
+    try:
+        # Check if tables exist before trying to clean them
+        inspector = inspect(db_engine)
+        existing_tables = inspector.get_table_names()
+
+        # Delete all data from tables that exist
+        for table_name in tables_to_clean:
+            if table_name in existing_tables:
+                db.execute(text(f"DELETE FROM {table_name}"))
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        # Log but don't raise - allow tests to proceed
+        import logging
+
+        logging.warning(f"Error cleaning database tables: {e}")
+    finally:
+        db.close()
+
+    yield
 
 
 @pytest.fixture(scope="function")
@@ -146,10 +207,27 @@ def unauthenticated_client(base_client):
 
 
 @pytest.fixture(scope="function")
-def db_session(testing_session_local):
-    """Provide a database session that is automatically closed after use."""
-    db = testing_session_local()
+def db_session(testing_session_local, db_setup):
+    """
+    Provide a database session for tests with automatic cleanup.
+
+    This fixture creates a new session, yields it for test use,
+    and ensures it's properly closed after the test completes.
+    """
+    session = testing_session_local()
     try:
-        yield db
+        yield session
     finally:
-        db.close()
+        session.close()
+
+
+def pytest_runtest_teardown(item):
+    """
+    Hook that runs after each test to ensure all sessions are closed.
+
+    This helps prevent connection pool exhaustion from tests that create
+    sessions directly without proper cleanup.
+    """
+    from sqlalchemy.orm import close_all_sessions
+
+    close_all_sessions()

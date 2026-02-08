@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { MapPin, Trash2, Edit2, ChevronDown, ChevronRight } from 'lucide-react';
 import { AccommodationInfo } from './AccommodationInfo';
 import { ActivityList } from '../activities';
+import { WeatherBadge, useWeather } from '../weather';
 
 interface DestinationItemProps {
   destination: Destination;
@@ -23,6 +24,8 @@ export function DestinationItem({
   onDelete,
   onToggleExpanded,
 }: DestinationItemProps) {
+  const { weather, loading, temperatureUnit, toggleTemperatureUnit } = useWeather(destination.id);
+
   return (
     <div className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
       <div className="flex justify-between items-start">
@@ -42,6 +45,13 @@ export function DestinationItem({
             </p>
           )}
           <AccommodationInfo expenses={accommodationExpenses} />
+          {!loading && weather && (
+            <WeatherBadge
+              forecast={weather}
+              temperatureUnit={temperatureUnit}
+              onToggleUnit={toggleTemperatureUnit}
+            />
+          )}
         </div>
         <div className="flex gap-2">
           <button

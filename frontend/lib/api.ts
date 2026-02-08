@@ -31,6 +31,7 @@ import {
   BudgetStatusResponse,
   DashboardData,
   JourneyTimelineResponse,
+  WeatherForecast,
 } from './types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -123,6 +124,12 @@ export const destinationApi = {
     return api.put<Destination>(`/destinations/${id}`, cleanedData);
   },
   delete: (id: number) => api.delete(`/destinations/${id}`),
+};
+
+// Weather API
+export const weatherApi = {
+  getByDestinationId: (destinationId: number) =>
+    api.get<WeatherForecast>(`/destinations/${destinationId}/weather`),
 };
 
 // Activity API

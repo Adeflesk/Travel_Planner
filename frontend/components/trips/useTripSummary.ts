@@ -20,8 +20,6 @@ export interface TripCostSummary {
   grandTotal: number;
 }
 
-const ACCOMMODATION_CATEGORIES = ['accommodation', 'lodging', 'hotel', 'hostel', 'airbnb'];
-
 export function useTripSummary(tripId: number, budget?: number) {
   const [summary, setSummary] = useState<TripCostSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -58,18 +56,8 @@ export function useTripSummary(tripId: number, budget?: number) {
         { total: 0, count: 0, byCurrency: {} as Record<string, number> }
       );
 
-      // Calculate accommodation total from expenses
+      // Get expense data
       const byCategory = expenseSummary.by_category || {};
-      const accommodationTotal = Object.entries(byCategory).reduce(
-        (total, [category, amount]) => {
-          if (ACCOMMODATION_CATEGORIES.includes(category.toLowerCase())) {
-            return total + Number(amount);
-          }
-          return total;
-        },
-        0
-      );
-
       const expenseTotal = Number(expenseSummary.total) || 0;
 
       const costSummary: TripCostSummary = {

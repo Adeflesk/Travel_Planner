@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from app import schemas, models
 from app.core.deps import get_current_user
+from app.services import weather_service
 from database import get_db
 
 router = APIRouter()
@@ -154,3 +155,57 @@ def delete_destination(
     db.delete(destination)
     db.commit()
     return None
+
+
+@router.get(
+    "/destinations/{destination_id}/weather",
+    response_model=schemas.WeatherForecast,
+    tags=["destinations"],
+)
+def get_destination_weather(
+    destination_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """
+    Get weather forecast for a destination.
+
+    Fetches current weather and forecast from OpenWeatherMap API.
+    Results are cached for 6 hours to minimize API calls.
+    """
+    # Get destination and verify it exists
+    destination = (
+        db.query(models.Destination)
+        .filter(models.Destination.id == destination_id)
+        .first()
+    )
+    if not destination:
+        raise HTTPException(status_code=404, detail="Destination not found")
+
+    # Check user has access to the trip
+    get_trip_for_destination(destination.trip_id, db, current_user)
+
+    # Build location string for weather API
+    location_parts = [destination.name]
+    if destination.country:
+        location_parts.append(destination.country)
+    location = ", ".join(location_parts)
+
+    # Get date range from destination
+    start_date = (
+        destination.arrival_date.isoformat() if destination.arrival_date else None
+    )
+    end_date = (
+        destination.departure_date.isoformat() if destination.departure_date else None
+    )
+
+    # Fetch weather data
+    weather_data = weather_service.fetch_weather(location, start_date, end_date)
+
+    if not weather_data:
+        raise HTTPException(
+            status_code=503,
+            detail="Weather service temporarily unavailable. Please try again later.",
+        )
+
+    return weather_data

@@ -20,3 +20,4 @@ from .auth import *  # noqa: F401, F403
 from .budget import *  # noqa: F401, F403
 from .dashboard import *  # noqa: F401, F403
 from .journey_timeline import *  # noqa: F401, F403
+from .weather import *  # noqa: F401, F403
