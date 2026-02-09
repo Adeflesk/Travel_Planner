@@ -10,6 +10,8 @@ const initialFormData: TripFormData = {
   start_date: '',
   end_date: '',
   budget: undefined,
+  budget_warning_threshold: 75,
+  budget_danger_threshold: 90,
   status: 'planning',
 };
 
@@ -55,6 +57,12 @@ export function useTripForm(onTripCreated: () => void) {
     if (formData.budget !== undefined && formData.budget !== null) {
       cleanedData.budget = formData.budget;
     }
+    if (formData.budget_warning_threshold != null) {
+      cleanedData.budget_warning_threshold = formData.budget_warning_threshold;
+    }
+    if (formData.budget_danger_threshold != null) {
+      cleanedData.budget_danger_threshold = formData.budget_danger_threshold;
+    }
 
     try {
       await tripApi.create(cleanedData as TripFormData);
@@ -83,7 +91,9 @@ export function useTripForm(onTripCreated: () => void) {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === 'budget' ? (value ? parseFloat(value) : undefined) : value,
+      [name]: ['budget', 'budget_warning_threshold', 'budget_danger_threshold'].includes(name)
+        ? (value ? parseFloat(value) : undefined)
+        : value,
     }));
   };
 

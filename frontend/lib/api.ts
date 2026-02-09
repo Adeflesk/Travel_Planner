@@ -29,6 +29,7 @@ import {
   DestinationAccommodation,
   TripStats,
   BudgetStatusResponse,
+  BudgetImpact,
   DashboardData,
   JourneyTimelineResponse,
   WeatherForecast,
@@ -202,6 +203,8 @@ export const expenseApi = {
     return api.put<Expense>(`/expenses/${id}`, cleanedData);
   },
   delete: (id: number) => api.delete(`/expenses/${id}`),
+  checkBudget: (data: ExpenseFormData) =>
+    api.post<BudgetImpact>('/expenses/check-budget/', data),
 };
 
 // Packing Item API

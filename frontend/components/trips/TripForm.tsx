@@ -45,6 +45,30 @@ export default function TripForm({ onTripCreated, onCancel }: TripFormProps) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
+            label="Warning Threshold (%)"
+            type="number"
+            name="budget_warning_threshold"
+            value={formData.budget_warning_threshold ?? 75}
+            onChange={handleChange}
+            min={1}
+            max={99}
+            placeholder="75"
+          />
+
+          <Input
+            label="Danger Threshold (%)"
+            type="number"
+            name="budget_danger_threshold"
+            value={formData.budget_danger_threshold ?? 90}
+            onChange={handleChange}
+            min={2}
+            max={100}
+            placeholder="90"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Input
             label="Start Date"
             type="date"
             name="start_date"

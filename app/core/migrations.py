@@ -75,6 +75,16 @@ def run_migrations(engine: Engine) -> None:
         if add_column_if_not_exists(engine, "journeys", col_name, col_type, default):
             migrations_run += 1
 
+    # Trip budget threshold columns (Feature 018)
+    trip_threshold_columns = [
+        ("budget_warning_threshold", "INTEGER", "75"),
+        ("budget_danger_threshold", "INTEGER", "90"),
+    ]
+
+    for col_name, col_type, default in trip_threshold_columns:
+        if add_column_if_not_exists(engine, "trips", col_name, col_type, default):
+            migrations_run += 1
+
     if migrations_run > 0:
         logger.info(f"Completed {migrations_run} migration(s)")
     else:

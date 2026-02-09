@@ -374,3 +374,106 @@ def test_delete_expense_not_found(client, test_user):
     """Test 404 for deleting non-existent expense"""
     resp = client.delete("/expenses/99999")
     assert resp.status_code == 404
+
+
+def test_check_budget_over(client, test_user, db_session):
+    """Test check-budget returns would_exceed when over budget"""
+    db = db_session
+
+    trip = models.Trip(
+        name="BudgetTrip",
+        description="x",
+        start_date=date(2030, 1, 1),
+        end_date=date(2030, 1, 10),
+        budget=100,
+        status="planning",
+        user_id=test_user["user"].id,
+    )
+    db.add(trip)
+    db.commit()
+    db.refresh(trip)
+
+    # Add existing expense to use up most of the budget
+    exp = models.Expense(
+        amount=Decimal("80.00"),
+        currency="USD",
+        category="food",
+        trip_id=trip.id,
+        date=date(2030, 1, 2),
+    )
+    db.add(exp)
+    db.commit()
+
+    payload = {
+        "amount": "30.00",
+        "currency": "USD",
+        "category": "food",
+        "date": "2030-01-03",
+        "trip_id": trip.id,
+    }
+    resp = client.post("/expenses/check-budget/", json=payload)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["would_exceed"] is True
+    assert data["over_by"] == 10.0
+    assert data["new_total"] == 110.0
+    assert data["budget"] == 100.0
+
+
+def test_check_budget_under(client, test_user, db_session):
+    """Test check-budget returns would_exceed=False when under budget"""
+    db = db_session
+
+    trip = models.Trip(
+        name="BudgetTrip",
+        description="x",
+        start_date=date(2030, 1, 1),
+        end_date=date(2030, 1, 10),
+        budget=1000,
+        status="planning",
+        user_id=test_user["user"].id,
+    )
+    db.add(trip)
+    db.commit()
+    db.refresh(trip)
+
+    payload = {
+        "amount": "50.00",
+        "currency": "USD",
+        "category": "food",
+        "date": "2030-01-02",
+        "trip_id": trip.id,
+    }
+    resp = client.post("/expenses/check-budget/", json=payload)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["would_exceed"] is False
+
+
+def test_check_budget_no_budget_set(client, test_user, db_session):
+    """Test check-budget returns would_exceed=False when no budget is set"""
+    db = db_session
+
+    trip = models.Trip(
+        name="NoBudgetTrip",
+        description="x",
+        start_date=date(2030, 1, 1),
+        end_date=date(2030, 1, 10),
+        status="planning",
+        user_id=test_user["user"].id,
+    )
+    db.add(trip)
+    db.commit()
+    db.refresh(trip)
+
+    payload = {
+        "amount": "500.00",
+        "currency": "USD",
+        "category": "lodging",
+        "date": "2030-01-02",
+        "trip_id": trip.id,
+    }
+    resp = client.post("/expenses/check-budget/", json=payload)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["would_exceed"] is False

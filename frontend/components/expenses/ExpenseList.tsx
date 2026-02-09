@@ -5,6 +5,7 @@ import { useExpenseForm } from './useExpenseForm';
 import { ExpenseForm } from './ExpenseForm';
 import { ExpenseItem } from './ExpenseItem';
 import { ExpenseSummary } from './ExpenseSummary';
+import BudgetExceededModal from './BudgetExceededModal';
 import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 
@@ -25,7 +26,10 @@ export default function ExpenseList({ tripId }: ExpenseListProps) {
   const {
     formData,
     isEditing,
+    budgetImpact,
     handleSubmit,
+    confirmSubmit,
+    cancelBudgetAlert,
     startEdit,
     resetForm,
     updateField,
@@ -82,6 +86,14 @@ export default function ExpenseList({ tripId }: ExpenseListProps) {
             </div>
           )}
         </>
+      )}
+
+      {budgetImpact && (
+        <BudgetExceededModal
+          impact={budgetImpact}
+          onConfirm={confirmSubmit}
+          onCancel={cancelBudgetAlert}
+        />
       )}
     </div>
   );

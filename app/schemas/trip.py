@@ -24,6 +24,8 @@ class TripBase(BaseModel):
     start_date: DateType
     end_date: DateType
     budget: Optional[Decimal] = None
+    budget_warning_threshold: Optional[int] = 75
+    budget_danger_threshold: Optional[int] = 90
     status: TripStatus = "planning"
 
     @model_validator(mode="after")
@@ -31,6 +33,21 @@ class TripBase(BaseModel):
         """Ensure end_date is not before start_date."""
         if self.end_date < self.start_date:
             raise ValueError("end_date must be on or after start_date")
+        return self
+
+    @model_validator(mode="after")
+    def validate_thresholds(self) -> "TripBase":
+        """Ensure thresholds are valid and warning < danger."""
+        w = self.budget_warning_threshold
+        d = self.budget_danger_threshold
+        if w is not None and (w < 1 or w > 100):
+            raise ValueError("budget_warning_threshold must be between 1 and 100")
+        if d is not None and (d < 1 or d > 100):
+            raise ValueError("budget_danger_threshold must be between 1 and 100")
+        if w is not None and d is not None and w >= d:
+            raise ValueError(
+                "budget_warning_threshold must be less than budget_danger_threshold"
+            )
         return self
 
     @field_validator("budget")
@@ -52,6 +69,8 @@ class TripUpdate(BaseModel):
     start_date: Optional[DateType] = None
     end_date: Optional[DateType] = None
     budget: Optional[Decimal] = None
+    budget_warning_threshold: Optional[int] = None
+    budget_danger_threshold: Optional[int] = None
     status: Optional[TripStatus] = None
 
     @field_validator("budget")
@@ -61,6 +80,21 @@ class TripUpdate(BaseModel):
         if v is not None and v < 0:
             raise ValueError("budget must be non-negative")
         return v
+
+    @model_validator(mode="after")
+    def validate_thresholds(self) -> "TripUpdate":
+        """Ensure thresholds are valid and warning < danger when both set."""
+        w = self.budget_warning_threshold
+        d = self.budget_danger_threshold
+        if w is not None and (w < 1 or w > 100):
+            raise ValueError("budget_warning_threshold must be between 1 and 100")
+        if d is not None and (d < 1 or d > 100):
+            raise ValueError("budget_danger_threshold must be between 1 and 100")
+        if w is not None and d is not None and w >= d:
+            raise ValueError(
+                "budget_warning_threshold must be less than budget_danger_threshold"
+            )
+        return self
 
 
 class Trip(TripBase):

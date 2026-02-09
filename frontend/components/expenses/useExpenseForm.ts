@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Expense, ExpenseFormData } from '@/lib/types';
+import { Expense, ExpenseFormData, BudgetImpact } from '@/lib/types';
 import { expenseApi } from '@/lib/api';
 
 const getInitialFormData = (tripId: number): ExpenseFormData => ({
@@ -21,6 +21,7 @@ export function useExpenseForm(tripId: number, onSuccess: () => void) {
   const [formData, setFormData] = useState<ExpenseFormData>(
     getInitialFormData(tripId)
   );
+  const [budgetImpact, setBudgetImpact] = useState<BudgetImpact | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,6 +30,12 @@ export function useExpenseForm(tripId: number, onSuccess: () => void) {
         await expenseApi.update(editingId, formData);
         setEditingId(null);
       } else {
+        // Check budget impact before creating
+        const { data: impact } = await expenseApi.checkBudget(formData);
+        if (impact.would_exceed) {
+          setBudgetImpact(impact);
+          return;
+        }
         await expenseApi.create(formData);
       }
       setFormData(getInitialFormData(tripId));
@@ -37,6 +44,22 @@ export function useExpenseForm(tripId: number, onSuccess: () => void) {
       console.error('Error saving expense:', error);
       alert('Failed to save expense');
     }
+  };
+
+  const confirmSubmit = async () => {
+    try {
+      await expenseApi.create(formData);
+      setBudgetImpact(null);
+      setFormData(getInitialFormData(tripId));
+      onSuccess();
+    } catch (error) {
+      console.error('Error saving expense:', error);
+      alert('Failed to save expense');
+    }
+  };
+
+  const cancelBudgetAlert = () => {
+    setBudgetImpact(null);
   };
 
   const startEdit = (expense: Expense) => {
@@ -69,7 +92,10 @@ export function useExpenseForm(tripId: number, onSuccess: () => void) {
   return {
     formData,
     isEditing: editingId !== null,
+    budgetImpact,
     handleSubmit,
+    confirmSubmit,
+    cancelBudgetAlert,
     startEdit,
     resetForm,
     updateField,

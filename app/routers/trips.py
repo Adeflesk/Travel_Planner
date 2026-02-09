@@ -223,8 +223,13 @@ def get_budget_status(
     current_user: models.User = Depends(get_current_user),
 ):
     """Get budget status with progress, category breakdown, and alerts."""
-    get_trip_or_404(trip_id, db, current_user)  # Check access
-    result = svc_get_budget_status(trip_id, db)
+    trip = get_trip_or_404(trip_id, db, current_user)
+    result = svc_get_budget_status(
+        trip_id,
+        db,
+        warning_threshold=trip.budget_warning_threshold or 75,
+        danger_threshold=trip.budget_danger_threshold or 90,
+    )
     if result is None:
         raise HTTPException(status_code=404, detail="Trip not found")
     return result

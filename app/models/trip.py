@@ -32,6 +32,8 @@ class Trip(Base):
     start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=False)
     budget = Column(Numeric(10, 2))
+    budget_warning_threshold = Column(Integer, default=75)
+    budget_danger_threshold = Column(Integer, default=90)
     status = Column(String(50), default="planning")
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(

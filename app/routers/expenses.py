@@ -11,9 +11,12 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from decimal import Decimal
+
 from app import schemas, models
 from app.core.deps import get_current_user
 from database import get_db
+from app.services.budget_service import check_expense_impact
 from app.services.expense_service import get_expense_summary as svc_get_expense_summary
 
 router = APIRouter()
@@ -43,6 +46,24 @@ def check_trip_access(
             return trip
 
     raise HTTPException(status_code=404, detail="Trip not found")
+
+
+@router.post(
+    "/expenses/check-budget/",
+    response_model=schemas.BudgetImpactResponse,
+    tags=["expenses"],
+)
+def check_budget(
+    expense: schemas.ExpenseCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Check if adding an expense would exceed the trip budget."""
+    check_trip_access(expense.trip_id, db, current_user)
+    impact = check_expense_impact(expense.trip_id, Decimal(str(expense.amount)), db)
+    if impact is None:
+        return schemas.BudgetImpactResponse(would_exceed=False)
+    return schemas.BudgetImpactResponse(**impact)
 
 
 @router.post(

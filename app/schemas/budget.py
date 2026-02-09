@@ -48,5 +48,17 @@ class BudgetStatusResponse(BaseModel):
     status: BudgetStatus
     by_category: List[CategoryBudget]
     alerts: List[BudgetAlert]
+    warning_threshold: int = 75
+    danger_threshold: int = 90
 
     model_config = {"from_attributes": True}
+
+
+class BudgetImpactResponse(BaseModel):
+    """Response from checking expense impact on budget."""
+
+    would_exceed: bool
+    over_by: Optional[float] = None
+    new_total: Optional[float] = None
+    budget: Optional[float] = None
+    percentage: Optional[float] = None
