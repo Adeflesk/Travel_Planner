@@ -3,6 +3,11 @@
 A full-stack travel planning application for organizing trips, destinations, journeys, activities, expenses, and packing lists.
 
 ## Tech Stack
+When fixing CI/CD or linter issues, verify the fix works against the exact CI environment version (e.g., Python 3.9 vs 3.10+) before committing. Check `.github/workflows/` files for runtime versions first.
+
+Add under a ## Language & Compatibility section near the top of CLAUDE.md\n\nThis project uses TypeScript (frontend) and Python (backend). Always check Python version compatibility (project targets 3.9+). Use `from __future__ import annotations` or `typing` module aliases instead of PEP 604/PEP 585 syntax for Python type hints.
+
+Add under a new ## Git Workflow section in CLAUDE.md\n\nWhen working on git branches, always confirm the current branch with `git branch` and verify it contains all expected features before creating new branches. Never branch from `master`/`main` when the intent is to build on an existing feature branch.
 
 **Backend:**
 - Python FastAPI
