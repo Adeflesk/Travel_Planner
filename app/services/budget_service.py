@@ -132,6 +132,8 @@ def get_budget_status(
         status=status,
         by_category=by_category,
         alerts=alerts,
+        warning_threshold=warning_threshold,
+        danger_threshold=danger_threshold,
     )
 
 

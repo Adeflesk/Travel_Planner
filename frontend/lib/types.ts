@@ -6,6 +6,8 @@ export interface Trip {
   start_date: string;
   end_date: string;
   budget?: number;
+  budget_warning_threshold?: number;
+  budget_danger_threshold?: number;
   status: 'planning' | 'booked' | 'ongoing' | 'completed';
   created_at: string;
   updated_at: string;
@@ -178,6 +180,8 @@ export interface TripFormData {
   start_date: string;
   end_date: string;
   budget?: number;
+  budget_warning_threshold?: number;
+  budget_danger_threshold?: number;
   status?: string;
 }
 
@@ -499,6 +503,16 @@ export interface BudgetStatusResponse {
   status: BudgetStatus;
   by_category: CategoryBudget[];
   alerts: BudgetAlert[];
+  warning_threshold: number;
+  danger_threshold: number;
+}
+
+export interface BudgetImpact {
+  would_exceed: boolean;
+  over_by?: number;
+  new_total?: number;
+  budget?: number;
+  percentage?: number;
 }
 
 

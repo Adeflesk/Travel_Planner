@@ -36,6 +36,8 @@ function EditTripContent() {
         start_date: trip.start_date,
         end_date: trip.end_date,
         budget: trip.budget,
+        budget_warning_threshold: trip.budget_warning_threshold ?? 75,
+        budget_danger_threshold: trip.budget_danger_threshold ?? 90,
         status: trip.status,
       });
     } catch (error) {
@@ -76,8 +78,8 @@ function EditTripContent() {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === 'budget' 
-        ? (value ? parseFloat(value) : undefined) 
+      [name]: ['budget', 'budget_warning_threshold', 'budget_danger_threshold'].includes(name)
+        ? (value ? parseFloat(value) : undefined)
         : value,
     }));
   };
@@ -156,7 +158,35 @@ function EditTripContent() {
             </div>
 
             <div>
-              {/* Empty div for grid alignment */}
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Warning Threshold (%)
+              </label>
+              <input
+                type="number"
+                name="budget_warning_threshold"
+                value={formData.budget_warning_threshold ?? 75}
+                onChange={handleChange}
+                min={1}
+                max={99}
+                className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+                placeholder="75"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Danger Threshold (%)
+              </label>
+              <input
+                type="number"
+                name="budget_danger_threshold"
+                value={formData.budget_danger_threshold ?? 90}
+                onChange={handleChange}
+                min={2}
+                max={100}
+                className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+                placeholder="90"
+              />
             </div>
 
             <div>

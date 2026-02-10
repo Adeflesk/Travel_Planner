@@ -29,6 +29,7 @@ import {
   DestinationAccommodation,
   TripStats,
   BudgetStatusResponse,
+  BudgetImpact,
   DashboardData,
   JourneyTimelineResponse,
   WeatherForecast,
@@ -202,6 +203,20 @@ export const expenseApi = {
     return api.put<Expense>(`/expenses/${id}`, cleanedData);
   },
   delete: (id: number) => api.delete(`/expenses/${id}`),
+  checkBudget: (data: ExpenseFormData) => {
+    const cleanedData: Partial<ExpenseFormData> = {};
+    (Object.keys(data) as Array<keyof ExpenseFormData>).forEach((key) => {
+      const value = data[key];
+      if (value !== '' && value !== undefined) {
+        if (key === 'amount' && typeof value === 'string') {
+          cleanedData[key] = parseFloat(value) as never;
+        } else {
+          cleanedData[key] = value as never;
+        }
+      }
+    });
+    return api.post<BudgetImpact>('/expenses/check-budget/', cleanedData);
+  },
 };
 
 // Packing Item API
