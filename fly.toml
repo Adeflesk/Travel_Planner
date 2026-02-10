@@ -1,36 +1,36 @@
-# fly.toml - Fly.io deployment configuration
-# Docs: https://fly.io/docs/reference/configuration/
+# fly.toml app configuration file generated for travel-planner-api-weathered-tree-9345 on 2026-02-10T21:07:34Z
 #
-# Deploy: fly deploy
-# First time: fly launch --no-deploy (then set secrets and deploy)
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
-app = "travel-planner-api"
-primary_region = "iad"
+app = 'travel-planner-api-weathered-tree-9345'
+primary_region = 'lhr'
 
 [build]
-  dockerfile = "Dockerfile"
+  dockerfile = 'Dockerfile'
 
 [env]
-  ENVIRONMENT = "production"
-  PORT = "8000"
+  app = "travel-planner"
+  ENVIRONMENT = 'production'
+  PORT = '8000'
 
 [http_service]
   internal_port = 8000
   force_https = true
-  auto_stop_machines = "stop"
+  auto_stop_machines = 'stop'
   auto_start_machines = true
   min_machines_running = 0
 
 [checks]
   [checks.health]
-    type = "http"
     port = 8000
-    path = "/health"
-    interval = "30s"
-    timeout = "5s"
-    grace_period = "10s"
+    type = 'http'
+    interval = '30s'
+    timeout = '5s'
+    grace_period = '10s'
+    path = '/health'
 
 [[vm]]
-  memory = "256mb"
-  cpu_kind = "shared"
+  memory = '256mb'
   cpus = 1
+  memory_mb = 256

@@ -61,6 +61,8 @@ curl https://travel-planner-api.fly.dev/health
 
 ```bash
 fly ssh console
+# Activate the virtual environment first
+source /opt/venv/bin/activate
 python -c "
 from database import SessionLocal
 from app.core.security import get_password_hash
@@ -69,7 +71,7 @@ from app.models.user import User
 db = SessionLocal()
 admin = User(
     email='admin@example.com',
-    hashed_password=get_password_hash('changeme'),
+    hashed_password=get_password_hash('YourSecurePassword'),
     full_name='Admin',
     role='admin',
     is_active=True
