@@ -1,0 +1,36 @@
+# fly.toml - Fly.io deployment configuration
+# Docs: https://fly.io/docs/reference/configuration/
+#
+# Deploy: fly deploy
+# First time: fly launch --no-deploy (then set secrets and deploy)
+
+app = "travel-planner-api"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  ENVIRONMENT = "production"
+  PORT = "8000"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+[checks]
+  [checks.health]
+    type = "http"
+    port = 8000
+    path = "/health"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+
+[[vm]]
+  memory = "256mb"
+  cpu_kind = "shared"
+  cpus = 1

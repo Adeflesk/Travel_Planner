@@ -1,0 +1,16 @@
+frontend/
+.venv/
+__pycache__/
+*.pyc
+.git/
+.github/
+.env
+*.db
+htmlcov/
+.pytest_cache/
+docs/
+node_modules/
+.next/
+*.md
+tests/
+.claude/
