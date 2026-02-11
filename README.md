@@ -16,6 +16,7 @@ A full-stack travel planning application for organizing trips, destinations, jou
 - **Trip Sharing** - Share trips with other users (view/edit permissions)
 - **Timeline View** - Visual chronological view of your trip
 - **Export** - Export itinerary to PDF or text format
+- **Help Center** - Comprehensive searchable documentation with 11 topic-specific guides
 
 ## Tech Stack
 
@@ -183,6 +184,7 @@ Detailed feature specifications are available in `docs/features/`. Each feature 
 - Journey Stops & Options
 - Journey Documents
 - Route Details
+- Help Center with Searchable Guides
 
 ## License
 
