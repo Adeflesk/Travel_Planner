@@ -133,7 +133,7 @@ export default function JourneysGuidePage() {
               Select from your trip&apos;s destinations when traveling between cities in your itinerary.
             </p>
             <p className="text-xs text-slate-600 italic">
-              Example: Journey from "Paris" destination to "Rome" destination
+              Example: Journey from &quot;Paris&quot; destination to &quot;Rome&quot; destination
             </p>
           </div>
 
@@ -143,7 +143,7 @@ export default function JourneysGuidePage() {
               Enter any location name when traveling from/to places not in your destinations list.
             </p>
             <p className="text-xs text-slate-600 italic">
-              Example: Journey from "JFK Airport" to "Manhattan Hotel"
+              Example: Journey from &quot;JFK Airport&quot; to &quot;Manhattan Hotel&quot;
             </p>
           </div>
         </div>
@@ -179,7 +179,7 @@ export default function JourneysGuidePage() {
                 <>
                   Fill in the stop information:
                   <ul className="list-disc ml-5 mt-2 space-y-1">
-                    <li><strong>Stop Name</strong>: Name of the location (e.g., "Grand Canyon Viewpoint")</li>
+                    <li><strong>Stop Name</strong>: Name of the location (e.g., &quot;Grand Canyon Viewpoint&quot;)</li>
                     <li><strong>Location</strong>: Address or general location</li>
                     <li><strong>Planned Arrival</strong>: When you expect to arrive</li>
                     <li><strong>Planned Departure</strong>: When you plan to leave</li>
@@ -244,7 +244,7 @@ export default function JourneysGuidePage() {
                 <>
                   Fill in the activity option:
                   <ul className="list-disc ml-5 mt-2 space-y-1">
-                    <li><strong>Name</strong>: Activity name (e.g., "Lunch at Local Cafe")</li>
+                    <li><strong>Name</strong>: Activity name (e.g., &quot;Lunch at Local Cafe&quot;)</li>
                     <li><strong>Description</strong>: Details about the activity</li>
                     <li><strong>Type</strong>: Activity, Meal, Sightseeing, Rest, Fuel, Shopping, or Other</li>
                     <li><strong>Duration</strong>: Estimated time needed</li>

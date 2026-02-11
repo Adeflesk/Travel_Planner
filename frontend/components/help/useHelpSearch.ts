@@ -1,40 +1,41 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { searchHelpContent, SearchResult } from '@/lib/help-content';
 
 export function useHelpSearch(query: string) {
   const [results, setResults] = useState<SearchResult[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
-    // Early return for empty/short queries - let state updates happen in cleanup
+    // Clear any existing timer
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+
+    // Handle empty or short queries
     if (!query || query.length < 2) {
+      setResults([]);
+      setIsSearching(false);
       return;
     }
 
-    setLoading(true);
-
-    const timer = setTimeout(() => {
+    // Set loading state and schedule search
+    setIsSearching(true);
+    timerRef.current = setTimeout(() => {
       const searchResults = searchHelpContent(query);
       setResults(searchResults);
-      setLoading(false);
+      setIsSearching(false);
     }, 300); // Debounce 300ms
 
+    // Cleanup function
     return () => {
-      clearTimeout(timer);
-      // Clean up state when query becomes invalid
-      if (!query || query.length < 2) {
-        setResults([]);
-        setLoading(false);
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
       }
     };
   }, [query]);
 
-  // Return empty results for invalid queries without calling setState in effect body
-  if (!query || query.length < 2) {
-    return { results: [], loading: false };
-  }
-
-  return { results, loading };
+  return { results, loading: isSearching };
 }
