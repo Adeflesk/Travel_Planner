@@ -13,7 +13,7 @@ interface HelpCategoryCardProps {
 
 export function HelpCategoryCard({ title, description, icon, href }: HelpCategoryCardProps) {
   // Dynamically get the icon component
-  const IconComponent = (Icons as Record<string, React.ComponentType<{ className?: string }>>)[icon];
+  const IconComponent = (Icons as any)[icon] as React.ComponentType<{ className?: string }> | undefined;
 
   return (
     <Link href={href}>
