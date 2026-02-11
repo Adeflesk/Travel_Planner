@@ -59,27 +59,67 @@ curl https://travel-planner-api.fly.dev/health
 
 ### Create initial admin user
 
+**Option 1: Using Python script (recommended)**
+
 ```bash
 fly ssh console
-# Activate the virtual environment first
 source /opt/venv/bin/activate
-python -c "
+
+# Create a script file
+cat > create_admin.py << 'SCRIPT'
 from database import SessionLocal
 from app.core.security import get_password_hash
 from app.models.user import User
 
 db = SessionLocal()
-admin = User(
-    email='admin@example.com',
-    hashed_password=get_password_hash('YourSecurePassword'),
-    full_name='Admin',
-    role='admin',
-    is_active=True
-)
-db.add(admin)
-db.commit()
-print('Admin created!')
-"
+
+# Check if admin already exists
+existing = db.query(User).filter(User.email == 'admin@example.com').first()
+if existing:
+    print('Admin user already exists!')
+else:
+    admin = User(
+        email='admin@example.com',
+        hashed_password=get_password_hash('YourSecurePassword'),
+        full_name='Admin',
+        role='admin',
+        is_active=True
+    )
+    db.add(admin)
+    db.commit()
+    print('Admin created successfully!')
+SCRIPT
+
+python create_admin.py
+```
+
+**Option 2: Direct SQL (for Postgres)**
+
+```bash
+# Connect to your Postgres database
+fly postgres connect -a travel-planner-db
+
+-- Check tables exist
+\dt
+
+-- Insert admin user (replace password with your own)
+INSERT INTO users (email, hashed_password, full_name, role, is_active, created_at, updated_at)
+SELECT
+    'admin@example.com',
+    '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY7KK3p5PDFJ7Ry',  -- bcrypt hash of 'admin123'
+    'Admin',
+    'admin',
+    true,
+    NOW(),
+    NOW()
+WHERE NOT EXISTS (
+    SELECT 1 FROM users WHERE email = 'admin@example.com'
+);
+```
+
+**To generate a new password hash locally:**
+```bash
+python -c "from app.core.security import get_password_hash; print(get_password_hash('your-password'))"
 ```
 
 ## Frontend — Vercel
