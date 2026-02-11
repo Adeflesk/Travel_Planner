@@ -21,15 +21,20 @@ fly launch --no-deploy
 #   Don't set up a Postgres database yet (we'll do it next)
 ```
 
-### 2. Create a Postgres database
+### 2. Set up Database (Neon Postgres)
+
+This project uses **Neon** (serverless Postgres) instead of Fly Postgres for better performance and generous free tier.
+
+1. Create a Neon account at [neon.tech](https://neon.tech)
+2. Create a new project (free tier includes 3 branches, 1GB storage, autoscaling)
+3. Copy your connection string from the Neon dashboard
+4. Set it as a Fly.io secret:
 
 ```bash
-fly postgres create --name travel-planner-db
-# Pick the "Development" plan (free, single node, 1GB)
-
-fly postgres attach travel-planner-db
-# This automatically sets DATABASE_URL as a secret
+fly secrets set DATABASE_URL='postgresql://neondb_owner:YOUR_PASSWORD@ep-xxx.eu-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require'
 ```
+
+**Note:** Replace with your actual Neon connection string from the dashboard.
 
 ### 3. Set secrets
 
@@ -93,11 +98,11 @@ SCRIPT
 python create_admin.py
 ```
 
-**Option 2: Direct SQL (for Postgres)**
+**Option 2: Direct SQL (for Neon Postgres)**
 
 ```bash
-# Connect to your Postgres database
-fly postgres connect -a travel-planner-db
+# Connect to your Neon database using psql
+psql 'postgresql://neondb_owner:YOUR_PASSWORD@ep-xxx.eu-west-2.aws.neon.tech/neondb?sslmode=require'
 
 -- Check tables exist
 \dt
@@ -157,7 +162,7 @@ fly secrets set FRONTEND_URL=https://your-actual-app.vercel.app
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `DATABASE_URL` | Yes | Set automatically by `fly postgres attach` |
+| `DATABASE_URL` | Yes | Neon Postgres connection string (set manually via `fly secrets set`) |
 | `JWT_SECRET_KEY` | Yes | Secret for signing JWT tokens |
 | `FRONTEND_URL` | Yes | Your Vercel frontend URL (for CORS) |
 | `ENVIRONMENT` | No | Set to `production` in fly.toml |
@@ -195,8 +200,12 @@ fly ssh console       # SSH into the machine
 
 ### Database connection issues
 ```bash
-fly postgres connect -a travel-planner-db   # Connect to Postgres directly
-fly postgres list                           # Check database status
+# Check Neon dashboard for database status and connection details
+# Test connection locally:
+psql 'postgresql://neondb_owner:YOUR_PASSWORD@ep-xxx.eu-west-2.aws.neon.tech/neondb?sslmode=require'
+
+# Verify DATABASE_URL secret is set correctly:
+fly secrets list
 ```
 
 ### CORS errors
@@ -214,5 +223,5 @@ Free-tier machines auto-stop after inactivity. First request after sleep takes ~
 | Service | Free Tier Includes |
 |---------|-------------------|
 | Fly.io | 3 shared VMs, 256MB RAM each, 3GB persistent storage |
-| Fly Postgres | 1GB storage on Development plan |
+| Neon Postgres | 3GB storage, 3 branches, autoscaling, no cold starts |
 | Vercel | 100GB bandwidth/month, serverless functions, edge network |
