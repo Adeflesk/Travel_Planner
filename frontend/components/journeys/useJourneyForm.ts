@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Journey, JourneyFormData, Trip } from '@/lib/types';
 import { journeyApi, tripApi } from '@/lib/api';
+import { useSuggestions } from '@/lib/hooks/useSuggestions';
 
 export interface ValidationErrors {
   departure_arrival?: string;
@@ -38,6 +39,13 @@ export function useJourneyForm(tripId: number, onSuccess: () => void) {
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [warnings, setWarnings] = useState<ValidationWarnings>({});
 
+  // Fetch carrier suggestions
+  const { suggestions: carrierSuggestions, recentItems: recentCarriers, loading: loadingCarriers } =
+    useSuggestions('carriers');
+
+  // Fetch currency suggestions for context-aware defaults
+  const { suggestions: currencySuggestions } = useSuggestions('currencies');
+
   // Fetch trip data for date validation
   useEffect(() => {
     const fetchTrip = async () => {
@@ -50,6 +58,40 @@ export function useJourneyForm(tripId: number, onSuccess: () => void) {
     };
     fetchTrip();
   }, [tripId]);
+
+  // Context-aware defaults: Set currency to most common from user's history
+  useEffect(() => {
+    if (!editingId && currencySuggestions.length > 0 && formData.currency === 'USD') {
+      // If the form is new (not editing) and currency is still default USD,
+      // set it to the user's most common currency
+      const defaultCurrency = currencySuggestions[0];
+      if (defaultCurrency && defaultCurrency !== 'USD') {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setFormData((prev) => ({ ...prev, currency: defaultCurrency }));
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingId, currencySuggestions]);
+
+  // Context-aware defaults: Pre-fill date fields with year/month from trip start
+  useEffect(() => {
+    if (!editingId && trip && !formData.departure_datetime && !formData.arrival_datetime) {
+      const tripStart = new Date(trip.start_date);
+      const year = tripStart.getFullYear();
+      const month = String(tripStart.getMonth() + 1).padStart(2, '0');
+      const day = String(tripStart.getDate()).padStart(2, '0');
+
+      // Default to trip start date at 9:00 AM for departure
+      const defaultDepartureDate = `${year}-${month}-${day}T09:00`;
+
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setFormData((prev) => ({
+        ...prev,
+        departure_datetime: defaultDepartureDate
+      }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingId, trip]);
 
   // Validate form data
   const validate = (): boolean => {
@@ -190,5 +232,8 @@ export function useJourneyForm(tripId: number, onSuccess: () => void) {
     resetForm,
     updateField,
     duplicateAsReturn,
+    carrierSuggestions,
+    recentCarriers,
+    loadingCarriers,
   };
 }

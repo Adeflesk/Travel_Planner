@@ -417,4 +417,38 @@ export const tripShareApi = {
     api.delete(`/trips/${tripId}/shares/${shareId}`),
 };
 
+// Suggestion Response Interface
+export interface SuggestionResponse {
+  suggestions: string[];
+  recent?: string[];
+  popular?: string[];
+}
+
+export interface SuggestionFilters {
+  category?: string;
+  trip_id?: number;
+}
+
+type SuggestionType =
+  | 'carriers'
+  | 'locations'
+  | 'expense-descriptions'
+  | 'activity-names'
+  | 'packing-items'
+  | 'currencies';
+
+// Suggestion API
+export const suggestionApi = {
+  getSuggestions: (type: SuggestionType, filters?: SuggestionFilters) => {
+    const params = new URLSearchParams();
+    if (filters?.category) params.append('category', filters.category);
+    if (filters?.trip_id) params.append('trip_id', filters.trip_id.toString());
+
+    const queryString = params.toString();
+    const url = `/api/suggestions/${type}${queryString ? `?${queryString}` : ''}`;
+
+    return api.get<SuggestionResponse>(url);
+  },
+};
+
 export default api;

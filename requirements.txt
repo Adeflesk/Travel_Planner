@@ -6,7 +6,7 @@ pydantic==2.5.3
 pydantic[email]
 
 # Database
-#psycopg2-binary==2.9.9
+psycopg2-binary==2.9.9
 
 # Authentication
 python-jose[cryptography]==3.3.0

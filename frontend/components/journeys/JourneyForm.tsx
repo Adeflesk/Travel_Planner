@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { JourneyFormData, Destination, RouteType } from '@/lib/types';
 import { transportModes } from './useJourneys';
 import { ValidationErrors, ValidationWarnings } from './useJourneyForm';
 import { AlertCircle, AlertTriangle, ChevronDown, ChevronUp, Route } from 'lucide-react';
+import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
 
 const routeTypes: { value: RouteType; label: string }[] = [
   { value: 'fastest', label: 'Fastest (Highways)' },
@@ -26,6 +27,9 @@ interface JourneyFormProps {
     field: K,
     value: JourneyFormData[K]
   ) => void;
+  carrierSuggestions?: string[];
+  recentCarriers?: string[];
+  loadingCarriers?: boolean;
 }
 
 export function JourneyForm({
@@ -37,14 +41,98 @@ export function JourneyForm({
   onSubmit,
   onCancel,
   updateField,
+  carrierSuggestions = [],
+  recentCarriers = [],
+  loadingCarriers = false,
 }: JourneyFormProps) {
   const [showRouteDetails, setShowRouteDetails] = useState(
     // Auto-expand if route details exist
     !!(formData.distance_km || formData.distance_miles || formData.estimated_duration_minutes || formData.route_type || formData.has_tolls || formData.toll_cost || formData.route_notes)
   );
 
+  // Date input mode: 'time' = explicit arrival time, 'duration' = calculate from duration
+  const [dateInputMode, setDateInputMode] = useState<'time' | 'duration'>('time');
+  const [durationHours, setDurationHours] = useState<number>(0);
+  const [durationMinutes, setDurationMinutes] = useState<number>(0);
+
   // Route details are primarily for ground transport
   const canHaveRouteDetails = ['car', 'bus', 'train'].includes(formData.transport_mode);
+
+  // Calculate duration from departure and arrival times
+  const calculateDuration = () => {
+    if (formData.departure_datetime && formData.arrival_datetime) {
+      const departure = new Date(formData.departure_datetime);
+      const arrival = new Date(formData.arrival_datetime);
+      const diffMs = arrival.getTime() - departure.getTime();
+      const diffMinutes = Math.floor(diffMs / 60000);
+      return {
+        hours: Math.floor(diffMinutes / 60),
+        minutes: diffMinutes % 60,
+        totalMinutes: diffMinutes
+      };
+    }
+    return { hours: 0, minutes: 0, totalMinutes: 0 };
+  };
+
+  // Calculate arrival time from departure + duration
+  const calculateArrival = (departureStr: string, hours: number, minutes: number) => {
+    if (!departureStr) return '';
+    const departure = new Date(departureStr);
+    const totalMinutes = (hours * 60) + minutes;
+    const arrival = new Date(departure.getTime() + totalMinutes * 60000);
+
+    // Format as datetime-local string: YYYY-MM-DDTHH:mm
+    const year = arrival.getFullYear();
+    const month = String(arrival.getMonth() + 1).padStart(2, '0');
+    const day = String(arrival.getDate()).padStart(2, '0');
+    const hour = String(arrival.getHours()).padStart(2, '0');
+    const minute = String(arrival.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hour}:${minute}`;
+  };
+
+  // Update duration when mode switches to duration or times change
+  const handleModeSwitch = (mode: 'time' | 'duration') => {
+    setDateInputMode(mode);
+    if (mode === 'duration') {
+      // Switching to duration mode - calculate duration from current times
+      const duration = calculateDuration();
+      setDurationHours(duration.hours);
+      setDurationMinutes(duration.minutes);
+    } else {
+      // Switching to time mode - calculate arrival from current duration
+      if (formData.departure_datetime && (durationHours > 0 || durationMinutes > 0)) {
+        const arrival = calculateArrival(formData.departure_datetime, durationHours, durationMinutes);
+        updateField('arrival_datetime', arrival);
+      }
+    }
+  };
+
+  // Handle journey duration change - recalculate arrival time
+  const handleJourneyDurationChange = (hours: number, minutes: number) => {
+    setDurationHours(hours);
+    setDurationMinutes(minutes);
+    if (formData.departure_datetime) {
+      const arrival = calculateArrival(formData.departure_datetime, hours, minutes);
+      updateField('arrival_datetime', arrival);
+    }
+  };
+
+  // Sync duration values when times change (e.g., when editing existing journey)
+  useEffect(() => {
+    if (dateInputMode === 'duration' && formData.departure_datetime && formData.arrival_datetime) {
+      const departure = new Date(formData.departure_datetime);
+      const arrival = new Date(formData.arrival_datetime);
+      const diffMs = arrival.getTime() - departure.getTime();
+      const diffMinutes = Math.floor(diffMs / 60000);
+      const hours = Math.floor(diffMinutes / 60);
+      const minutes = diffMinutes % 60;
+
+      setDurationHours(hours);
+      setDurationMinutes(minutes);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.departure_datetime, formData.arrival_datetime, dateInputMode]);
+
 
   // Format duration for display (hours and minutes)
   const formatDurationForInput = (minutes?: number): { hours: string; mins: string } => {
@@ -85,16 +173,18 @@ export function JourneyForm({
             ))}
           </select>
         </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">
-            Carrier <span className="text-gray-400 font-normal">(optional)</span>
-          </label>
-          <input
-            type="text"
+        <div>
+          <AutocompleteInput
+            label="Carrier"
+            hint="optional"
             value={formData.carrier}
             onChange={(e) => updateField('carrier', e.target.value)}
+            onSelect={(value) => updateField('carrier', value)}
+            suggestions={carrierSuggestions}
+            recentItems={recentCarriers}
+            loading={loadingCarriers}
             placeholder="e.g., British Airways, Eurostar"
-            className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+            showRecentFirst={true}
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -173,24 +263,128 @@ export function JourneyForm({
             />
           )}
         </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">Departure</label>
-          <input
-            type="datetime-local"
-            value={formData.departure_datetime}
-            onChange={(e) => updateField('departure_datetime', e.target.value)}
-            className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs"
-          />
+        {/* Date Input Mode Toggle */}
+        <div className="md:col-span-2">
+          <div className="flex items-center gap-2 mb-2">
+            <label className="text-sm font-medium text-gray-700">Journey Timing:</label>
+            <div className="inline-flex rounded-md shadow-sm" role="group">
+              <button
+                type="button"
+                onClick={() => handleModeSwitch('time')}
+                className={`px-3 py-1.5 text-sm font-medium rounded-l-md border ${
+                  dateInputMode === 'time'
+                    ? 'bg-primary-600 text-white border-primary-600'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                Exact Times
+              </button>
+              <button
+                type="button"
+                onClick={() => handleModeSwitch('duration')}
+                className={`px-3 py-1.5 text-sm font-medium rounded-r-md border-t border-r border-b ${
+                  dateInputMode === 'duration'
+                    ? 'bg-primary-600 text-white border-primary-600'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                Duration
+              </button>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">Arrival</label>
-          <input
-            type="datetime-local"
-            value={formData.arrival_datetime}
-            onChange={(e) => updateField('arrival_datetime', e.target.value)}
-            className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs"
-          />
-        </div>
+
+        {/* Time Mode: Departure + Arrival */}
+        {dateInputMode === 'time' && (
+          <>
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700">Departure</label>
+              <input
+                type="datetime-local"
+                value={formData.departure_datetime}
+                onChange={(e) => updateField('departure_datetime', e.target.value)}
+                className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700">Arrival</label>
+              <input
+                type="datetime-local"
+                value={formData.arrival_datetime}
+                onChange={(e) => updateField('arrival_datetime', e.target.value)}
+                className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs"
+              />
+              {formData.departure_datetime && formData.arrival_datetime && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Duration: {calculateDuration().hours}h {calculateDuration().minutes}m
+                </p>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* Duration Mode: Departure + Duration */}
+        {dateInputMode === 'duration' && (
+          <>
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700">Departure</label>
+              <input
+                type="datetime-local"
+                value={formData.departure_datetime}
+                onChange={(e) => {
+                  updateField('departure_datetime', e.target.value);
+                  // Recalculate arrival when departure changes
+                  if (e.target.value && (durationHours > 0 || durationMinutes > 0)) {
+                    const arrival = calculateArrival(e.target.value, durationHours, durationMinutes);
+                    updateField('arrival_datetime', arrival);
+                  }
+                }}
+                className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700">Journey Duration</label>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <div className="flex items-center">
+                    <input
+                      type="number"
+                      min="0"
+                      max="72"
+                      value={durationHours}
+                      onChange={(e) => handleJourneyDurationChange(parseInt(e.target.value) || 0, durationMinutes)}
+                      className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs"
+                      placeholder="0"
+                    />
+                    <span className="ml-2 text-sm text-gray-600">hours</span>
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center">
+                    <input
+                      type="number"
+                      min="0"
+                      max="59"
+                      value={durationMinutes}
+                      onChange={(e) => handleJourneyDurationChange(durationHours, parseInt(e.target.value) || 0)}
+                      className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs"
+                      placeholder="0"
+                    />
+                    <span className="ml-2 text-sm text-gray-600">minutes</span>
+                  </div>
+                </div>
+              </div>
+              {formData.departure_datetime && (durationHours > 0 || durationMinutes > 0) && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Arrival: {formData.arrival_datetime ? new Date(formData.arrival_datetime).toLocaleString('en-GB', {
+                    dateStyle: 'medium',
+                    timeStyle: 'short'
+                  }) : 'N/A'}
+                </p>
+              )}
+            </div>
+          </>
+        )}
 
         {/* Validation Messages */}
         {(errors.departure_arrival || warnings.outside_trip_dates) && (

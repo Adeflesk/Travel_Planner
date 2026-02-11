@@ -33,6 +33,9 @@ export default function JourneyList({ tripId }: JourneyListProps) {
     resetForm,
     updateField,
     duplicateAsReturn,
+    carrierSuggestions,
+    recentCarriers,
+    loadingCarriers,
   } = useJourneyForm(tripId, reload);
 
   const [showForm, setShowForm] = useState(false);
@@ -94,6 +97,9 @@ export default function JourneyList({ tripId }: JourneyListProps) {
               setShowForm(false);
             }}
             updateField={updateField}
+            carrierSuggestions={carrierSuggestions}
+            recentCarriers={recentCarriers}
+            loadingCarriers={loadingCarriers}
           />
         </div>
       )}
