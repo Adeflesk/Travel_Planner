@@ -8,9 +8,8 @@ export function useHelpSearch(query: string) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    // Early return for empty/short queries - let state updates happen in cleanup
     if (!query || query.length < 2) {
-      setResults([]);
-      setLoading(false);
       return;
     }
 
@@ -24,8 +23,18 @@ export function useHelpSearch(query: string) {
 
     return () => {
       clearTimeout(timer);
+      // Clean up state when query becomes invalid
+      if (!query || query.length < 2) {
+        setResults([]);
+        setLoading(false);
+      }
     };
   }, [query]);
+
+  // Return empty results for invalid queries without calling setState in effect body
+  if (!query || query.length < 2) {
+    return { results: [], loading: false };
+  }
 
   return { results, loading };
 }

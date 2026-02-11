@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import * as Icons from 'lucide-react';
-import { ReactNode } from 'react';
 
 interface HelpCategoryCardProps {
   title: string;
