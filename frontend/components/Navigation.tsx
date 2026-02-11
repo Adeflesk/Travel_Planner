@@ -32,6 +32,12 @@ export default function Navigation() {
             >
               My Trips
             </Link>
+            <Link
+              href="/help"
+              className="text-white hover:text-primary-200 transition-colors font-medium"
+            >
+              Help
+            </Link>
             {user?.role === 'admin' && (
               <>
                 <span className="text-primary-300">|</span>
