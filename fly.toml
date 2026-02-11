@@ -9,6 +9,9 @@ primary_region = 'lhr'
 [build]
   dockerfile = 'Dockerfile'
 
+[deploy]
+  release_command = '/opt/venv/bin/python -c "from database import engine; import models; models.Base.metadata.create_all(bind=engine)"'
+
 [env]
   app = "travel-planner"
   ENVIRONMENT = 'production'
