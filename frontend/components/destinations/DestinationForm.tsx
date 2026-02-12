@@ -34,7 +34,7 @@ export function DestinationForm({
             onChange={(e) => updateField('name', e.target.value)}
             placeholder="e.g., Paris, Tokyo"
             required
-            className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+            className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -46,7 +46,7 @@ export function DestinationForm({
             value={formData.country}
             onChange={(e) => updateField('country', e.target.value)}
             placeholder="e.g., France, Japan"
-            className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+            className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -58,7 +58,7 @@ export function DestinationForm({
             value={formData.region}
             onChange={(e) => updateField('region', e.target.value || '')}
             placeholder="e.g., Île-de-France, Kanto"
-            className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+            className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -67,7 +67,7 @@ export function DestinationForm({
             type="date"
             value={formData.arrival_date}
             onChange={(e) => updateField('arrival_date', e.target.value)}
-            className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+            className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -76,7 +76,7 @@ export function DestinationForm({
             type="date"
             value={formData.departure_date}
             onChange={(e) => updateField('departure_date', e.target.value)}
-            className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+            className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
           />
         </div>
       </div>

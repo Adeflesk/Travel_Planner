@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, forwardRef, useCallback } from 'react';
+import { useState, useEffect, useRef, forwardRef, useCallback, useMemo } from 'react';
 import { Input } from './Input';
 import type { InputHTMLAttributes, ReactNode } from 'react';
 import { Loader2 } from 'lucide-react';
@@ -52,30 +52,32 @@ export const AutocompleteInput = forwardRef<HTMLInputElement, AutocompleteInputP
     ref
   ) => {
     const [isOpen, setIsOpen] = useState(false);
-    const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
     const [selectedIndex, setSelectedIndex] = useState(-1);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    // Filter suggestions based on input value
-    useEffect(() => {
+    // Filter suggestions based on input value using useMemo instead of useEffect
+    const filteredSuggestions = useMemo(() => {
       if (!value || typeof value !== 'string') {
-        setFilteredSuggestions(suggestions);
-        return;
+        return suggestions;
       }
 
       const inputValue = value.toLowerCase();
-      const filtered = suggestions.filter((suggestion) => {
+      return suggestions.filter((suggestion) => {
         const suggestionLower = suggestion.toLowerCase();
         if (filterMethod === 'startsWith') {
           return suggestionLower.startsWith(inputValue);
         }
         return suggestionLower.includes(inputValue);
       });
-
-      setFilteredSuggestions(filtered);
-      setSelectedIndex(-1);
     }, [value, suggestions, filterMethod]);
+
+    // Reset selected index when filtered suggestions change
+    useEffect(() => {
+      // Synchronize selectedIndex with filtered list - valid use case for effect
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelectedIndex(-1);
+    }, [filteredSuggestions]);
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -219,7 +221,7 @@ export const AutocompleteInput = forwardRef<HTMLInputElement, AutocompleteInputP
                     <div className="px-3 py-1.5 text-xs font-medium text-slate-500 bg-slate-50 border-b border-slate-200">
                       Recent
                     </div>
-                    {recentSuggestions.map((suggestion, idx) => {
+                    {recentSuggestions.map((suggestion) => {
                       const globalIndex = filteredSuggestions.indexOf(suggestion);
                       return (
                         <button

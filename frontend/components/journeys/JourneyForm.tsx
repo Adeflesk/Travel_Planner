@@ -127,11 +127,12 @@ export function JourneyForm({
       const hours = Math.floor(diffMinutes / 60);
       const minutes = diffMinutes % 60;
 
+      // Synchronize local duration state with form data - valid use case for effect
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDurationHours(hours);
       setDurationMinutes(minutes);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData.departure_datetime, formData.arrival_datetime, dateInputMode]);
+  }, [formData.departure_datetime, formData.arrival_datetime, dateInputMode, setDurationHours, setDurationMinutes]);
 
 
   // Format duration for display (hours and minutes)
@@ -163,7 +164,7 @@ export function JourneyForm({
             value={formData.transport_mode}
             onChange={(e) => updateField('transport_mode', e.target.value)}
             required
-            className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs"
+            className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
           >
             <option value="">Select Transport</option>
             {transportModes.map((mode) => (
@@ -204,7 +205,7 @@ export function JourneyForm({
                 updateField('origin_name', undefined);
               }
             }}
-            className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs"
+            className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
           >
             <option value="">Select Origin</option>
             {destinations.map((dest) => (
@@ -221,7 +222,7 @@ export function JourneyForm({
               value={formData.origin_name || ''}
               onChange={(e) => updateField('origin_name', e.target.value)}
               placeholder="e.g., Dublin Airport (DUB)"
-              className="mt-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+              className="mt-2 bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
             />
           )}
         </div>
@@ -242,7 +243,7 @@ export function JourneyForm({
                 updateField('destination_name', undefined);
               }
             }}
-            className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs"
+            className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
           >
             <option value="">Select Destination</option>
             {destinations.map((dest) => (
@@ -259,7 +260,7 @@ export function JourneyForm({
               value={formData.destination_name || ''}
               onChange={(e) => updateField('destination_name', e.target.value)}
               placeholder="e.g., Dublin Airport (DUB)"
-              className="mt-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+              className="mt-2 bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
             />
           )}
         </div>
@@ -303,7 +304,7 @@ export function JourneyForm({
                 type="datetime-local"
                 value={formData.departure_datetime}
                 onChange={(e) => updateField('departure_datetime', e.target.value)}
-                className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs"
+                className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
               />
             </div>
             <div className="flex flex-col gap-1">
@@ -312,7 +313,7 @@ export function JourneyForm({
                 type="datetime-local"
                 value={formData.arrival_datetime}
                 onChange={(e) => updateField('arrival_datetime', e.target.value)}
-                className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs"
+                className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
               />
               {formData.departure_datetime && formData.arrival_datetime && (
                 <p className="text-xs text-gray-500 mt-1">
@@ -339,7 +340,7 @@ export function JourneyForm({
                     updateField('arrival_datetime', arrival);
                   }
                 }}
-                className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs"
+                className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
               />
             </div>
             <div className="flex flex-col gap-1">
@@ -353,7 +354,7 @@ export function JourneyForm({
                       max="72"
                       value={durationHours}
                       onChange={(e) => handleJourneyDurationChange(parseInt(e.target.value) || 0, durationMinutes)}
-                      className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs"
+                      className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
                       placeholder="0"
                     />
                     <span className="ml-2 text-sm text-gray-600">hours</span>
@@ -367,7 +368,7 @@ export function JourneyForm({
                       max="59"
                       value={durationMinutes}
                       onChange={(e) => handleJourneyDurationChange(durationHours, parseInt(e.target.value) || 0)}
-                      className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs"
+                      className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
                       placeholder="0"
                     />
                     <span className="ml-2 text-sm text-gray-600">minutes</span>
@@ -420,12 +421,12 @@ export function JourneyForm({
               }
               placeholder="0.00"
               step="0.01"
-              className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+              className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
             />
             <select
               value={formData.currency}
               onChange={(e) => updateField('currency', e.target.value)}
-              className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand px-3 py-2.5 shadow-xs"
+              className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 px-3 py-2.5 shadow-xs"
             >
               <option value="USD">USD</option>
               <option value="EUR">EUR</option>
@@ -449,7 +450,7 @@ export function JourneyForm({
             value={formData.booking_reference}
             onChange={(e) => updateField('booking_reference', e.target.value)}
             placeholder="e.g., ABC123"
-            className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+            className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
           />
         </div>
       </div>
@@ -487,7 +488,7 @@ export function JourneyForm({
                       onChange={(e) => updateField('distance_miles', e.target.value ? parseFloat(e.target.value) : undefined)}
                       placeholder="0"
                       step="0.1"
-                      className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+                      className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
                     />
                     <span className="text-xs text-gray-500 mt-1">miles</span>
                   </div>
@@ -498,7 +499,7 @@ export function JourneyForm({
                       onChange={(e) => updateField('distance_km', e.target.value ? parseFloat(e.target.value) : undefined)}
                       placeholder="0"
                       step="0.1"
-                      className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+                      className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
                     />
                     <span className="text-xs text-gray-500 mt-1">km</span>
                   </div>
@@ -515,7 +516,7 @@ export function JourneyForm({
                     onChange={(e) => handleDurationChange(e.target.value, durationParts.mins)}
                     placeholder="0"
                     min="0"
-                    className="w-20 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block px-3 py-2.5 shadow-xs placeholder:text-body"
+                    className="w-20 bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block px-3 py-2.5 shadow-xs placeholder:text-slate-400"
                   />
                   <span className="text-sm text-gray-600">h</span>
                   <input
@@ -525,7 +526,7 @@ export function JourneyForm({
                     placeholder="0"
                     min="0"
                     max="59"
-                    className="w-20 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block px-3 py-2.5 shadow-xs placeholder:text-body"
+                    className="w-20 bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block px-3 py-2.5 shadow-xs placeholder:text-slate-400"
                   />
                   <span className="text-sm text-gray-600">min</span>
                 </div>
@@ -537,7 +538,7 @@ export function JourneyForm({
                 <select
                   value={formData.route_type || ''}
                   onChange={(e) => updateField('route_type', e.target.value as RouteType || undefined)}
-                  className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs"
+                  className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
                 >
                   <option value="">Not specified</option>
                   {routeTypes.map((rt) => (
@@ -570,7 +571,7 @@ export function JourneyForm({
                         onChange={(e) => updateField('toll_cost', e.target.value ? parseFloat(e.target.value) : undefined)}
                         placeholder="0.00"
                         step="0.01"
-                        className="w-24 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block px-3 py-2 shadow-xs placeholder:text-body"
+                        className="w-24 bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block px-3 py-2 shadow-xs placeholder:text-slate-400"
                       />
                     </div>
                   )}
@@ -585,7 +586,7 @@ export function JourneyForm({
                   onChange={(e) => updateField('route_notes', e.target.value || undefined)}
                   placeholder="e.g., Take I-70 through Glenwood Canyon for scenic views"
                   rows={2}
-                  className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body resize-none"
+                  className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400 resize-none"
                 />
               </div>
             </div>
@@ -599,7 +600,7 @@ export function JourneyForm({
           <select
             value={formData.status}
             onChange={(e) => updateField('status', e.target.value)}
-            className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand px-3 py-1.5 shadow-xs"
+            className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 px-3 py-1.5 shadow-xs"
           >
             <option value="planned">Planned</option>
             <option value="booked">Booked</option>

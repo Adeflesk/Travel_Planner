@@ -56,7 +56,7 @@ function getCachedSuggestions(
     // Cache expired, remove it
     localStorage.removeItem(cacheKey);
     return null;
-  } catch (error) {
+  } catch {
     // Invalid cache, remove it
     localStorage.removeItem(cacheKey);
     return null;

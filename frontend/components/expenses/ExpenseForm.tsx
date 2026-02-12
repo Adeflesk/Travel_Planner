@@ -35,7 +35,7 @@ export function ExpenseForm({
             onChange={(e) => updateField('description', e.target.value)}
             placeholder="e.g., Hotel booking, Dinner"
             required
-            className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+            className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -47,7 +47,7 @@ export function ExpenseForm({
             placeholder="0.00"
             step="0.01"
             required
-            className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+            className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -56,7 +56,7 @@ export function ExpenseForm({
             value={formData.category}
             onChange={(e) => updateField('category', e.target.value)}
             required
-            className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs"
+            className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
           >
             <option value="">Select Category</option>
             {categories.map((cat) => (
@@ -73,7 +73,7 @@ export function ExpenseForm({
             value={formData.date}
             onChange={(e) => updateField('date', e.target.value)}
             required
-            className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+            className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -84,7 +84,7 @@ export function ExpenseForm({
             type="date"
             value={formData.cancel_by_date || ''}
             onChange={(e) => updateField('cancel_by_date', e.target.value)}
-            className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+            className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
           />
         </div>
       </div>

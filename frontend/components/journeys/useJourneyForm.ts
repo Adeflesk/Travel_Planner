@@ -66,12 +66,12 @@ export function useJourneyForm(tripId: number, onSuccess: () => void) {
       // set it to the user's most common currency
       const defaultCurrency = currencySuggestions[0];
       if (defaultCurrency && defaultCurrency !== 'USD') {
+        // This is an initialization effect - sets smart defaults on mount
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setFormData((prev) => ({ ...prev, currency: defaultCurrency }));
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editingId, currencySuggestions]);
+  }, [editingId, currencySuggestions, formData.currency]);
 
   // Context-aware defaults: Pre-fill date fields with year/month from trip start
   useEffect(() => {
@@ -84,14 +84,14 @@ export function useJourneyForm(tripId: number, onSuccess: () => void) {
       // Default to trip start date at 9:00 AM for departure
       const defaultDepartureDate = `${year}-${month}-${day}T09:00`;
 
+      // This is an initialization effect - sets smart defaults on mount
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData((prev) => ({
         ...prev,
         departure_datetime: defaultDepartureDate
       }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editingId, trip]);
+  }, [editingId, trip, formData.departure_datetime, formData.arrival_datetime]);
 
   // Validate form data
   const validate = (): boolean => {
