@@ -90,7 +90,7 @@ export function JourneyItem({
   const canHaveStops = ['car', 'bus', 'train'].includes(journey.transport_mode);
 
   return (
-    <div className="border border-gray-200 rounded-lg hover:shadow-md transition">
+    <div className="border border-gray-200 rounded-lg bg-white hover:shadow-md transition">
       {/* Journey Header */}
       <div className="p-4">
         <div className="flex justify-between items-start">
@@ -99,7 +99,7 @@ export function JourneyItem({
               <div className={`p-2 rounded-full ${transportClass} shrink-0`}>
                 <TransportIcon className="w-5 h-5" />
               </div>
-              <div className="flex items-center gap-2 flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-1 min-w-0 relative z-10">
                 <span className="font-semibold text-gray-900">
                   {journey.origin_name || getDestinationName(journey.origin_id)}
                 </span>
