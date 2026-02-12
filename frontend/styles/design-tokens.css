@@ -96,15 +96,16 @@
   --radius-full: 9999px;
 }
 
-/* Dark mode (future) - Disabled until full dark mode support is implemented
+/* Force light mode colors even when device prefers dark mode
+   TODO: Implement proper dark mode support with dark backgrounds */
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-background: #0F172A;
-    --color-surface: #1E293B;
-    --color-border: #334155;
-    --color-text: #F8FAFC;
-    --color-text-secondary: #94A3B8;
-    --color-text-muted: #64748B;
+    /* Keep light mode colors to ensure text visibility */
+    --color-background: #F8FAFC;
+    --color-surface: #FFFFFF;
+    --color-border: #E2E8F0;
+    --color-text: #0F172A;
+    --color-text-secondary: #475569;
+    --color-text-muted: #94A3B8;
   }
 }
-*/
