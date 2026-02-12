@@ -100,11 +100,11 @@ export function JourneyItem({
                 <TransportIcon className="w-5 h-5" />
               </div>
               <div className="flex items-center gap-2">
-                <span className="font-semibold">
+                <span className="font-semibold text-gray-900">
                   {journey.origin_name || getDestinationName(journey.origin_id)}
                 </span>
                 <ArrowRight className="w-4 h-4 text-gray-400" />
-                <span className="font-semibold">
+                <span className="font-semibold text-gray-900">
                   {journey.destination_name || getDestinationName(journey.destination_id)}
                 </span>
               </div>
