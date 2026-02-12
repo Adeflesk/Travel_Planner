@@ -2,12 +2,49 @@
 
 A full-stack travel planning application for organizing trips, destinations, journeys, activities, expenses, and packing lists.
 
-## Tech Stack
+## Language & Compatibility
+
+This project uses TypeScript (frontend) and Python (backend). Always check Python version compatibility (project targets 3.9+). Use `from __future__ import annotations` or `typing` module aliases instead of PEP 604/PEP 585 syntax for Python type hints.
+
+## CI/CD
+
 When fixing CI/CD or linter issues, verify the fix works against the exact CI environment version (e.g., Python 3.9 vs 3.10+) before committing. Check `.github/workflows/` files for runtime versions first.
 
-Add under a ## Language & Compatibility section near the top of CLAUDE.md\n\nThis project uses TypeScript (frontend) and Python (backend). Always check Python version compatibility (project targets 3.9+). Use `from __future__ import annotations` or `typing` module aliases instead of PEP 604/PEP 585 syntax for Python type hints.
+## Git Workflow
 
-Add under a new ## Git Workflow section in CLAUDE.md\n\nWhen working on git branches, always confirm the current branch with `git branch` and verify it contains all expected features before creating new branches. Never branch from `master`/`main` when the intent is to build on an existing feature branch.
+When working on git branches, always confirm the current branch with `git branch` and verify it contains all expected features before creating new branches. Never branch from `master`/`main` when the intent is to build on an existing feature branch.
+
+## Development Workflow
+
+After making backend schema or model changes, always suggest restarting the dev server. After fixing lint/type errors, run the full lint suite locally before committing.
+
+## Code Quality
+
+When editing string literals in JSX/TSX or template strings, double-check quote escaping and special characters before finalizing the edit.
+
+## Deployment
+
+### Production Environment
+- **Backend:** Deployed to [Fly.io](https://fly.io) using Docker (Python 3.12, Gunicorn + Uvicorn workers)
+- **Frontend:** Deployed to [Vercel](https://vercel.com) (Node 20, Next.js App Router)
+- **Database:** SQLite locally, **Neon Postgres** in production (not Fly Postgres)
+
+### Important Constraints
+- **Python version:** CI tests against 3.11 and 3.12. Dockerfile uses 3.12. Code must be compatible with both.
+- **Node version:** CI and production use Node 20
+- **Database migrations:** Any schema changes require database migration consideration
+- **Environment variables:** All secrets and config must use environment variables (never hardcode)
+
+### When Making Changes
+- **Dockerfile edits:** Use multi-stage build pattern, maintain Python 3.12 base image, keep non-root user
+- **Dependencies:** Changes to `requirements.txt` or `package.json` affect build time and deployment
+- **Environment variables:** Document new env vars in `docs/deployment.md` Environment Variables Reference section
+- **Database changes:** SQLite (local dev) behaves differently from Postgres (production) - test compatibility
+
+### Deployment Documentation
+Full deployment guide with step-by-step instructions: [`docs/deployment.md`](docs/deployment.md)
+
+## Tech Stack
 
 **Backend:**
 - Python FastAPI
