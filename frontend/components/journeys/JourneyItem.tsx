@@ -95,20 +95,20 @@ export function JourneyItem({
       <div className="p-4">
         <div className="flex justify-between items-start">
           <div className="flex-1">
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-full ${transportClass}`}>
+            <div className="flex items-start gap-3 flex-wrap">
+              <div className={`p-2 rounded-full ${transportClass} shrink-0`}>
                 <TransportIcon className="w-5 h-5" />
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
                 <span className="font-semibold text-gray-900">
                   {journey.origin_name || getDestinationName(journey.origin_id)}
                 </span>
-                <ArrowRight className="w-4 h-4 text-gray-400" />
+                <ArrowRight className="w-4 h-4 text-gray-400 shrink-0" />
                 <span className="font-semibold text-gray-900">
                   {journey.destination_name || getDestinationName(journey.destination_id)}
                 </span>
               </div>
-              <Badge variant={statusVariant} size="sm">
+              <Badge variant={statusVariant} size="sm" className="shrink-0">
                 {journey.status.charAt(0).toUpperCase() + journey.status.slice(1)}
               </Badge>
             </div>
