@@ -18,6 +18,8 @@ from .journey import Journey
 from .journey_stop import JourneyStop
 from .stop_option import StopOption
 from .journey_document import JourneyDocument
+from .journey_option import JourneyOption
+from .flight_layover import FlightLayover
 
 __all__ = [
     "Base",
@@ -33,4 +35,6 @@ __all__ = [
     "JourneyStop",
     "StopOption",
     "JourneyDocument",
+    "JourneyOption",
+    "FlightLayover",
 ]

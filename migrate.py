@@ -24,6 +24,7 @@ from app.models.journey import Journey  # noqa: E402, F401
 from app.models.journey_stop import JourneyStop  # noqa: E402, F401
 from app.models.stop_option import StopOption  # noqa: E402, F401
 from app.models.journey_document import JourneyDocument  # noqa: E402, F401
+from app.models.journey_option import JourneyOption  # noqa: E402, F401
 from app.models.trip_share import TripShare  # noqa: E402, F401
 
 print("Creating database tables...")

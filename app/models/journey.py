@@ -11,6 +11,7 @@ from sqlalchemy import (
     Column,
     Integer,
     String,
+    Date,
     DateTime,
     Numeric,
     Text,
@@ -51,6 +52,17 @@ class Journey(Base):
     toll_cost = Column(Numeric(10, 2), nullable=True)
     route_notes = Column(Text, nullable=True)
 
+    # Flexible booking fields
+    is_booked = Column(Boolean, default=True, nullable=False)
+    booking_opens_date = Column(Date, nullable=True)
+    booking_deadline = Column(Date, nullable=True)
+    frequency = Column(String(100), nullable=True)  # "Every 30 min", "Hourly", etc.
+    flexibility_level = Column(String(20), default="exact", nullable=False)
+
+    # Timezone fields (for flights and accurate time calculations)
+    origin_timezone = Column(String(50), nullable=True)  # e.g., "America/Los_Angeles"
+    destination_timezone = Column(String(50), nullable=True)  # e.g., "America/New_York"
+
     trip = relationship("Trip", back_populates="journeys")
     origin = relationship(
         "Destination", foreign_keys=[origin_id], backref="departing_journeys"
@@ -63,4 +75,10 @@ class Journey(Base):
     )
     documents = relationship(
         "JourneyDocument", back_populates="journey", cascade="all, delete-orphan"
+    )
+    layovers = relationship(
+        "FlightLayover", back_populates="journey", cascade="all, delete-orphan"
+    )
+    options = relationship(
+        "JourneyOption", back_populates="journey", cascade="all, delete-orphan"
     )

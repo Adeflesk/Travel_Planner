@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { Journey, JourneyFormData, Trip } from '@/lib/types';
-import { journeyApi, tripApi } from '@/lib/api';
+import { journeyApi, layoverApi, tripApi } from '@/lib/api';
 import { useSuggestions } from '@/lib/hooks/useSuggestions';
+import type { DraftLayover } from '@/components/layovers';
 
 export interface ValidationErrors {
   departure_arrival?: string;
@@ -20,6 +21,8 @@ const getInitialFormData = (tripId: number): JourneyFormData => ({
   destination_id: undefined,
   origin_name: undefined,
   destination_name: undefined,
+  origin_timezone: undefined,
+  destination_timezone: undefined,
   departure_datetime: '',
   arrival_datetime: '',
   carrier: '',
@@ -28,6 +31,11 @@ const getInitialFormData = (tripId: number): JourneyFormData => ({
   currency: 'USD',
   notes: '',
   status: 'planned',
+  is_booked: true,
+  booking_opens_date: '',
+  booking_deadline: '',
+  frequency: '',
+  flexibility_level: 'exact',
 });
 
 export function useJourneyForm(tripId: number, onSuccess: () => void) {
@@ -35,6 +43,7 @@ export function useJourneyForm(tripId: number, onSuccess: () => void) {
   const [formData, setFormData] = useState<JourneyFormData>(
     getInitialFormData(tripId)
   );
+  const [draftLayovers, setDraftLayovers] = useState<DraftLayover[]>([]);
   const [trip, setTrip] = useState<Trip | null>(null);
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [warnings, setWarnings] = useState<ValidationWarnings>({});
@@ -83,12 +92,16 @@ export function useJourneyForm(tripId: number, onSuccess: () => void) {
 
       // Default to trip start date at 9:00 AM for departure
       const defaultDepartureDate = `${year}-${month}-${day}T09:00`;
+      
+      // Default arrival to 2 hours after departure (reasonable for most journeys)
+      const defaultArrivalDate = `${year}-${month}-${day}T11:00`;
 
       // This is an initialization effect - sets smart defaults on mount
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData((prev) => ({
         ...prev,
-        departure_datetime: defaultDepartureDate
+        departure_datetime: defaultDepartureDate,
+        arrival_datetime: defaultArrivalDate
       }));
     }
   }, [editingId, trip, formData.departure_datetime, formData.arrival_datetime]);
@@ -150,9 +163,23 @@ export function useJourneyForm(tripId: number, onSuccess: () => void) {
         await journeyApi.update(editingId, formData);
         setEditingId(null);
       } else {
-        await journeyApi.create(formData);
+        const response = await journeyApi.create(formData);
+        const createdJourney = response.data;
+
+        if (draftLayovers.length > 0) {
+          await Promise.all(
+            draftLayovers.map((layover, index) =>
+              layoverApi.create({
+                ...layover,
+                journey_id: createdJourney.id,
+                order: index,
+              })
+            )
+          );
+        }
       }
       setFormData(getInitialFormData(tripId));
+      setDraftLayovers([]);
       setErrors({});
       setWarnings({});
       onSuccess();
@@ -171,6 +198,8 @@ export function useJourneyForm(tripId: number, onSuccess: () => void) {
       destination_id: journey.destination_id,
       origin_name: journey.origin_name,
       destination_name: journey.destination_name,
+      origin_timezone: journey.origin_timezone,
+      destination_timezone: journey.destination_timezone,
       departure_datetime: journey.departure_datetime || '',
       arrival_datetime: journey.arrival_datetime || '',
       carrier: journey.carrier || '',
@@ -185,6 +214,7 @@ export function useJourneyForm(tripId: number, onSuccess: () => void) {
   const resetForm = () => {
     setEditingId(null);
     setFormData(getInitialFormData(tripId));
+    setDraftLayovers([]);
     setErrors({});
     setWarnings({});
   };
@@ -199,6 +229,8 @@ export function useJourneyForm(tripId: number, onSuccess: () => void) {
       destination_id: journey.origin_id,
       origin_name: journey.destination_name,
       destination_name: journey.origin_name,
+      origin_timezone: journey.destination_timezone,
+      destination_timezone: journey.origin_timezone,
       // Keep transport details
       transport_mode: journey.transport_mode,
       carrier: journey.carrier || '',
@@ -225,6 +257,7 @@ export function useJourneyForm(tripId: number, onSuccess: () => void) {
   return {
     formData,
     isEditing: editingId !== null,
+    editingId,
     errors,
     warnings,
     handleSubmit,
@@ -232,6 +265,8 @@ export function useJourneyForm(tripId: number, onSuccess: () => void) {
     resetForm,
     updateField,
     duplicateAsReturn,
+    draftLayovers,
+    setDraftLayovers,
     carrierSuggestions,
     recentCarriers,
     loadingCarriers,

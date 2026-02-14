@@ -15,6 +15,11 @@ import {
   StopOptionStatus,
   JourneyDocument,
   JourneyDocumentFormData,
+  JourneyOption,
+  JourneyOptionFormData,
+  OptionStatus,
+  FlightLayover,
+  FlightLayoverFormData,
   TripFormData,
   DestinationFormData,
   ExpenseFormData,
@@ -269,6 +274,50 @@ export const journeyApi = {
   delete: (id: number) => api.delete(`/journeys/${id}`),
   getTimeline: (journeyId: number) =>
     api.get<JourneyTimelineResponse>(`/journeys/${journeyId}/timeline`),
+  markBooked: (id: number) => api.patch<Journey>(`/journeys/${id}/book`),
+};
+
+// Journey Option API
+export const journeyOptionApi = {
+  getByJourneyId: (journeyId: number) =>
+    api.get<JourneyOption[]>(`/journeys/${journeyId}/options/`),
+  getById: (journeyId: number, optionId: number) =>
+    api.get<JourneyOption>(`/journeys/${journeyId}/options/${optionId}`),
+  create: (data: JourneyOptionFormData) => {
+    const cleanedData: Partial<JourneyOptionFormData> = {};
+    (Object.keys(data) as Array<keyof JourneyOptionFormData>).forEach((key) => {
+      const value = data[key];
+      if (value !== '' && value !== undefined && value !== null) {
+        if (key === 'cost' && typeof value === 'string') {
+          cleanedData[key] = parseFloat(value) as never;
+        } else {
+          cleanedData[key] = value as never;
+        }
+      }
+    });
+    return api.post<JourneyOption>(`/journeys/${data.journey_id}/options/`, cleanedData);
+  },
+  update: (journeyId: number, optionId: number, data: Partial<JourneyOptionFormData>) => {
+    const cleanedData: Partial<JourneyOptionFormData> = {};
+    (Object.keys(data) as Array<keyof JourneyOptionFormData>).forEach((key) => {
+      const value = data[key];
+      if (key === 'journey_id') return; // Don't update journey_id
+      if (value !== '' && value !== undefined && value !== null) {
+        if (key === 'cost' && typeof value === 'string') {
+          cleanedData[key] = parseFloat(value) as never;
+        } else {
+          cleanedData[key] = value as never;
+        }
+      }
+    });
+    return api.put<JourneyOption>(`/journeys/${journeyId}/options/${optionId}`, cleanedData);
+  },
+  delete: (journeyId: number, optionId: number) =>
+    api.delete(`/journeys/${journeyId}/options/${optionId}`),
+  select: (journeyId: number, optionId: number) =>
+    api.patch<JourneyOption>(`/journeys/${journeyId}/options/${optionId}/select`),
+  reorder: (journeyId: number, optionIds: number[]) =>
+    api.patch<JourneyOption[]>(`/journeys/${journeyId}/options/reorder`, { option_ids: optionIds }),
 };
 
 // Journey Stop API
@@ -384,6 +433,39 @@ export const journeyDocumentApi = {
   },
   delete: (journeyId: number, documentId: number) =>
     api.delete(`/journeys/${journeyId}/documents/${documentId}`),
+};
+
+// Flight Layover API
+export const layoverApi = {
+  getByJourneyId: (journeyId: number) =>
+    api.get<FlightLayover[]>(`/journeys/${journeyId}/layovers/`),
+  getById: (journeyId: number, layoverId: number) =>
+    api.get<FlightLayover>(`/journeys/${journeyId}/layovers/${layoverId}`),
+  create: (data: FlightLayoverFormData) => {
+    const cleanedData: Partial<FlightLayoverFormData> = {};
+    (Object.keys(data) as Array<keyof FlightLayoverFormData>).forEach((key) => {
+      const value = data[key];
+      if (value !== '' && value !== undefined && value !== null) {
+        cleanedData[key] = value as never;
+      }
+    });
+    return api.post<FlightLayover>(`/journeys/${data.journey_id}/layovers/`, cleanedData);
+  },
+  update: (journeyId: number, layoverId: number, data: Partial<FlightLayoverFormData>) => {
+    const cleanedData: Partial<FlightLayoverFormData> = {};
+    (Object.keys(data) as Array<keyof FlightLayoverFormData>).forEach((key) => {
+      const value = data[key];
+      if (key === 'journey_id') return;
+      if (value !== '' && value !== undefined && value !== null) {
+        cleanedData[key] = value as never;
+      }
+    });
+    return api.put<FlightLayover>(`/journeys/${journeyId}/layovers/${layoverId}`, cleanedData);
+  },
+  delete: (journeyId: number, layoverId: number) =>
+    api.delete(`/journeys/${journeyId}/layovers/${layoverId}`),
+  reorder: (journeyId: number, layoverIds: number[]) =>
+    api.patch<FlightLayover[]>(`/journeys/${journeyId}/layovers/reorder`, { layover_ids: layoverIds }),
 };
 
 // Admin API

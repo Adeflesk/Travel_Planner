@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge, StatusBadge } from '@/components/ui/Badge';
 import TripSidebar from '@/components/trips/TripSidebar';
+import { TripProvider } from '@/lib/trip-context';
 
 function TripDetailContent() {
   const { isAuthenticated } = useAuth();
@@ -68,8 +69,9 @@ function TripDetailContent() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      <div className="max-w-6xl mx-auto px-6 py-8">
+    <TripProvider tripId={tripId} startDate={trip.start_date} endDate={trip.end_date}>
+      <div className="min-h-screen bg-slate-100">
+        <div className="max-w-6xl mx-auto px-6 py-8">
       <Button
         variant="link"
         onClick={() => router.push('/trips')}
@@ -228,8 +230,9 @@ function TripDetailContent() {
         isOpen={showShareModal}
         onClose={() => setShowShareModal(false)}
       />
-    </div>
-    </div>
+      </div>
+      </div>
+    </TripProvider>
   );
 }
 

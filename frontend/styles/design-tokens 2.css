@@ -1,0 +1,109 @@
+/* ============================================
+   TRAVEL PLANNER DESIGN TOKENS
+   ============================================ */
+
+:root {
+  /* Primary Colors (Ocean Blue) */
+  --color-primary-50: #EFF6FF;
+  --color-primary-100: #DBEAFE;
+  --color-primary-200: #BFDBFE;
+  --color-primary-500: #3B82F6;
+  --color-primary-600: #2563EB;
+  --color-primary-700: #1D4ED8;
+  --color-primary-800: #1E40AF;
+  --color-primary: var(--color-primary-600);
+
+  /* Secondary Colors (Sunset Orange) */
+  --color-secondary-50: #FFF7ED;
+  --color-secondary-100: #FFEDD5;
+  --color-secondary-500: #F97316;
+  --color-secondary-600: #EA580C;
+  --color-secondary-700: #C2410C;
+  --color-secondary: var(--color-secondary-500);
+
+  /* Semantic Colors */
+  --color-success-50: #ECFDF5;
+  --color-success-100: #D1FAE5;
+  --color-success-500: #10B981;
+  --color-success-600: #059669;
+  --color-success: var(--color-success-500);
+
+  --color-warning-50: #FFFBEB;
+  --color-warning-100: #FEF3C7;
+  --color-warning-500: #F59E0B;
+  --color-warning-600: #D97706;
+  --color-warning: var(--color-warning-500);
+
+  --color-danger-50: #FEF2F2;
+  --color-danger-100: #FEE2E2;
+  --color-danger-500: #EF4444;
+  --color-danger-600: #DC2626;
+  --color-danger: var(--color-danger-500);
+
+  --color-info-50: #F0F9FF;
+  --color-info-100: #E0F2FE;
+  --color-info-500: #0EA5E9;
+  --color-info: var(--color-info-500);
+
+  /* Neutral Colors */
+  --color-background: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-border: #E2E8F0;
+  --color-text: #0F172A;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94A3B8;
+
+  /* Status Colors */
+  --color-status-planned: #3B82F6;
+  --color-status-planned-bg: #DBEAFE;
+  --color-status-booked: #10B981;
+  --color-status-booked-bg: #D1FAE5;
+  --color-status-active: #F97316;
+  --color-status-active-bg: #FFEDD5;
+  --color-status-completed: #6B7280;
+  --color-status-completed-bg: #F3F4F6;
+  --color-status-cancelled: #EF4444;
+  --color-status-cancelled-bg: #FEE2E2;
+
+  /* Transport Mode Colors */
+  --color-transport-flight: #0EA5E9;
+  --color-transport-train: #8B5CF6;
+  --color-transport-car: #F59E0B;
+  --color-transport-bus: #22C55E;
+  --color-transport-ferry: #06B6D4;
+  --color-transport-walk: #78716C;
+
+  /* Budget Status Colors */
+  --color-budget-under: #10B981;
+  --color-budget-near: #F59E0B;
+  --color-budget-limit: #F97316;
+  --color-budget-over: #EF4444;
+
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  /* Border Radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-full: 9999px;
+}
+
+/* Dark mode (future) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background: #0F172A;
+    --color-surface: #1E293B;
+    --color-border: #334155;
+    --color-text: #F8FAFC;
+    --color-text-secondary: #94A3B8;
+    --color-text-muted: #64748B;
+  }
+}

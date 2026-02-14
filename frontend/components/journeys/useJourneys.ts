@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Journey, Destination } from '@/lib/types';
 import { journeyApi, destinationApi } from '@/lib/api';
-import { Plane, Train, Bus, Car, Ship, Footprints } from 'lucide-react';
+import { Plane, Train, Bus, Car, Ship, Footprints, Bike } from 'lucide-react';
 
 export type SortOption =
   | 'departure_asc'
@@ -23,10 +23,16 @@ const SORT_STORAGE_KEY = 'journey_sort_preference';
 export const transportModes = [
   { value: 'flight', label: 'Flight', icon: Plane },
   { value: 'train', label: 'Train', icon: Train },
+  { value: 'metro', label: 'Metro/Subway', icon: Train },
   { value: 'bus', label: 'Bus', icon: Bus },
-  { value: 'car', label: 'Car', icon: Car },
+  { value: 'shuttle', label: 'Shuttle', icon: Bus },
   { value: 'ferry', label: 'Ferry', icon: Ship },
+  { value: 'car', label: 'Car', icon: Car },
+  { value: 'taxi', label: 'Taxi', icon: Car },
+  { value: 'uber', label: 'Rideshare', icon: Car },
   { value: 'walk', label: 'Walk', icon: Footprints },
+  { value: 'bike', label: 'Bike', icon: Bike },
+  { value: 'other', label: 'Other', icon: Car },
 ];
 
 export const getTransportIcon = (mode: string) => {

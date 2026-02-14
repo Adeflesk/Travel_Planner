@@ -85,6 +85,19 @@ def run_migrations(engine: Engine) -> None:
         if add_column_if_not_exists(engine, "trips", col_name, col_type, default):
             migrations_run += 1
 
+    # Flexible booking columns (Feature 021)
+    flexible_booking_columns = [
+        ("is_booked", "BOOLEAN", "1"),  # Default true
+        ("booking_opens_date", "DATE", "NULL"),
+        ("booking_deadline", "DATE", "NULL"),
+        ("frequency", "VARCHAR(100)", "NULL"),
+        ("flexibility_level", "VARCHAR(20)", "'exact'"),  # Default 'exact'
+    ]
+
+    for col_name, col_type, default in flexible_booking_columns:
+        if add_column_if_not_exists(engine, "journeys", col_name, col_type, default):
+            migrations_run += 1
+
     if migrations_run > 0:
         logger.info(f"Completed {migrations_run} migration(s)")
     else:

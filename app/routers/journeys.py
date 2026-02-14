@@ -133,6 +133,27 @@ def delete_journey(
         raise HTTPException(status_code=404, detail=str(e))
 
 
+@router.patch(
+    "/journeys/{journey_id}/book", response_model=schemas.Journey, tags=["journeys"]
+)
+def mark_journey_booked(
+    journey_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Mark a journey as booked."""
+    journey = svc_get_journey(journey_id, db)
+    if not journey:
+        raise HTTPException(status_code=404, detail="Journey not found")
+
+    check_trip_access(journey.trip_id, db, current_user, require_owner=True)
+
+    journey.is_booked = True
+    db.commit()
+    db.refresh(journey)
+    return journey
+
+
 @router.get(
     "/journeys/{journey_id}/timeline",
     response_model=schemas.JourneyTimelineResponse,

@@ -8,7 +8,7 @@ Author: Travel Planner Team
 """
 
 from pydantic import BaseModel, ConfigDict, model_validator
-from datetime import datetime
+from datetime import datetime, date
 from decimal import Decimal
 from typing import Literal, Optional
 
@@ -36,6 +36,15 @@ class JourneyBase(BaseModel):
     has_tolls: bool = False
     toll_cost: Optional[Decimal] = None
     route_notes: Optional[str] = None
+    # Flexible booking fields
+    is_booked: bool = True
+    booking_opens_date: Optional[date] = None
+    booking_deadline: Optional[date] = None
+    frequency: Optional[str] = None
+    flexibility_level: str = "exact"
+    # Timezone fields (for flights and accurate time calculations)
+    origin_timezone: Optional[str] = None
+    destination_timezone: Optional[str] = None
 
     @model_validator(mode="after")
     def validate_departure_before_arrival(self):
@@ -77,6 +86,15 @@ class JourneyUpdate(BaseModel):
     has_tolls: Optional[bool] = None
     toll_cost: Optional[Decimal] = None
     route_notes: Optional[str] = None
+    # Flexible booking fields
+    is_booked: Optional[bool] = None
+    booking_opens_date: Optional[date] = None
+    booking_deadline: Optional[date] = None
+    frequency: Optional[str] = None
+    flexibility_level: Optional[str] = None
+    # Timezone fields
+    origin_timezone: Optional[str] = None
+    destination_timezone: Optional[str] = None
 
     @model_validator(mode="after")
     def validate_departure_before_arrival(self):

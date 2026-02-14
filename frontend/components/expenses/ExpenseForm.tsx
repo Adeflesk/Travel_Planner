@@ -2,6 +2,8 @@
 
 import { ExpenseFormData } from '@/lib/types';
 import { categories } from './useExpenses';
+import { useTripContext } from '@/lib/trip-context';
+import { getDateConstraints } from '@/lib/date-constraints';
 
 interface ExpenseFormProps {
   formData: ExpenseFormData;
@@ -21,6 +23,19 @@ export function ExpenseForm({
   onCancel,
   updateField,
 }: ExpenseFormProps) {
+  // Get trip context for date constraints
+  const tripContext = useTripContext();
+  
+  const dateConstraints = getDateConstraints(
+    tripContext?.startDate,
+    tripContext?.endDate,
+    {
+      allowBeforeStart: true,  // Allow expenses before trip (e.g., bookings)
+      allowAfterEnd: true,      // Allow expenses after trip (e.g., charges)
+      defaultTo: 'start',
+    }
+  );
+
   return (
     <form onSubmit={onSubmit} className="bg-gray-50 p-4 rounded-lg mb-4">
       <h3 className="font-semibold mb-3">
@@ -72,6 +87,8 @@ export function ExpenseForm({
             type="date"
             value={formData.date}
             onChange={(e) => updateField('date', e.target.value)}
+            min={dateConstraints.min}
+            max={dateConstraints.max}
             required
             className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
           />
@@ -84,6 +101,8 @@ export function ExpenseForm({
             type="date"
             value={formData.cancel_by_date || ''}
             onChange={(e) => updateField('cancel_by_date', e.target.value)}
+            min={dateConstraints.min}
+            max={dateConstraints.max}
             className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
           />
         </div>

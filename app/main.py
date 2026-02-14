@@ -36,6 +36,8 @@ from app.routers import (  # noqa: E402
     journey_stops_router,
     stop_options_router,
     journey_documents_router,
+    journey_options_router,
+    flight_layovers_router,
     dashboard_router,
     suggestions_router,
 )
@@ -110,6 +112,8 @@ def create_app() -> FastAPI:
     app.include_router(journey_stops_router)
     app.include_router(stop_options_router)
     app.include_router(journey_documents_router)
+    app.include_router(journey_options_router)
+    app.include_router(flight_layovers_router)
     app.include_router(dashboard_router)
     app.include_router(suggestions_router)
 

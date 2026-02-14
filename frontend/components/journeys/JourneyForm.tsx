@@ -4,8 +4,15 @@ import { useState, useEffect } from 'react';
 import { JourneyFormData, Destination, RouteType } from '@/lib/types';
 import { transportModes } from './useJourneys';
 import { ValidationErrors, ValidationWarnings } from './useJourneyForm';
+import { LayoverDraftList, LayoverList, DraftLayover } from '@/components/layovers';
+import { JourneyOptionsPanel, useJourneyOptions } from '@/components/journey-options';
+import { useTransportModeCapabilities } from './useTransportModeCapabilities';
 import { AlertCircle, AlertTriangle, ChevronDown, ChevronUp, Route } from 'lucide-react';
 import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
+import { AirportAutocomplete } from '@/components/ui/AirportAutocomplete';
+import { useTripContext } from '@/lib/trip-context';
+import { getDateTimeConstraints } from '@/lib/date-constraints';
+import { calculateFlightDuration } from '@/lib/timezone-utils';
 
 const routeTypes: { value: RouteType; label: string }[] = [
   { value: 'fastest', label: 'Fastest (Highways)' },
@@ -18,6 +25,7 @@ const routeTypes: { value: RouteType; label: string }[] = [
 interface JourneyFormProps {
   formData: JourneyFormData;
   isEditing: boolean;
+  editingId?: number | null;
   destinations: Destination[];
   errors?: ValidationErrors;
   warnings?: ValidationWarnings;
@@ -27,6 +35,8 @@ interface JourneyFormProps {
     field: K,
     value: JourneyFormData[K]
   ) => void;
+  draftLayovers: DraftLayover[];
+  setDraftLayovers: (layovers: DraftLayover[]) => void;
   carrierSuggestions?: string[];
   recentCarriers?: string[];
   loadingCarriers?: boolean;
@@ -35,12 +45,15 @@ interface JourneyFormProps {
 export function JourneyForm({
   formData,
   isEditing,
+  editingId,
   destinations,
   errors = {},
   warnings = {},
   onSubmit,
   onCancel,
   updateField,
+  draftLayovers,
+  setDraftLayovers,
   carrierSuggestions = [],
   recentCarriers = [],
   loadingCarriers = false,
@@ -50,17 +63,101 @@ export function JourneyForm({
     !!(formData.distance_km || formData.distance_miles || formData.estimated_duration_minutes || formData.route_type || formData.has_tolls || formData.toll_cost || formData.route_notes)
   );
 
+  // Get trip context for date constraints
+  const tripContext = useTripContext();
+
+  // Calculate date/time constraints based on trip dates
+  const dateTimeConstraints = getDateTimeConstraints(
+    tripContext?.startDate,
+    tripContext?.endDate,
+    {
+      allowBeforeStart: true, // Allow booking flights before trip starts
+      allowAfterEnd: true,     // Allow return flights after trip ends
+      defaultTo: 'start',
+      defaultTime: '09:00',
+    }
+  );
+
+  // Journey options hook (only for existing journeys)
+  const journeyOptions = useJourneyOptions(editingId || 0);
+
+  // Transport mode capabilities
+  const modeCapabilities = useTransportModeCapabilities(formData.transport_mode);
+
+  // Apply smart defaults when transport mode changes (only for new journeys)
+  useEffect(() => {
+    if (!isEditing && formData.transport_mode && modeCapabilities.config) {
+      // Set default flexibility level
+      if (modeCapabilities.defaultFlexibility && !formData.flexibility_level) {
+        updateField('flexibility_level', modeCapabilities.defaultFlexibility);
+      }
+      
+      // Set default booking status
+      if (typeof modeCapabilities.defaultIsBooked !== 'undefined' && typeof formData.is_booked === 'undefined') {
+        updateField('is_booked', modeCapabilities.defaultIsBooked);
+      }
+    }
+  }, [formData.transport_mode, modeCapabilities.config, modeCapabilities.defaultFlexibility, modeCapabilities.defaultIsBooked, formData.flexibility_level, formData.is_booked, isEditing, updateField]);
+
   // Date input mode: 'time' = explicit arrival time, 'duration' = calculate from duration
   const [dateInputMode, setDateInputMode] = useState<'time' | 'duration'>('time');
   const [durationHours, setDurationHours] = useState<number>(0);
   const [durationMinutes, setDurationMinutes] = useState<number>(0);
 
-  // Route details are primarily for ground transport
-  const canHaveRouteDetails = ['car', 'bus', 'train'].includes(formData.transport_mode);
+  // Enforce mode-specific constraints
+  useEffect(() => {
+    if (!formData.transport_mode || !modeCapabilities.config) {
+      return;
+    }
+
+    if (modeCapabilities.requiresExactTimes && dateInputMode === 'duration') {
+      setDateInputMode('time');
+    }
+
+    if (!modeCapabilities.canHaveBookingStatus && formData.is_booked === false) {
+      updateField('is_booked', true);
+    }
+
+    if (!modeCapabilities.canHaveFrequency && formData.frequency) {
+      updateField('frequency', undefined);
+    }
+
+    if (!modeCapabilities.canBeFlexible && formData.flexibility_level && formData.flexibility_level !== 'exact') {
+      updateField('flexibility_level', 'exact');
+    }
+  }, [
+    formData.transport_mode,
+    modeCapabilities.config,
+    modeCapabilities.requiresExactTimes,
+    modeCapabilities.canHaveBookingStatus,
+    modeCapabilities.canHaveFrequency,
+    modeCapabilities.canBeFlexible,
+    dateInputMode,
+    formData.is_booked,
+    formData.frequency,
+    formData.flexibility_level,
+    updateField,
+  ]);
 
   // Calculate duration from departure and arrival times
   const calculateDuration = () => {
     if (formData.departure_datetime && formData.arrival_datetime) {
+      // Use timezone-aware calculation if we have timezone data
+      if (formData.origin_timezone && formData.destination_timezone) {
+        const totalMinutes = calculateFlightDuration(
+          formData.departure_datetime,
+          formData.arrival_datetime,
+          formData.origin_timezone,
+          formData.destination_timezone
+        );
+        return {
+          hours: Math.floor(totalMinutes / 60),
+          minutes: totalMinutes % 60,
+          totalMinutes
+        };
+      }
+      
+      // Fall back to simple calculation if no timezone data
       const departure = new Date(formData.departure_datetime);
       const arrival = new Date(formData.arrival_datetime);
       const diffMs = arrival.getTime() - departure.getTime();
@@ -152,6 +249,40 @@ export function JourneyForm({
 
   const durationParts = formatDurationForInput(formData.estimated_duration_minutes);
 
+  const modeSummaryItems = [] as string[];
+  if (modeCapabilities.canHaveLayovers) {
+    modeSummaryItems.push('Layovers');
+  }
+  if (modeCapabilities.canHaveRouteDetails) {
+    modeSummaryItems.push('Route details');
+  }
+  if (modeCapabilities.canHaveBookingStatus) {
+    modeSummaryItems.push('Booking status');
+  }
+  if (modeCapabilities.canHaveBookingOptions) {
+    modeSummaryItems.push('Booking options');
+  }
+  if (modeCapabilities.canHaveFrequency) {
+    modeSummaryItems.push('Frequency');
+  }
+  if (modeCapabilities.requiresExactTimes) {
+    modeSummaryItems.push('Exact times');
+  } else {
+    modeSummaryItems.push('Flexible timing');
+  }
+
+  const handleTransportModeChange = (mode: string) => {
+    updateField('transport_mode', mode);
+
+    if (!isEditing) {
+      updateField('flexibility_level', undefined);
+      updateField('is_booked', undefined);
+      updateField('frequency', undefined);
+      updateField('booking_opens_date', undefined);
+      updateField('booking_deadline', undefined);
+    }
+  };
+
   return (
     <form onSubmit={onSubmit} className="bg-gray-50 p-4 rounded-lg mb-4">
       <h3 className="font-semibold mb-3">
@@ -162,7 +293,7 @@ export function JourneyForm({
           <label className="text-sm font-medium text-gray-700">Transport Mode</label>
           <select
             value={formData.transport_mode}
-            onChange={(e) => updateField('transport_mode', e.target.value)}
+            onChange={(e) => handleTransportModeChange(e.target.value)}
             required
             className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
           >
@@ -173,6 +304,19 @@ export function JourneyForm({
               </option>
             ))}
           </select>
+          {formData.transport_mode && (modeCapabilities.hint || modeSummaryItems.length > 0) && (
+            <div className="mt-2 rounded-md border border-slate-200 bg-slate-50 p-2 text-xs text-slate-600">
+              {modeCapabilities.hint && (
+                <p className="mb-1">{modeCapabilities.hint}</p>
+              )}
+              {modeSummaryItems.length > 0 && (
+                <p>
+                  <span className="font-medium text-slate-700">Includes:</span>{' '}
+                  {modeSummaryItems.join(', ')}
+                </p>
+              )}
+            </div>
+          )}
         </div>
         <div>
           <AutocompleteInput
@@ -197,12 +341,18 @@ export function JourneyForm({
               if (value === 'other') {
                 updateField('origin_id', undefined);
                 updateField('origin_name', formData.origin_name || '');
+                // Clear timezone when switching to manual entry
+                if (formData.transport_mode !== 'flight') {
+                  updateField('origin_timezone', undefined);
+                }
               } else if (value) {
                 updateField('origin_id', parseInt(value));
                 updateField('origin_name', undefined);
+                updateField('origin_timezone', undefined);
               } else {
                 updateField('origin_id', undefined);
                 updateField('origin_name', undefined);
+                updateField('origin_timezone', undefined);
               }
             }}
             className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
@@ -214,9 +364,28 @@ export function JourneyForm({
                 {dest.country ? `, ${dest.country}` : ''}
               </option>
             ))}
-            <option value="other">📍 Other Location (e.g., Home Airport)</option>
+            <option value="other">
+              {formData.transport_mode === 'flight' ? '✈️ Search Airports' : '📍 Other Location (e.g., Home Airport)'}
+            </option>
           </select>
-          {formData.origin_name !== undefined && (
+          {formData.origin_name !== undefined && formData.transport_mode === 'flight' && (
+            <div className="mt-2">
+              <AirportAutocomplete
+                value={formData.origin_name || ''}
+                onChange={(airport) => {
+                  updateField('origin_name', airport ? `${airport.name} (${airport.iata})` : '');
+                  updateField('origin_timezone', airport?.timezone);
+                }}
+                placeholder="Search airports by name or IATA code..."
+              />
+              {formData.origin_timezone && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Timezone: {formData.origin_timezone}
+                </p>
+              )}
+            </div>
+          )}
+          {formData.origin_name !== undefined && formData.transport_mode !== 'flight' && (
             <input
               type="text"
               value={formData.origin_name || ''}
@@ -235,12 +404,18 @@ export function JourneyForm({
               if (value === 'other') {
                 updateField('destination_id', undefined);
                 updateField('destination_name', formData.destination_name || '');
+                // Clear timezone when switching to manual entry
+                if (formData.transport_mode !== 'flight') {
+                  updateField('destination_timezone', undefined);
+                }
               } else if (value) {
                 updateField('destination_id', parseInt(value));
                 updateField('destination_name', undefined);
+                updateField('destination_timezone', undefined);
               } else {
                 updateField('destination_id', undefined);
                 updateField('destination_name', undefined);
+                updateField('destination_timezone', undefined);
               }
             }}
             className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
@@ -252,9 +427,28 @@ export function JourneyForm({
                 {dest.country ? `, ${dest.country}` : ''}
               </option>
             ))}
-            <option value="other">📍 Other Location (e.g., Home Airport)</option>
+            <option value="other">
+              {formData.transport_mode === 'flight' ? '✈️ Search Airports' : '📍 Other Location (e.g., Home Airport)'}
+            </option>
           </select>
-          {formData.destination_name !== undefined && (
+          {formData.destination_name !== undefined && formData.transport_mode === 'flight' && (
+            <div className="mt-2">
+              <AirportAutocomplete
+                value={formData.destination_name || ''}
+                onChange={(airport) => {
+                  updateField('destination_name', airport ? `${airport.name} (${airport.iata})` : '');
+                  updateField('destination_timezone', airport?.timezone);
+                }}
+                placeholder="Search airports by name or IATA code..."
+              />
+              {formData.destination_timezone && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Timezone: {formData.destination_timezone}
+                </p>
+              )}
+            </div>
+          )}
+          {formData.destination_name !== undefined && formData.transport_mode !== 'flight' && (
             <input
               type="text"
               value={formData.destination_name || ''}
@@ -265,35 +459,37 @@ export function JourneyForm({
           )}
         </div>
         {/* Date Input Mode Toggle */}
-        <div className="md:col-span-2">
-          <div className="flex items-center gap-2 mb-2">
-            <label className="text-sm font-medium text-gray-700">Journey Timing:</label>
-            <div className="inline-flex rounded-md shadow-sm" role="group">
-              <button
-                type="button"
-                onClick={() => handleModeSwitch('time')}
-                className={`px-3 py-1.5 text-sm font-medium rounded-l-md border ${
-                  dateInputMode === 'time'
-                    ? 'bg-primary-600 text-white border-primary-600'
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                Exact Times
-              </button>
-              <button
-                type="button"
-                onClick={() => handleModeSwitch('duration')}
-                className={`px-3 py-1.5 text-sm font-medium rounded-r-md border-t border-r border-b ${
-                  dateInputMode === 'duration'
-                    ? 'bg-primary-600 text-white border-primary-600'
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                Duration
-              </button>
+        {!modeCapabilities.requiresExactTimes && (
+          <div className="md:col-span-2">
+            <div className="flex items-center gap-2 mb-2">
+              <label className="text-sm font-medium text-gray-700">Journey Timing:</label>
+              <div className="inline-flex rounded-md shadow-sm" role="group">
+                <button
+                  type="button"
+                  onClick={() => handleModeSwitch('time')}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-l-md border ${
+                    dateInputMode === 'time'
+                      ? 'bg-primary-600 text-white border-primary-600'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  Exact Times
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleModeSwitch('duration')}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-r-md border-t border-r border-b ${
+                    dateInputMode === 'duration'
+                      ? 'bg-primary-600 text-white border-primary-600'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  Duration
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Time Mode: Departure + Arrival */}
         {dateInputMode === 'time' && (
@@ -304,6 +500,8 @@ export function JourneyForm({
                 type="datetime-local"
                 value={formData.departure_datetime}
                 onChange={(e) => updateField('departure_datetime', e.target.value)}
+                min={dateTimeConstraints.min}
+                max={dateTimeConstraints.max}
                 className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
               />
             </div>
@@ -313,6 +511,8 @@ export function JourneyForm({
                 type="datetime-local"
                 value={formData.arrival_datetime}
                 onChange={(e) => updateField('arrival_datetime', e.target.value)}
+                min={dateTimeConstraints.min}
+                max={dateTimeConstraints.max}
                 className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
               />
               {formData.departure_datetime && formData.arrival_datetime && (
@@ -340,6 +540,8 @@ export function JourneyForm({
                     updateField('arrival_datetime', arrival);
                   }
                 }}
+                min={dateTimeConstraints.min}
+                max={dateTimeConstraints.max}
                 className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
               />
             </div>
@@ -453,10 +655,139 @@ export function JourneyForm({
             className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
           />
         </div>
+
+        {/* Booking Status Section */}
+        {modeCapabilities.canHaveBookingStatus && (
+          <div className="md:col-span-2">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-semibold text-slate-800">Booking Status</h4>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.is_booked !== false}
+                    onChange={(e) => updateField('is_booked', e.target.checked)}
+                    className="w-4 h-4 text-primary-600 bg-white border-slate-300 rounded focus:ring-2 focus:ring-primary-500/20"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Already Booked</span>
+                </label>
+              </div>
+
+              {modeCapabilities.hint && (
+                <p className="text-xs text-slate-500 mb-3">
+                  {modeCapabilities.hint}
+                </p>
+              )}
+
+            {!formData.is_booked && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-slate-200">
+                {/* Flexibility Level */}
+                {modeCapabilities.canBeFlexible && (
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm font-medium text-gray-700">Flexibility</label>
+                    <select
+                      value={formData.flexibility_level || 'exact'}
+                      onChange={(e) => updateField('flexibility_level', e.target.value as 'exact' | 'flexible' | 'very_flexible')}
+                      className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
+                    >
+                      <option value="exact">Exact time - reserved, fixed schedule</option>
+                      <option value="flexible">Flexible - multiple departures, choose closer to trip</option>
+                      <option value="very_flexible">Very flexible - on-demand, frequent service</option>
+                    </select>
+                  </div>
+                )}
+
+                {/* Frequency */}
+                {modeCapabilities.canHaveFrequency && (
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm font-medium text-gray-700">
+                      Frequency <span className="text-gray-400 font-normal">(optional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.frequency || ''}
+                      onChange={(e) => updateField('frequency', e.target.value)}
+                      placeholder="e.g., Every 30 minutes, Hourly"
+                      className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
+                    />
+                  </div>
+                )}
+
+                {/* Booking Opens Date */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium text-gray-700">
+                    Booking Opens <span className="text-gray-400 font-normal">(optional)</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.booking_opens_date || ''}
+                    onChange={(e) => updateField('booking_opens_date', e.target.value)}
+                    max={dateTimeConstraints.max?.split('T')[0]}
+                    className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
+                  />
+                </div>
+
+                {/* Booking Deadline */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium text-gray-700">
+                    Book By <span className="text-gray-400 font-normal">(optional)</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.booking_deadline || ''}
+                    onChange={(e) => updateField('booking_deadline', e.target.value)}
+                    max={dateTimeConstraints.max?.split('T')[0]}
+                    className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+        )}
+
+        {/* Booking Options Panel (for editing existing unbooked journeys) */}
+        {isEditing && editingId && !formData.is_booked && modeCapabilities.canHaveBookingOptions && (
+          <div className="md:col-span-2 mt-4">
+            <div className="rounded-lg border border-slate-200 bg-white p-4">
+              <h4 className="text-sm font-semibold text-slate-800 mb-3">Booking Options</h4>
+              <p className="text-xs text-slate-500 mb-4">
+                Compare different transfers and booking options before selecting one.
+              </p>
+              <JourneyOptionsPanel
+                journeyId={editingId}
+                options={journeyOptions.options}
+                onAddOption={journeyOptions.addOption}
+                onUpdateOption={journeyOptions.updateOption}
+                onDeleteOption={journeyOptions.deleteOption}
+                onSelectOption={journeyOptions.selectOption}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
+      {/* Layovers Section (flights only) */}
+      {modeCapabilities.canHaveLayovers && (
+        <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
+          <div className="mb-3">
+            <h4 className="text-sm font-semibold text-slate-800">Layovers</h4>
+            <p className="text-xs text-slate-500">
+              {isEditing
+                ? 'Manage layovers for this flight.'
+                : 'Add layovers now. They will be saved after the journey is created.'}
+            </p>
+          </div>
+          {isEditing && editingId ? (
+            <LayoverList journeyId={editingId} />
+          ) : (
+            <LayoverDraftList layovers={draftLayovers} onChange={setDraftLayovers} />
+          )}
+        </div>
+      )}
+
       {/* Route Details Section (expandable, for ground transport) */}
-      {canHaveRouteDetails && (
+      {modeCapabilities.canHaveRouteDetails && (
         <div className="mt-4 border border-gray-200 rounded-lg">
           <button
             type="button"

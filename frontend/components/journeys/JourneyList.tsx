@@ -26,6 +26,7 @@ export default function JourneyList({ tripId }: JourneyListProps) {
   const {
     formData,
     isEditing,
+    editingId,
     errors,
     warnings,
     handleSubmit,
@@ -33,6 +34,8 @@ export default function JourneyList({ tripId }: JourneyListProps) {
     resetForm,
     updateField,
     duplicateAsReturn,
+    draftLayovers,
+    setDraftLayovers,
     carrierSuggestions,
     recentCarriers,
     loadingCarriers,
@@ -88,6 +91,7 @@ export default function JourneyList({ tripId }: JourneyListProps) {
           <JourneyForm
             formData={formData}
             isEditing={isEditing}
+            editingId={editingId}
             destinations={destinations}
             errors={errors}
             warnings={warnings}
@@ -97,6 +101,8 @@ export default function JourneyList({ tripId }: JourneyListProps) {
               setShowForm(false);
             }}
             updateField={updateField}
+            draftLayovers={draftLayovers}
+            setDraftLayovers={setDraftLayovers}
             carrierSuggestions={carrierSuggestions}
             recentCarriers={recentCarriers}
             loadingCarriers={loadingCarriers}

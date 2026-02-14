@@ -133,6 +133,15 @@ export interface Journey {
   has_tolls?: boolean;
   toll_cost?: number;
   route_notes?: string;
+  // Flexible booking fields
+  is_booked?: boolean;
+  booking_opens_date?: string;
+  booking_deadline?: string;
+  frequency?: string;
+  flexibility_level?: 'exact' | 'flexible' | 'very_flexible';
+  // Timezone fields (for flights and accurate time calculations)
+  origin_timezone?: string;
+  destination_timezone?: string;
 }
 
 export type JourneyTimelineItemType = 'stop' | 'activity';
@@ -254,6 +263,50 @@ export interface JourneyFormData {
   has_tolls?: boolean;
   toll_cost?: number;
   route_notes?: string;
+  // Flexible booking fields
+  is_booked?: boolean;
+  booking_opens_date?: string;
+  booking_deadline?: string;
+  frequency?: string;
+  flexibility_level?: 'exact' | 'flexible' | 'very_flexible';
+  // Timezone fields
+  origin_timezone?: string;
+  destination_timezone?: string;
+}
+
+// Journey Option Types
+export type OptionStatus = 'researching' | 'selected' | 'booked' | 'rejected';
+
+export interface JourneyOption {
+  id: number;
+  journey_id: number;
+  name: string;
+  carrier?: string;
+  transport_mode?: string;
+  frequency?: string;
+  estimated_duration?: number;
+  cost?: number;
+  currency: string;
+  booking_url?: string;
+  notes?: string;
+  status: OptionStatus;
+  order: number;
+  created_at: string;
+}
+
+export interface JourneyOptionFormData {
+  journey_id: number;
+  name: string;
+  carrier?: string;
+  transport_mode?: string;
+  frequency?: string;
+  estimated_duration?: number;
+  cost?: number;
+  currency?: string;
+  booking_url?: string;
+  notes?: string;
+  status?: OptionStatus;
+  order?: number;
 }
 
 // Journey Stop Types
@@ -338,6 +391,36 @@ export interface JourneyDocumentFormData {
   document_type?: DocumentType;
   url?: string;
   notes?: string;
+}
+
+// Flight Layover Types
+export interface FlightLayover {
+  id: number;
+  journey_id: number;
+  airport_name: string;
+  airport_code?: string;
+  terminal?: string;
+  gate?: string;
+  arrival_datetime?: string;
+  departure_datetime?: string;
+  connecting_flight_number?: string;
+  connecting_airline?: string;
+  notes?: string;
+  order: number;
+}
+
+export interface FlightLayoverFormData {
+  journey_id: number;
+  airport_name: string;
+  airport_code?: string;
+  terminal?: string;
+  gate?: string;
+  arrival_datetime?: string;
+  departure_datetime?: string;
+  connecting_flight_number?: string;
+  connecting_airline?: string;
+  notes?: string;
+  order?: number;
 }
 
 // Summary Types

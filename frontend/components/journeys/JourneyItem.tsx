@@ -5,9 +5,11 @@ import { Journey, RouteType } from '@/lib/types';
 import { format } from 'date-fns';
 import { Trash2, Edit2, ArrowRight, Plane, Train, Bus, Car, Ship, Footprints, Copy, Route, ChevronDown, ChevronUp, FileText, MapPin, Clock, DollarSign } from 'lucide-react';
 import { JourneyStopsList } from '../journey-stops';
+import { LayoverList } from '../layovers';
 import { JourneyDocuments } from './JourneyDocuments';
 import { Badge } from '@/components/ui/Badge';
 import { JourneyTimeline } from './JourneyTimeline';
+import { formatFlightTimeRange, formatDateTimeWithZone, calculateFlightDuration, formatDuration as formatTimeDuration } from '@/lib/timezone-utils';
 
 const transportIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   flight: Plane,
@@ -80,6 +82,7 @@ export function JourneyItem({
   onDuplicateReturn,
 }: JourneyItemProps) {
   const [showStops, setShowStops] = useState(false);
+  const [showLayovers, setShowLayovers] = useState(false);
   const [showDocuments, setShowDocuments] = useState(false);
   const [showTimeline, setShowTimeline] = useState(false);
   const TransportIcon = transportIcons[journey.transport_mode] || Plane;
@@ -88,6 +91,8 @@ export function JourneyItem({
 
   // Only show stops for ground transport (car, bus, train)
   const canHaveStops = ['car', 'bus', 'train'].includes(journey.transport_mode);
+  // Only show layovers for flights
+  const canHaveLayovers = journey.transport_mode === 'flight';
 
   return (
     <div className="border border-gray-200 rounded-lg bg-white hover:shadow-md transition">
@@ -111,6 +116,11 @@ export function JourneyItem({
               <Badge variant={statusVariant} size="sm" className="shrink-0">
                 {journey.status.charAt(0).toUpperCase() + journey.status.slice(1)}
               </Badge>
+              {journey.is_booked === false && (
+                <Badge variant="warning" size="sm" className="shrink-0">
+                  ⚠️ Not Booked
+                </Badge>
+              )}
             </div>
             <div className="mt-2 ml-12 text-sm text-gray-600 space-y-1">
               {journey.carrier && (
@@ -118,17 +128,53 @@ export function JourneyItem({
                   <span className="font-medium">Carrier:</span> {journey.carrier}
                 </p>
               )}
-              {journey.departure_datetime && (
-                <p>
-                  <span className="font-medium">Departs:</span>{' '}
-                  {format(new Date(journey.departure_datetime), 'MMM dd, yyyy HH:mm')}
-                </p>
-              )}
-              {journey.arrival_datetime && (
-                <p>
-                  <span className="font-medium">Arrives:</span>{' '}
-                  {format(new Date(journey.arrival_datetime), 'MMM dd, yyyy HH:mm')}
-                </p>
+              {/* Show timezone-aware times for flights with timezone info */}
+              {journey.transport_mode === 'flight' && 
+               journey.departure_datetime && 
+               journey.arrival_datetime && 
+               journey.origin_timezone && 
+               journey.destination_timezone ? (
+                <>
+                  <p>
+                    <span className="font-medium">Flight:</span>{' '}
+                    {formatFlightTimeRange(
+                      journey.departure_datetime,
+                      journey.arrival_datetime,
+                      journey.origin_timezone,
+                      journey.destination_timezone
+                    )}
+                  </p>
+                  <p>
+                    <span className="font-medium">Duration:</span>{' '}
+                    {formatTimeDuration(
+                      calculateFlightDuration(
+                        journey.departure_datetime,
+                        journey.arrival_datetime,
+                        journey.origin_timezone,
+                        journey.destination_timezone
+                      )
+                    )}
+                  </p>
+                </>
+              ) : (
+                <>
+                  {journey.departure_datetime && (
+                    <p>
+                      <span className="font-medium">Departs:</span>{' '}
+                      {journey.origin_timezone
+                        ? formatDateTimeWithZone(journey.departure_datetime, journey.origin_timezone)
+                        : format(new Date(journey.departure_datetime), 'MMM dd, yyyy HH:mm')}
+                    </p>
+                  )}
+                  {journey.arrival_datetime && (
+                    <p>
+                      <span className="font-medium">Arrives:</span>{' '}
+                      {journey.destination_timezone
+                        ? formatDateTimeWithZone(journey.arrival_datetime, journey.destination_timezone)
+                        : format(new Date(journey.arrival_datetime), 'MMM dd, yyyy HH:mm')}
+                    </p>
+                  )}
+                </>
               )}
               {journey.booking_reference && (
                 <p>
@@ -140,6 +186,34 @@ export function JourneyItem({
                   <span className="font-medium">Cost:</span>{' '}
                   {(+journey.cost).toFixed(2)} {journey.currency || 'USD'}
                 </p>
+              )}
+              {/* Booking Status Details */}
+              {journey.is_booked === false && (
+                <>
+                  {journey.flexibility_level && journey.flexibility_level !== 'exact' && (
+                    <p>
+                      <span className="font-medium">Flexibility:</span>{' '}
+                      {journey.flexibility_level === 'flexible' ? 'Flexible' : 'Very Flexible'}
+                    </p>
+                  )}
+                  {journey.frequency && (
+                    <p>
+                      <span className="font-medium">Frequency:</span> {journey.frequency}
+                    </p>
+                  )}
+                  {journey.booking_opens_date && (
+                    <p className="text-amber-600">
+                      <span className="font-medium">Booking Opens:</span>{' '}
+                      {format(new Date(journey.booking_opens_date), 'MMM dd, yyyy')}
+                    </p>
+                  )}
+                  {journey.booking_deadline && (
+                    <p className="text-red-600">
+                      <span className="font-medium">Book By:</span>{' '}
+                      {format(new Date(journey.booking_deadline), 'MMM dd, yyyy')}
+                    </p>
+                  )}
+                </>
               )}
             </div>
 
@@ -247,6 +321,27 @@ export function JourneyItem({
             </button>
           )}
 
+          {/* Layovers Toggle - only for flights */}
+          {canHaveLayovers && (
+            <button
+              onClick={() => setShowLayovers(!showLayovers)}
+              className="flex items-center gap-2 text-sm text-sky-600 hover:text-sky-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60 focus-visible:ring-offset-2"
+            >
+              <Plane className="w-4 h-4" />
+              {showLayovers ? (
+                <>
+                  <span>Hide Layovers</span>
+                  <ChevronUp className="w-4 h-4" />
+                </>
+              ) : (
+                <>
+                  <span>Manage Layovers</span>
+                  <ChevronDown className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          )}
+
           {/* Documents Toggle */}
           <button
             onClick={() => setShowDocuments(!showDocuments)}
@@ -290,6 +385,13 @@ export function JourneyItem({
       {canHaveStops && showStops && (
         <div className="border-t border-gray-200 p-4 bg-gray-50">
           <JourneyStopsList journeyId={journey.id} />
+        </div>
+      )}
+
+      {/* Layovers Section */}
+      {canHaveLayovers && showLayovers && (
+        <div className="border-t border-gray-200 p-4 bg-sky-50">
+          <LayoverList journeyId={journey.id} />
         </div>
       )}
 

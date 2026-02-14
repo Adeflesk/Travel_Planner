@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { JourneyStop } from '@/lib/types';
 import { X } from 'lucide-react';
+import { useTripContext } from '@/lib/trip-context';
+import { getDateTimeConstraints } from '@/lib/date-constraints';
 
 interface JourneyStopFormProps {
   journeyId: number;
@@ -25,6 +27,20 @@ export function JourneyStopForm({
     notes: '',
   });
   const [submitting, setSubmitting] = useState(false);
+
+  // Get trip context for date constraints
+  const tripContext = useTripContext();
+  
+  const dateTimeConstraints = getDateTimeConstraints(
+    tripContext?.startDate,
+    tripContext?.endDate,
+    {
+      allowBeforeStart: true,
+      allowAfterEnd: true,
+      defaultTo: 'start',
+      defaultTime: '09:00',
+    }
+  );
 
   useEffect(() => {
     if (stop) {
@@ -110,6 +126,8 @@ export function JourneyStopForm({
               onChange={(e) =>
                 setFormData({ ...formData, planned_arrival: e.target.value })
               }
+              min={dateTimeConstraints.min}
+              max={dateTimeConstraints.max}
               className="w-full border rounded-lg px-3 py-2"
             />
           </div>
@@ -124,6 +142,8 @@ export function JourneyStopForm({
               onChange={(e) =>
                 setFormData({ ...formData, planned_departure: e.target.value })
               }
+              min={dateTimeConstraints.min}
+              max={dateTimeConstraints.max}
               className="w-full border rounded-lg px-3 py-2"
             />
           </div>

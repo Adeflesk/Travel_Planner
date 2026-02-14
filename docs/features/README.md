@@ -40,7 +40,13 @@ See [014-journey-enhancements-plan.md](./014-journey-enhancements-plan.md) for t
 | # | Feature | Priority | Complexity | Status |
 |---|---------|----------|------------|--------|
 | 017 | [Weather Integration](./completed/017-weather-integration.md) | Medium | Medium | Complete |
-| 018 | [Budget Alerts](./018-budget-alerts.md) | High | Low | Complete |
+| 018 | [Budget Alerts](./completed/018-budget-alerts.md) | High | Low | Complete |
+
+### Other Completed Docs
+
+- [completed/timezone-support.md](./completed/timezone-support.md)
+- [completed/timezone-quick-start.md](./completed/timezone-quick-start.md)
+- [completed/trip-aware-date-constraints.md](./completed/trip-aware-date-constraints.md)
 
 ### Planned Features
 
