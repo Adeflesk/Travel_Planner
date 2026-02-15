@@ -183,8 +183,10 @@ test.describe('Journey Management', () => {
     await authenticatedPage.getByRole('button', { name: 'Edit' }).first().click();
     await expect(authenticatedPage.getByText('Edit segment')).toBeVisible();
 
-    // Cancel via forced click to avoid viewport issues
-    await authenticatedPage.getByRole('button', { name: 'Close' }).click({ force: true });
+    // Cancel via programmatic click to avoid viewport issues
+    await authenticatedPage
+      .getByRole('button', { name: 'Close' })
+      .evaluate((el) => (el as HTMLElement).click());
 
     // Modal should close
     await expect(authenticatedPage.getByText('Edit segment')).not.toBeVisible();
