@@ -7,17 +7,14 @@ Author: Travel Planner Team
 """
 
 from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app import models
-from app.schemas.auth import (
-    UserResponse,
-    AdminUserCreate,
-    AdminUserUpdate,
-)
 from app.core.deps import get_admin_user
 from app.core.security import get_password_hash
+from app.schemas.auth import AdminUserCreate, AdminUserUpdate, UserResponse
 from database import get_db
 
 router = APIRouter(prefix="/admin", tags=["admin"])

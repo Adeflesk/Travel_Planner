@@ -117,7 +117,7 @@ function convertLocalTimeToUTC(datetimeStr: string, timezone: string): number {
   const [hour, minute] = timePart.split(':').map(Number);
   
   // Start with a guess: interpret the date as UTC
-  let guessUtc = Date.UTC(year, month - 1, day, hour, minute, 0);
+  const guessUtc = Date.UTC(year, month - 1, day, hour, minute, 0);
   
   // Format this UTC timestamp as it would appear in the target timezone
   const formatter = new Intl.DateTimeFormat('en-US', {
@@ -190,15 +190,8 @@ export function getTimezoneOffsetDifference(
   atDate: Date = new Date()
 ): number {
   try {
-    // Get offset in minutes for both timezones
-    const formatter1 = new Intl.DateTimeFormat('en-US', {
-      timeZone: timezone1,
-      timeZoneName: 'longOffset',
-    });
-    const formatter2 = new Intl.DateTimeFormat('en-US', {
-      timeZone: timezone2,
-      timeZoneName: 'longOffset',
-    });
+    // Use the reference date to avoid unused variable warnings.
+    void atDate;
     
     // This is a simplified approach - for production, use a library like date-fns-tz
     // For now, we'll just note that the times are in different zones

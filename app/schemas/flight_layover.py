@@ -7,9 +7,10 @@ Defines FlightLayover-related Pydantic models: `FlightLayoverBase`,
 Author: Travel Planner Team
 """
 
-from pydantic import BaseModel, ConfigDict, model_validator
 from datetime import datetime
 from typing import Optional
+
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 class FlightLayoverBase(BaseModel):

@@ -8,14 +8,15 @@ Author: Travel Planner Team
 """
 
 from typing import List, Optional
+
 from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel
+from sqlalchemy import distinct, func
 from sqlalchemy.orm import Session
-from sqlalchemy import func, distinct
 
 from app import models
 from app.core.deps import get_current_user
 from database import get_db
-from pydantic import BaseModel
 
 
 class SuggestionResponse(BaseModel):

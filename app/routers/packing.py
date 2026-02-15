@@ -8,13 +8,14 @@ Author: Travel Planner Team
 """
 
 from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app import schemas, models
+from app import models, schemas
 from app.core.deps import get_current_user
-from database import get_db
 from app.services.packing_service import get_packing_summary as svc_get_packing_summary
+from database import get_db
 
 router = APIRouter()
 

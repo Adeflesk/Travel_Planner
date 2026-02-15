@@ -7,9 +7,10 @@ Set DATABASE_URL environment variable for PostgreSQL:
 """
 
 import os
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
 from typing import Generator
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
 
 # Database URL from environment or default to SQLite
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./travel_planner.db")

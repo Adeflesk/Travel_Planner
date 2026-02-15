@@ -7,12 +7,12 @@ Defines Trip-related Pydantic models: `TripBase`, `TripCreate`,
 Author: Travel Planner Team
 """
 
-from datetime import datetime, date as DateType
+from datetime import date as DateType
+from datetime import datetime
 from decimal import Decimal
 from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
-
 
 # Valid trip statuses
 TripStatus = Literal["planning", "booked", "ongoing", "completed", "cancelled"]

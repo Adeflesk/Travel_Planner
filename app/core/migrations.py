@@ -10,7 +10,7 @@ Author: Travel Planner Team
 import logging
 from typing import Optional, Set
 
-from sqlalchemy import text, inspect
+from sqlalchemy import inspect, text
 from sqlalchemy.engine import Engine
 
 logger = logging.getLogger(__name__)
@@ -48,10 +48,12 @@ def add_column_if_not_exists(
         with engine.connect() as conn:
             conn.execute(text(sql))
             conn.commit()
-        logger.info(f"Added column {column_name} to {table_name}")
+        logger.info("Added column %s to %s", column_name, table_name)
         return True
-    except Exception as e:
-        logger.warning(f"Could not add column {column_name} to {table_name}: {e}")
+    except Exception as exc:
+        logger.warning(
+            "Could not add column %s to %s: %s", column_name, table_name, exc
+        )
         return False
 
 
@@ -75,30 +77,7 @@ def run_migrations(engine: Engine) -> None:
         if add_column_if_not_exists(engine, "journeys", col_name, col_type, default):
             migrations_run += 1
 
-    # Trip budget threshold columns (Feature 018)
-    trip_threshold_columns = [
-        ("budget_warning_threshold", "INTEGER", "75"),
-        ("budget_danger_threshold", "INTEGER", "90"),
-    ]
-
-    for col_name, col_type, default in trip_threshold_columns:
-        if add_column_if_not_exists(engine, "trips", col_name, col_type, default):
-            migrations_run += 1
-
-    # Flexible booking columns (Feature 021)
-    flexible_booking_columns = [
-        ("is_booked", "BOOLEAN", "1"),  # Default true
-        ("booking_opens_date", "DATE", "NULL"),
-        ("booking_deadline", "DATE", "NULL"),
-        ("frequency", "VARCHAR(100)", "NULL"),
-        ("flexibility_level", "VARCHAR(20)", "'exact'"),  # Default 'exact'
-    ]
-
-    for col_name, col_type, default in flexible_booking_columns:
-        if add_column_if_not_exists(engine, "journeys", col_name, col_type, default):
-            migrations_run += 1
-
     if migrations_run > 0:
-        logger.info(f"Completed {migrations_run} migration(s)")
+        logger.info("Completed %s migration(s)", migrations_run)
     else:
         logger.info("No migrations needed")

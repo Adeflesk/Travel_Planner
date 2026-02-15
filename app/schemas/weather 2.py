@@ -6,8 +6,9 @@ Defines Weather-related Pydantic models for API responses.
 Author: Travel Planner Team
 """
 
-from pydantic import BaseModel
 from typing import List, Optional
+
+from pydantic import BaseModel
 
 
 class WeatherDay(BaseModel):

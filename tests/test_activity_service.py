@@ -1,6 +1,7 @@
 """
 Unit tests for app.services.activity_service
 """
+
 from datetime import date
 from decimal import Decimal
 
@@ -9,10 +10,9 @@ from sqlalchemy.orm import sessionmaker
 
 import models
 from app.services.activity_service import (
-    get_trip_progress,
     get_destinations_with_activities,
+    get_trip_progress,
 )
-
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 engine = create_engine(

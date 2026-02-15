@@ -10,13 +10,12 @@ Provides dependency functions for:
 from typing import Optional
 
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
-from database import get_db
-from app.models import User, UserRole
 from app.core.security import decode_token
-
+from app.models import User, UserRole
+from database import get_db
 
 # HTTP Bearer token security scheme (auto_error=False to handle 401 properly)
 security = HTTPBearer(auto_error=False)

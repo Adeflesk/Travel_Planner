@@ -1,6 +1,7 @@
 """
 Unit tests for app.services.journey_service
 """
+
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 
@@ -11,12 +12,11 @@ import models
 from app.schemas.journey import JourneyCreate, JourneyUpdate
 from app.services.journey_service import (
     create_journey,
-    get_trip_journeys,
-    get_journey,
-    update_journey,
     delete_journey,
+    get_journey,
+    get_trip_journeys,
+    update_journey,
 )
-
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 engine = create_engine(

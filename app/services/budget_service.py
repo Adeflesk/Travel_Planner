@@ -14,7 +14,6 @@ from sqlalchemy.orm import Session
 
 from app import models, schemas
 
-
 # Default thresholds
 WARNING_THRESHOLD = 75  # percentage
 DANGER_THRESHOLD = 90  # percentage

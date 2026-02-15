@@ -7,7 +7,7 @@ Author: Travel Planner Team
 """
 
 from datetime import datetime, time
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
 
 from sqlalchemy.orm import Session
 

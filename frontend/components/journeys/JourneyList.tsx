@@ -5,7 +5,7 @@ import { useJourneys, sortOptions } from './useJourneys';
 import { useJourneyForm } from './useJourneyForm';
 import { JourneyForm } from './JourneyForm';
 import { JourneyItem } from './JourneyItem';
-import { ArrowUpDown, Plus, X } from 'lucide-react';
+import { ArrowUpDown, Plus } from 'lucide-react';
 
 interface JourneyListProps {
   tripId: number;
@@ -54,18 +54,16 @@ export default function JourneyList({ tripId }: JourneyListProps) {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <h3 className="text-lg font-semibold text-slate-900">Journeys</h3>
-        <button
-          onClick={() => setShowForm((prev) => !prev)}
-          type="button"
-          className={`relative z-10 inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition ${
-            shouldShowForm
-              ? 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-              : 'border-[color:var(--color-primary-600)] bg-[color:var(--color-primary-600)] text-white hover:bg-[color:var(--color-primary-700)]'
-          }`}
-        >
-          {shouldShowForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-          {shouldShowForm ? 'Cancel' : 'Add Journey'}
-        </button>
+        {!shouldShowForm && (
+          <button
+            onClick={() => setShowForm(true)}
+            type="button"
+            className="relative z-10 inline-flex items-center gap-2 rounded-lg border border-[color:var(--color-primary-600)] bg-[color:var(--color-primary-600)] px-4 py-2 text-sm font-medium text-white transition hover:bg-[color:var(--color-primary-700)]"
+          >
+            <Plus className="h-4 w-4" />
+            Add Journey
+          </button>
+        )}
       </div>
 
       {!loading && journeys.length > 0 && (

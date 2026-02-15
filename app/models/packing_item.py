@@ -6,7 +6,7 @@ Defines the `PackingItem` model and its relationship to a trip.
 Author: Travel Planner Team
 """
 
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
 from .base import Base

@@ -73,9 +73,11 @@ def get_journey_timeline(
                     description=option.description,
                     option_type=option.option_type,
                     estimated_duration=option.estimated_duration,
-                    estimated_cost=float(option.estimated_cost)
-                    if option.estimated_cost is not None
-                    else None,
+                    estimated_cost=(
+                        float(option.estimated_cost)
+                        if option.estimated_cost is not None
+                        else None
+                    ),
                     currency=option.currency,
                     url=option.url,
                     notes=option.notes,

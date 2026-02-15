@@ -8,11 +8,12 @@ Author: Travel Planner Team
 """
 
 from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app import schemas, models
+from app import models, schemas
 from app.core.deps import get_current_user
 from database import get_db
 

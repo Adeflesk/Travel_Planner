@@ -7,14 +7,7 @@ expenses.
 Author: Travel Planner Team
 """
 
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    Text,
-    Date,
-    ForeignKey,
-)
+from sqlalchemy import Column, Date, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from .base import Base

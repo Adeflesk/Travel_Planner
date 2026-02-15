@@ -6,11 +6,11 @@ Defines JourneyOption-related Pydantic models for tracking booking alternatives.
 Author: Travel Planner Team
 """
 
-from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from decimal import Decimal
 from typing import Literal, Optional
 
+from pydantic import BaseModel, ConfigDict
 
 # Option status types
 OptionStatus = Literal["researching", "selected", "booked", "rejected"]

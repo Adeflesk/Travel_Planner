@@ -12,7 +12,6 @@ from app.main import app
 from app.models import Base
 from database import get_db
 
-
 # Test database setup
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 

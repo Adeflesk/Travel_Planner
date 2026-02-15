@@ -7,9 +7,10 @@ Defines Destination-related Pydantic models: `DestinationBase`,
 Author: Travel Planner Team
 """
 
-from pydantic import BaseModel, ConfigDict
 from datetime import date as DateType
 from typing import Optional
+
+from pydantic import BaseModel, ConfigDict
 
 
 class DestinationBase(BaseModel):

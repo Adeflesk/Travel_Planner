@@ -8,22 +8,21 @@ Author: Travel Planner Team
 """
 
 from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app import schemas, models
+from app import models, schemas
 from app.core.deps import get_current_user
-from database import get_db
-from app.services.journey_service import (
-    create_journey as svc_create_journey,
-    get_trip_journeys as svc_get_trip_journeys,
-    get_journey as svc_get_journey,
-    update_journey as svc_update_journey,
-    delete_journey as svc_delete_journey,
-)
+from app.services.journey_service import create_journey as svc_create_journey
+from app.services.journey_service import delete_journey as svc_delete_journey
+from app.services.journey_service import get_journey as svc_get_journey
+from app.services.journey_service import get_trip_journeys as svc_get_trip_journeys
+from app.services.journey_service import update_journey as svc_update_journey
 from app.services.journey_timeline_service import (
     get_journey_timeline as svc_get_journey_timeline,
 )
+from database import get_db
 
 router = APIRouter()
 

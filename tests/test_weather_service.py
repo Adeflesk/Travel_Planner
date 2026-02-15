@@ -4,8 +4,8 @@ Tests for weather service.
 Tests weather fetching, caching, and data parsing.
 """
 
-from unittest.mock import patch, Mock
 from datetime import datetime, timedelta
+from unittest.mock import Mock, patch
 
 from app.services import weather_service
 

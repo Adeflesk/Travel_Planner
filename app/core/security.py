@@ -14,7 +14,6 @@ import bcrypt
 from jose import JWTError, jwt
 from pydantic import BaseModel
 
-
 # Configuration from environment variables
 SECRET_KEY = os.getenv(
     "JWT_SECRET_KEY", os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")

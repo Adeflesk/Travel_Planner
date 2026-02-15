@@ -6,4 +6,4 @@ Package marker for the FastAPI application modules.
 Author: Travel Planner Team
 """
 
-from . import models, schemas, routers  # noqa: F401
+from . import models, routers, schemas  # noqa: F401

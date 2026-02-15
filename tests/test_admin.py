@@ -8,11 +8,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.core.security import create_access_token, get_password_hash
 from app.main import app
 from app.models import Base, User, UserRole
-from app.core.security import get_password_hash, create_access_token
 from database import get_db
-
 
 # Test database setup
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"

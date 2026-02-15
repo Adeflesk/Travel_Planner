@@ -8,14 +8,8 @@ Author: Travel Planner Team
 
 import enum
 from datetime import datetime, timezone
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    Boolean,
-    DateTime,
-    Enum,
-)
+
+from sqlalchemy import Boolean, Column, DateTime, Enum, Integer, String
 from sqlalchemy.orm import relationship
 
 from .base import Base

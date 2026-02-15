@@ -7,17 +7,17 @@ All endpoints require authentication.
 Author: Travel Planner Team
 """
 
+from decimal import Decimal
 from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from decimal import Decimal
-
-from app import schemas, models
+from app import models, schemas
 from app.core.deps import get_current_user
-from database import get_db
 from app.services.budget_service import check_expense_impact
 from app.services.expense_service import get_expense_summary as svc_get_expense_summary
+from database import get_db
 
 router = APIRouter()
 

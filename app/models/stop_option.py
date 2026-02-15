@@ -6,14 +6,7 @@ Defines the `StopOption` model for options/activities at a journey stop.
 Author: Travel Planner Team
 """
 
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    Numeric,
-    Text,
-    ForeignKey,
-)
+from sqlalchemy import Column, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import relationship
 
 from .base import Base

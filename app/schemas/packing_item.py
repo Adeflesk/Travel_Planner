@@ -6,8 +6,9 @@ Defines PackingItem-related Pydantic models and packing summary schemas.
 Author: Travel Planner Team
 """
 
-from pydantic import BaseModel
 from typing import Optional
+
+from pydantic import BaseModel
 
 
 class PackingItemBase(BaseModel):

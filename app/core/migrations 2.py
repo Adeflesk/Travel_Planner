@@ -10,7 +10,7 @@ Author: Travel Planner Team
 import logging
 from typing import Optional, Set
 
-from sqlalchemy import text, inspect
+from sqlalchemy import inspect, text
 from sqlalchemy.engine import Engine
 
 logger = logging.getLogger(__name__)

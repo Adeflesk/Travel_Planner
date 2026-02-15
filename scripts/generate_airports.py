@@ -1571,8 +1571,8 @@ def generate_airports_json(output_file):
 
 
 if __name__ == "__main__":
-    import sys
     import os
+    import sys
 
     # Default output path
     script_dir = os.path.dirname(os.path.abspath(__file__))

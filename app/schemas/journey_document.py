@@ -6,10 +6,10 @@ Defines JourneyDocument-related Pydantic models.
 Author: Travel Planner Team
 """
 
-from pydantic import BaseModel, ConfigDict, model_validator
 from datetime import datetime
-from typing import Optional, Literal
+from typing import Literal, Optional
 
+from pydantic import BaseModel, ConfigDict, model_validator
 
 # Valid document types
 DocumentType = Literal[

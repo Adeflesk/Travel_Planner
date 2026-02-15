@@ -10,6 +10,8 @@ import {
   JourneyStop,
   JourneyStopWithOptions,
   JourneyStopFormData,
+  JourneySegment,
+  JourneySegmentInput,
   StopOption,
   StopOptionFormData,
   StopOptionStatus,
@@ -17,7 +19,6 @@ import {
   JourneyDocumentFormData,
   JourneyOption,
   JourneyOptionFormData,
-  OptionStatus,
   FlightLayover,
   FlightLayoverFormData,
   TripFormData,
@@ -351,6 +352,39 @@ export const journeyStopApi = {
     api.delete(`/journeys/${journeyId}/stops/${stopId}`),
   reorder: (journeyId: number, stopIds: number[]) =>
     api.patch<JourneyStop[]>(`/journeys/${journeyId}/stops/reorder`, { stop_ids: stopIds }),
+};
+
+// Journey Segment API
+export const journeySegmentApi = {
+  getByJourneyId: (journeyId: number) =>
+    api.get<JourneySegment[]>(`/journeys/${journeyId}/segments/`),
+  getById: (journeyId: number, segmentId: number) =>
+    api.get<JourneySegment>(`/journeys/${journeyId}/segments/${segmentId}`),
+  create: (data: JourneySegmentInput) => {
+    const cleanedData: Partial<JourneySegmentInput> = {};
+    (Object.keys(data) as Array<keyof JourneySegmentInput>).forEach((key) => {
+      const value = data[key];
+      if (value !== '' && value !== undefined && value !== null) {
+        cleanedData[key] = value as never;
+      }
+    });
+    return api.post<JourneySegment>(`/journeys/${data.journey_id}/segments/`, cleanedData);
+  },
+  update: (journeyId: number, segmentId: number, data: Partial<JourneySegmentInput>) => {
+    const cleanedData: Partial<JourneySegmentInput> = {};
+    (Object.keys(data) as Array<keyof JourneySegmentInput>).forEach((key) => {
+      const value = data[key];
+      if (key === 'journey_id') return; // Don't update journey_id
+      if (value !== '' && value !== undefined && value !== null) {
+        cleanedData[key] = value as never;
+      }
+    });
+    return api.put<JourneySegment>(`/journeys/${journeyId}/segments/${segmentId}`, cleanedData);
+  },
+  delete: (journeyId: number, segmentId: number) =>
+    api.delete(`/journeys/${journeyId}/segments/${segmentId}`),
+  reorder: (journeyId: number, segmentIds: number[]) =>
+    api.patch<JourneySegment[]>(`/journeys/${journeyId}/segments/reorder`, { segment_ids: segmentIds }),
 };
 
 // Stop Option API

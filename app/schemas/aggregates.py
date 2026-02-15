@@ -7,14 +7,15 @@ timeline items, destination-with-activities, and destination accommodation.
 Author: Travel Planner Team
 """
 
-from pydantic import BaseModel
-from typing import Optional
 from datetime import datetime
+from typing import Optional
 
-from .destination import Destination
+from pydantic import BaseModel
+
 from .activity import Activity
-from .journey import Journey
+from .destination import Destination
 from .expense import Expense
+from .journey import Journey
 
 
 class TripProgress(BaseModel):

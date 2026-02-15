@@ -7,7 +7,9 @@ Author: Travel Planner Team
 """
 
 from typing import Dict
+
 from sqlalchemy.orm import Session
+
 import models
 
 

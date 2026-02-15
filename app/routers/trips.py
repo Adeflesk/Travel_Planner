@@ -19,14 +19,14 @@ from app import models, schemas
 from app.core.deps import get_current_user
 from app.services.activity_service import (
     get_destinations_with_activities as svc_get_destinations_with_activities,
-    get_trip_progress as svc_get_trip_progress,
 )
+from app.services.activity_service import get_trip_progress as svc_get_trip_progress
 from app.services.budget_service import get_budget_status as svc_get_budget_status
 from app.services.expense_service import get_expense_summary as svc_get_expense_summary
 from app.services.timeline_service import (
     get_accommodation_expenses as svc_get_accommodation_expenses,
-    get_timeline as svc_get_timeline,
 )
+from app.services.timeline_service import get_timeline as svc_get_timeline
 from database import get_db
 
 router = APIRouter()

@@ -1,6 +1,7 @@
 """
 Unit tests for app.services.packing_service
 """
+
 from datetime import date
 from decimal import Decimal
 
@@ -9,7 +10,6 @@ from sqlalchemy.orm import sessionmaker
 
 import models
 from app.services.packing_service import get_packing_summary
-
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 engine = create_engine(

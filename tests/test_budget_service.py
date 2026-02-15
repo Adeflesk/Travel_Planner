@@ -1,12 +1,11 @@
-from decimal import Decimal
 from datetime import date
+from decimal import Decimal
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 import models
 from app.services.budget_service import get_budget_status
-
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 engine = create_engine(

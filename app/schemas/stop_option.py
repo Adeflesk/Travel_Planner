@@ -7,10 +7,10 @@ Defines StopOption-related Pydantic models: `StopOptionBase`, `StopOptionCreate`
 Author: Travel Planner Team
 """
 
-from pydantic import BaseModel, ConfigDict, field_validator
 from decimal import Decimal
-from typing import Optional, Literal
+from typing import Literal, Optional
 
+from pydantic import BaseModel, ConfigDict, field_validator
 
 # Valid option types
 OptionType = Literal[

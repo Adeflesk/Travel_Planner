@@ -65,6 +65,7 @@ export function AirportAutocomplete({
 
   // Update query when value prop changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setQuery(value || '');
   }, [value]);
 

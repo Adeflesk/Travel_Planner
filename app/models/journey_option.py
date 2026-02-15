@@ -9,12 +9,12 @@ Author: Travel Planner Team
 
 from sqlalchemy import (
     Column,
-    Integer,
-    String,
     DateTime,
-    Numeric,
-    Text,
     ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    Text,
     func,
 )
 from sqlalchemy.orm import relationship

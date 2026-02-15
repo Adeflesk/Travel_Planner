@@ -1,6 +1,7 @@
 """
 Unit tests for app.services.timeline_service
 """
+
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 
@@ -8,8 +9,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 import models
-from app.services.timeline_service import get_timeline, get_accommodation_expenses
-
+from app.services.timeline_service import get_accommodation_expenses, get_timeline
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 engine = create_engine(

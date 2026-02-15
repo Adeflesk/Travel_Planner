@@ -1,10 +1,18 @@
 import os
 import sys
+import warnings
 
 import pytest
 
 # Disable rate limiting for tests
 os.environ["RATE_LIMIT_ENABLED"] = "false"
+
+# Suppress third-party deprecation warnings in tests
+warnings.filterwarnings(
+    "ignore",
+    message=r".*asyncio\.iscoroutinefunction.*",
+    category=DeprecationWarning,
+)
 
 # Ensure project root is on sys.path for test imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -17,7 +25,6 @@ from app.core.security import create_access_token, get_password_hash  # noqa: E4
 from database import get_db  # noqa: E402
 from main import app  # noqa: E402
 from models import Base, User  # noqa: E402
-
 
 # Shared test DB configuration (matches existing tests)
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
@@ -84,7 +91,7 @@ def db_setup(db_engine, testing_session_local, setup_database):
     Instead of dropping/recreating tables (which causes connection pool issues),
     we delete all rows from each table while preserving the schema.
     """
-    from sqlalchemy import text, inspect
+    from sqlalchemy import inspect, text
 
     # Tables in reverse dependency order to avoid foreign key constraints
     tables_to_clean = [
@@ -95,6 +102,7 @@ def db_setup(db_engine, testing_session_local, setup_database):
         "stop_options",
         "journey_stops",
         "journey_documents",
+        "journey_segments",
         "journeys",
         "destinations",
         "trips",

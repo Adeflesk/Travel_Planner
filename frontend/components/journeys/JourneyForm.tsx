@@ -6,6 +6,7 @@ import { transportModes } from './useJourneys';
 import { ValidationErrors, ValidationWarnings } from './useJourneyForm';
 import { LayoverDraftList, LayoverList, DraftLayover } from '@/components/layovers';
 import { JourneyOptionsPanel, useJourneyOptions } from '@/components/journey-options';
+import { SegmentBuilder } from '@/components/journey-segments';
 import { useTransportModeCapabilities } from './useTransportModeCapabilities';
 import { AlertCircle, AlertTriangle, ChevronDown, ChevronUp, Route } from 'lucide-react';
 import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
@@ -62,6 +63,8 @@ export function JourneyForm({
     // Auto-expand if route details exist
     !!(formData.distance_km || formData.distance_miles || formData.estimated_duration_minutes || formData.route_type || formData.has_tolls || formData.toll_cost || formData.route_notes)
   );
+  const [showAdvanced, setShowAdvanced] = useState(true);
+  const [showBuilderStep, setShowBuilderStep] = useState(() => !isEditing);
 
   // Get trip context for date constraints
   const tripContext = useTripContext();
@@ -103,15 +106,14 @@ export function JourneyForm({
   const [dateInputMode, setDateInputMode] = useState<'time' | 'duration'>('time');
   const [durationHours, setDurationHours] = useState<number>(0);
   const [durationMinutes, setDurationMinutes] = useState<number>(0);
+  const effectiveDateInputMode = modeCapabilities.requiresExactTimes
+    ? 'time'
+    : dateInputMode;
 
   // Enforce mode-specific constraints
   useEffect(() => {
     if (!formData.transport_mode || !modeCapabilities.config) {
       return;
-    }
-
-    if (modeCapabilities.requiresExactTimes && dateInputMode === 'duration') {
-      setDateInputMode('time');
     }
 
     if (!modeCapabilities.canHaveBookingStatus && formData.is_booked === false) {
@@ -132,7 +134,6 @@ export function JourneyForm({
     modeCapabilities.canHaveBookingStatus,
     modeCapabilities.canHaveFrequency,
     modeCapabilities.canBeFlexible,
-    dateInputMode,
     formData.is_booked,
     formData.frequency,
     formData.flexibility_level,
@@ -189,8 +190,12 @@ export function JourneyForm({
 
   // Update duration when mode switches to duration or times change
   const handleModeSwitch = (mode: 'time' | 'duration') => {
-    setDateInputMode(mode);
-    if (mode === 'duration') {
+    if (modeCapabilities.requiresExactTimes) {
+      setDateInputMode('time');
+    } else {
+      setDateInputMode(mode);
+    }
+    if (mode === 'duration' && !modeCapabilities.requiresExactTimes) {
       // Switching to duration mode - calculate duration from current times
       const duration = calculateDuration();
       setDurationHours(duration.hours);
@@ -216,7 +221,7 @@ export function JourneyForm({
 
   // Sync duration values when times change (e.g., when editing existing journey)
   useEffect(() => {
-    if (dateInputMode === 'duration' && formData.departure_datetime && formData.arrival_datetime) {
+    if (effectiveDateInputMode === 'duration' && formData.departure_datetime && formData.arrival_datetime) {
       const departure = new Date(formData.departure_datetime);
       const arrival = new Date(formData.arrival_datetime);
       const diffMs = arrival.getTime() - departure.getTime();
@@ -229,7 +234,7 @@ export function JourneyForm({
       setDurationHours(hours);
       setDurationMinutes(minutes);
     }
-  }, [formData.departure_datetime, formData.arrival_datetime, dateInputMode, setDurationHours, setDurationMinutes]);
+  }, [formData.departure_datetime, formData.arrival_datetime, effectiveDateInputMode, setDurationHours, setDurationMinutes]);
 
 
   // Format duration for display (hours and minutes)
@@ -285,10 +290,63 @@ export function JourneyForm({
 
   return (
     <form onSubmit={onSubmit} className="bg-gray-50 p-4 rounded-lg mb-4">
-      <h3 className="font-semibold mb-3">
-        {isEditing ? 'Edit Journey' : 'Add Journey'}
-      </h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="font-semibold">
+          {isEditing ? 'Edit Journey' : 'Add Journey'}
+        </h3>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="text-sm font-medium text-slate-500 hover:text-slate-700"
+        >
+          Close
+        </button>
+      </div>
+      {!isEditing && showBuilderStep && (
+        <div className="mb-6">
+          <SegmentBuilder
+            segments={formData.segments || []}
+            onChange={(segments) => updateField('segments', segments)}
+            defaultTimezone={formData.origin_timezone || 'UTC'}
+          />
+          <div className="mt-4 flex justify-end">
+            <button
+              type="button"
+              onClick={() => setShowBuilderStep(false)}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            >
+              Continue to details
+            </button>
+          </div>
+        </div>
+      )}
+      {!showBuilderStep && (
+        <>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
+            <div>
+              {!isEditing && (
+                <button
+                  type="button"
+                  onClick={() => setShowBuilderStep(true)}
+                  className="mb-1 text-xs font-medium text-slate-500 hover:text-slate-700"
+                >
+                  Back to segment builder
+                </button>
+              )}
+              <p className="text-sm font-semibold text-slate-900">Quick setup</p>
+              <p className="text-sm text-slate-600">
+                Start with the essentials. Add details later if you need them.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowAdvanced((prev) => !prev)}
+              className="text-sm font-medium text-primary-600 hover:text-primary-700"
+            >
+              {showAdvanced ? 'Hide details' : 'Show details'}
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-700">Transport Mode</label>
           <select
@@ -318,20 +376,22 @@ export function JourneyForm({
             </div>
           )}
         </div>
-        <div>
-          <AutocompleteInput
-            label="Carrier"
-            hint="optional"
-            value={formData.carrier}
-            onChange={(e) => updateField('carrier', e.target.value)}
-            onSelect={(value) => updateField('carrier', value)}
-            suggestions={carrierSuggestions}
-            recentItems={recentCarriers}
-            loading={loadingCarriers}
-            placeholder="e.g., British Airways, Eurostar"
-            showRecentFirst={true}
-          />
-        </div>
+        {showAdvanced && (
+          <div>
+            <AutocompleteInput
+              label="Carrier"
+              hint="optional"
+              value={formData.carrier}
+              onChange={(e) => updateField('carrier', e.target.value)}
+              onSelect={(value) => updateField('carrier', value)}
+              suggestions={carrierSuggestions}
+              recentItems={recentCarriers}
+              loading={loadingCarriers}
+              placeholder="e.g., British Airways, Eurostar"
+              showRecentFirst={true}
+            />
+          </div>
+        )}
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-700">From</label>
           <select
@@ -468,7 +528,7 @@ export function JourneyForm({
                   type="button"
                   onClick={() => handleModeSwitch('time')}
                   className={`px-3 py-1.5 text-sm font-medium rounded-l-md border ${
-                    dateInputMode === 'time'
+                    effectiveDateInputMode === 'time'
                       ? 'bg-primary-600 text-white border-primary-600'
                       : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                   }`}
@@ -479,7 +539,7 @@ export function JourneyForm({
                   type="button"
                   onClick={() => handleModeSwitch('duration')}
                   className={`px-3 py-1.5 text-sm font-medium rounded-r-md border-t border-r border-b ${
-                    dateInputMode === 'duration'
+                    effectiveDateInputMode === 'duration'
                       ? 'bg-primary-600 text-white border-primary-600'
                       : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                   }`}
@@ -492,7 +552,7 @@ export function JourneyForm({
         )}
 
         {/* Time Mode: Departure + Arrival */}
-        {dateInputMode === 'time' && (
+        {effectiveDateInputMode === 'time' && (
           <>
             <div className="flex flex-col gap-1">
               <label className="text-sm font-medium text-gray-700">Departure</label>
@@ -525,7 +585,7 @@ export function JourneyForm({
         )}
 
         {/* Duration Mode: Departure + Duration */}
-        {dateInputMode === 'duration' && (
+        {effectiveDateInputMode === 'duration' && (
           <>
             <div className="flex flex-col gap-1">
               <label className="text-sm font-medium text-gray-700">Departure</label>
@@ -607,207 +667,231 @@ export function JourneyForm({
           </div>
         )}
 
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">
-            Cost <span className="text-gray-400 font-normal">(optional)</span>
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="number"
-              value={formData.cost || ''}
-              onChange={(e) =>
-                updateField(
-                  'cost',
-                  e.target.value ? parseFloat(e.target.value) : undefined
-                )
-              }
-              placeholder="0.00"
-              step="0.01"
-              className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
-            />
-            <select
-              value={formData.currency}
-              onChange={(e) => updateField('currency', e.target.value)}
-              className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 px-3 py-2.5 shadow-xs"
-            >
-              <option value="USD">USD</option>
-              <option value="EUR">EUR</option>
-              <option value="GBP">GBP</option>
-              <option value="CAD">CAD</option>
-              <option value="AUD">AUD</option>
-              <option value="JPY">JPY</option>
-              <option value="CHF">CHF</option>
-              <option value="CNY">CNY</option>
-              <option value="INR">INR</option>
-              <option value="MXN">MXN</option>
-            </select>
-          </div>
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">
-            Booking Reference <span className="text-gray-400 font-normal">(optional)</span>
-          </label>
-          <input
-            type="text"
-            value={formData.booking_reference}
-            onChange={(e) => updateField('booking_reference', e.target.value)}
-            placeholder="e.g., ABC123"
-            className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
-          />
-        </div>
-
-        {/* Booking Status Section */}
-        {modeCapabilities.canHaveBookingStatus && (
-          <div className="md:col-span-2">
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="text-sm font-semibold text-slate-800">Booking Status</h4>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.is_booked !== false}
-                    onChange={(e) => updateField('is_booked', e.target.checked)}
-                    className="w-4 h-4 text-primary-600 bg-white border-slate-300 rounded focus:ring-2 focus:ring-primary-500/20"
-                  />
-                  <span className="text-sm font-medium text-gray-700">Already Booked</span>
-                </label>
-              </div>
-
-              {modeCapabilities.hint && (
-                <p className="text-xs text-slate-500 mb-3">
-                  {modeCapabilities.hint}
-                </p>
-              )}
-
-            {!formData.is_booked && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-slate-200">
-                {/* Flexibility Level */}
-                {modeCapabilities.canBeFlexible && (
-                  <div className="flex flex-col gap-1">
-                    <label className="text-sm font-medium text-gray-700">Flexibility</label>
-                    <select
-                      value={formData.flexibility_level || 'exact'}
-                      onChange={(e) => updateField('flexibility_level', e.target.value as 'exact' | 'flexible' | 'very_flexible')}
-                      className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
-                    >
-                      <option value="exact">Exact time - reserved, fixed schedule</option>
-                      <option value="flexible">Flexible - multiple departures, choose closer to trip</option>
-                      <option value="very_flexible">Very flexible - on-demand, frequent service</option>
-                    </select>
-                  </div>
-                )}
-
-                {/* Frequency */}
-                {modeCapabilities.canHaveFrequency && (
-                  <div className="flex flex-col gap-1">
-                    <label className="text-sm font-medium text-gray-700">
-                      Frequency <span className="text-gray-400 font-normal">(optional)</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.frequency || ''}
-                      onChange={(e) => updateField('frequency', e.target.value)}
-                      placeholder="e.g., Every 30 minutes, Hourly"
-                      className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
-                    />
-                  </div>
-                )}
-
-                {/* Booking Opens Date */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-sm font-medium text-gray-700">
-                    Booking Opens <span className="text-gray-400 font-normal">(optional)</span>
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.booking_opens_date || ''}
-                    onChange={(e) => updateField('booking_opens_date', e.target.value)}
-                    max={dateTimeConstraints.max?.split('T')[0]}
-                    className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
-                  />
+        {!showAdvanced && (
+          <div className="md:col-span-2 rounded-lg border border-slate-200 bg-white px-4 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="text-xs font-semibold text-slate-500">Quick summary</div>
+                <div className="text-sm text-slate-700">
+                  {formData.departure_datetime && formData.arrival_datetime
+                    ? `Duration: ${calculateDuration().hours}h ${calculateDuration().minutes}m`
+                    : 'Add times to see duration'}
                 </div>
+              </div>
+              <div className="text-sm text-slate-700">
+                {formData.cost ? `Cost: ${formData.currency || 'USD'} ${formData.cost}` : 'Cost: not set'}
+              </div>
+            </div>
+          </div>
+        )}
 
-                {/* Booking Deadline */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-sm font-medium text-gray-700">
-                    Book By <span className="text-gray-400 font-normal">(optional)</span>
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.booking_deadline || ''}
-                    onChange={(e) => updateField('booking_deadline', e.target.value)}
-                    max={dateTimeConstraints.max?.split('T')[0]}
-                    className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
+        {showAdvanced && (
+          <>
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700">
+                Cost <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  value={formData.cost || ''}
+                  onChange={(e) =>
+                    updateField(
+                      'cost',
+                      e.target.value ? parseFloat(e.target.value) : undefined
+                    )
+                  }
+                  placeholder="0.00"
+                  step="0.01"
+                  className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
+                />
+                <select
+                  value={formData.currency}
+                  onChange={(e) => updateField('currency', e.target.value)}
+                  className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 px-3 py-2.5 shadow-xs"
+                >
+                  <option value="USD">USD</option>
+                  <option value="EUR">EUR</option>
+                  <option value="GBP">GBP</option>
+                  <option value="CAD">CAD</option>
+                  <option value="AUD">AUD</option>
+                  <option value="JPY">JPY</option>
+                  <option value="CHF">CHF</option>
+                  <option value="CNY">CNY</option>
+                  <option value="INR">INR</option>
+                  <option value="MXN">MXN</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700">
+                Booking Reference <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
+              <input
+                type="text"
+                value={formData.booking_reference}
+                onChange={(e) => updateField('booking_reference', e.target.value)}
+                placeholder="e.g., ABC123"
+                className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
+              />
+            </div>
+
+            {/* Booking Status Section */}
+            {modeCapabilities.canHaveBookingStatus && (
+              <div className="md:col-span-2">
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-semibold text-slate-800">Booking Status</h4>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.is_booked !== false}
+                        onChange={(e) => updateField('is_booked', e.target.checked)}
+                        className="w-4 h-4 text-primary-600 bg-white border-slate-300 rounded focus:ring-2 focus:ring-primary-500/20"
+                      />
+                      <span className="text-sm font-medium text-gray-700">Already Booked</span>
+                    </label>
+                  </div>
+
+                  {modeCapabilities.hint && (
+                    <p className="text-xs text-slate-500 mb-3">
+                      {modeCapabilities.hint}
+                    </p>
+                  )}
+
+                {!formData.is_booked && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-slate-200">
+                    {/* Flexibility Level */}
+                    {modeCapabilities.canBeFlexible && (
+                      <div className="flex flex-col gap-1">
+                        <label className="text-sm font-medium text-gray-700">Flexibility</label>
+                        <select
+                          value={formData.flexibility_level || 'exact'}
+                          onChange={(e) => updateField('flexibility_level', e.target.value as 'exact' | 'flexible' | 'very_flexible')}
+                          className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
+                        >
+                          <option value="exact">Exact time - reserved, fixed schedule</option>
+                          <option value="flexible">Flexible - multiple departures, choose closer to trip</option>
+                          <option value="very_flexible">Very flexible - on-demand, frequent service</option>
+                        </select>
+                      </div>
+                    )}
+
+                    {/* Frequency */}
+                    {modeCapabilities.canHaveFrequency && (
+                      <div className="flex flex-col gap-1">
+                        <label className="text-sm font-medium text-gray-700">
+                          Frequency <span className="text-gray-400 font-normal">(optional)</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.frequency || ''}
+                          onChange={(e) => updateField('frequency', e.target.value)}
+                          placeholder="e.g., Every 30 minutes, Hourly"
+                          className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
+                        />
+                      </div>
+                    )}
+
+                    {/* Booking Opens Date */}
+                    <div className="flex flex-col gap-1">
+                      <label className="text-sm font-medium text-gray-700">
+                        Booking Opens <span className="text-gray-400 font-normal">(optional)</span>
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.booking_opens_date || ''}
+                        onChange={(e) => updateField('booking_opens_date', e.target.value)}
+                        max={dateTimeConstraints.max?.split('T')[0]}
+                        className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
+                      />
+                    </div>
+
+                    {/* Booking Deadline */}
+                    <div className="flex flex-col gap-1">
+                      <label className="text-sm font-medium text-gray-700">
+                        Book By <span className="text-gray-400 font-normal">(optional)</span>
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.booking_deadline || ''}
+                        onChange={(e) => updateField('booking_deadline', e.target.value)}
+                        max={dateTimeConstraints.max?.split('T')[0]}
+                        className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            )}
+
+            {/* Booking Options Panel (for editing existing unbooked journeys) */}
+            {isEditing && editingId && !formData.is_booked && modeCapabilities.canHaveBookingOptions && (
+              <div className="md:col-span-2 mt-4">
+                <div className="rounded-lg border border-slate-200 bg-white p-4">
+                  <h4 className="text-sm font-semibold text-slate-800 mb-3">Booking Options</h4>
+                  <p className="text-xs text-slate-500 mb-4">
+                    Compare different transfers and booking options before selecting one.
+                  </p>
+                  <JourneyOptionsPanel
+                    journeyId={editingId}
+                    options={journeyOptions.options}
+                    onAddOption={journeyOptions.addOption}
+                    onUpdateOption={journeyOptions.updateOption}
+                    onDeleteOption={journeyOptions.deleteOption}
+                    onSelectOption={journeyOptions.selectOption}
                   />
                 </div>
               </div>
             )}
-          </div>
-        </div>
-        )}
-
-        {/* Booking Options Panel (for editing existing unbooked journeys) */}
-        {isEditing && editingId && !formData.is_booked && modeCapabilities.canHaveBookingOptions && (
-          <div className="md:col-span-2 mt-4">
-            <div className="rounded-lg border border-slate-200 bg-white p-4">
-              <h4 className="text-sm font-semibold text-slate-800 mb-3">Booking Options</h4>
-              <p className="text-xs text-slate-500 mb-4">
-                Compare different transfers and booking options before selecting one.
-              </p>
-              <JourneyOptionsPanel
-                journeyId={editingId}
-                options={journeyOptions.options}
-                onAddOption={journeyOptions.addOption}
-                onUpdateOption={journeyOptions.updateOption}
-                onDeleteOption={journeyOptions.deleteOption}
-                onSelectOption={journeyOptions.selectOption}
-              />
-            </div>
-          </div>
+          </>
         )}
       </div>
 
-      {/* Layovers Section (flights only) */}
-      {modeCapabilities.canHaveLayovers && (
-        <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
-          <div className="mb-3">
-            <h4 className="text-sm font-semibold text-slate-800">Layovers</h4>
-            <p className="text-xs text-slate-500">
-              {isEditing
-                ? 'Manage layovers for this flight.'
-                : 'Add layovers now. They will be saved after the journey is created.'}
-            </p>
-          </div>
-          {isEditing && editingId ? (
-            <LayoverList journeyId={editingId} />
-          ) : (
-            <LayoverDraftList layovers={draftLayovers} onChange={setDraftLayovers} />
-          )}
-        </div>
-      )}
-
-      {/* Route Details Section (expandable, for ground transport) */}
-      {modeCapabilities.canHaveRouteDetails && (
-        <div className="mt-4 border border-gray-200 rounded-lg">
-          <button
-            type="button"
-            onClick={() => setShowRouteDetails(!showRouteDetails)}
-            className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 rounded-lg"
-          >
-            <div className="flex items-center gap-2">
-              <Route className="w-4 h-4 text-gray-600" />
-              <span className="font-medium text-gray-700">Route Details</span>
-              <span className="text-sm text-gray-400">(optional)</span>
+      {showAdvanced && (
+        <>
+          {/* Layovers Section (flights only) */}
+          {modeCapabilities.canHaveLayovers && (
+            <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <div className="mb-3">
+                <h4 className="text-sm font-semibold text-slate-800">Layovers</h4>
+                <p className="text-xs text-slate-500">
+                  {isEditing
+                    ? 'Manage layovers for this flight.'
+                    : 'Add layovers now. They will be saved after the journey is created.'}
+                </p>
+              </div>
+              {isEditing && editingId ? (
+                <LayoverList journeyId={editingId} />
+              ) : (
+                <LayoverDraftList layovers={draftLayovers} onChange={setDraftLayovers} />
+              )}
             </div>
-            {showRouteDetails ? (
-              <ChevronUp className="w-4 h-4 text-gray-500" />
-            ) : (
-              <ChevronDown className="w-4 h-4 text-gray-500" />
-            )}
-          </button>
+          )}
 
-          {showRouteDetails && (
-            <div className="px-4 pb-4 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-200 pt-4">
+          {/* Route Details Section (expandable, for ground transport) */}
+          {modeCapabilities.canHaveRouteDetails && (
+            <div className="mt-4 border border-gray-200 rounded-lg">
+              <button
+                type="button"
+                onClick={() => setShowRouteDetails(!showRouteDetails)}
+                className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 rounded-lg"
+              >
+                <div className="flex items-center gap-2">
+                  <Route className="w-4 h-4 text-gray-600" />
+                  <span className="font-medium text-gray-700">Route Details</span>
+                  <span className="text-sm text-gray-400">(optional)</span>
+                </div>
+                {showRouteDetails ? (
+                  <ChevronUp className="w-4 h-4 text-gray-500" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-gray-500" />
+                )}
+              </button>
+
+              {showRouteDetails && (
+                <div className="px-4 pb-4 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-200 pt-4">
               {/* Distance */}
               <div className="flex flex-col gap-1">
                 <label className="text-sm font-medium text-gray-700">Distance</label>
@@ -920,9 +1004,23 @@ export function JourneyForm({
                   className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400 resize-none"
                 />
               </div>
+                </div>
+              )}
             </div>
           )}
-        </div>
+        </>
+      )}
+
+          {showAdvanced && isEditing && (
+            <div className="mt-6">
+              <SegmentBuilder
+                segments={formData.segments || []}
+                onChange={(segments) => updateField('segments', segments)}
+                defaultTimezone={formData.origin_timezone || 'UTC'}
+              />
+            </div>
+          )}
+        </>
       )}
 
       <div className="mt-3 flex gap-4 items-center">

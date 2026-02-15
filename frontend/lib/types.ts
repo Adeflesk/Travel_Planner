@@ -144,6 +144,71 @@ export interface Journey {
   destination_timezone?: string;
 }
 
+export type SegmentType = 'TRANSFER' | 'BUS' | 'RAIL' | 'FLIGHT' | 'LAYOVER' | 'STOP';
+
+export type LocationRefType = 'destination' | 'custom';
+
+export interface LocationRef {
+  type: LocationRefType;
+  destination_id?: number;
+  name?: string;
+}
+
+/** Segment metadata by type (type-specific fields) */
+export type SegmentMetadata = 
+  | { mode?: string; provider?: string; pickupNotes?: string; dropoffNotes?: string } // TRANSFER
+  | { carrier?: string; flightNumber?: string; terminal?: string; gate?: string; seat?: string; baggage?: string } // FLIGHT
+  | { line?: string; coach?: string; seat?: string } // BUS, RAIL
+  | { notes?: string; passThrough?: boolean } // STOP, LAYOVER
+  | Record<string, string | number | boolean | null>;
+
+/** Complete journey segment from backend */
+export interface JourneySegment {
+  id: number;
+  journey_id: number;
+  segment_type: SegmentType;
+  origin_id?: number;
+  origin_name?: string;
+  destination_id?: number;
+  destination_name?: string;
+  start_datetime?: string;
+  end_datetime?: string;
+  origin_timezone?: string;
+  destination_timezone?: string;
+  metadata?: SegmentMetadata;
+  order: number;
+}
+
+/** Segment for creating/updating */
+export interface JourneySegmentInput {
+  journey_id: number;
+  segment_type: SegmentType;
+  origin_id?: number;
+  origin_name?: string;
+  destination_id?: number;
+  destination_name?: string;
+  start_datetime?: string;
+  end_datetime?: string;
+  origin_timezone?: string;
+  destination_timezone?: string;
+  metadata?: Record<string, string | number | boolean | null>;
+  order?: number;
+}
+
+export interface JourneySegmentDraft {
+  segment_type: SegmentType;
+  origin: LocationRef;
+  destination: LocationRef;
+  start_datetime?: string;
+  end_datetime?: string;
+  origin_timezone?: string;
+  destination_timezone?: string;
+  metadata?: Record<string, string | number | boolean | null>;
+  order: number;
+}
+
+export type JourneySegmentIntent = 'SIMPLE' | 'AIR_TRAVEL' | 'AIR_LAYOVER' | 'MULTI_STOP';
+
 export type JourneyTimelineItemType = 'stop' | 'activity';
 
 export interface JourneyTimelineStop {
@@ -272,6 +337,7 @@ export interface JourneyFormData {
   // Timezone fields
   origin_timezone?: string;
   destination_timezone?: string;
+  segments?: JourneySegmentDraft[];
 }
 
 // Journey Option Types

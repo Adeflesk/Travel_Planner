@@ -7,10 +7,11 @@ Defines Expense-related Pydantic models: `ExpenseBase`, `ExpenseCreate`,
 Author: Travel Planner Team
 """
 
-from pydantic import BaseModel
 from datetime import date as DateType
 from decimal import Decimal
 from typing import Optional
+
+from pydantic import BaseModel
 
 
 class ExpenseBase(BaseModel):

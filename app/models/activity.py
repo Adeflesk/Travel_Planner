@@ -7,15 +7,15 @@ Author: Travel Planner Team
 """
 
 from sqlalchemy import (
+    Boolean,
     Column,
+    Date,
+    ForeignKey,
     Integer,
+    Numeric,
     String,
     Text,
-    Date,
     Time,
-    Numeric,
-    Boolean,
-    ForeignKey,
 )
 from sqlalchemy.orm import relationship
 

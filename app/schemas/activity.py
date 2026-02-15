@@ -7,10 +7,12 @@ Defines Activity-related Pydantic models: `ActivityBase`, `ActivityCreate`,
 Author: Travel Planner Team
 """
 
-from pydantic import BaseModel, ConfigDict
-from datetime import date as DateType, time
+from datetime import date as DateType
+from datetime import time
 from decimal import Decimal
 from typing import Optional
+
+from pydantic import BaseModel, ConfigDict
 
 
 class ActivityBase(BaseModel):

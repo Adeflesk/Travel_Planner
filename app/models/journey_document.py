@@ -6,16 +6,10 @@ Defines the `JourneyDocument` model for documents attached to journeys.
 Author: Travel Planner Team
 """
 
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    Text,
-    DateTime,
-    ForeignKey,
-)
-from sqlalchemy.orm import relationship
 from datetime import datetime
+
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import relationship
 
 from .base import Base
 

@@ -9,13 +9,13 @@ Author: Travel Planner Team
 from sqlalchemy import (
     Boolean,
     Column,
-    Integer,
-    String,
     Date,
     DateTime,
-    Numeric,
-    Text,
     ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    Text,
 )
 from sqlalchemy.orm import relationship
 
@@ -72,6 +72,9 @@ class Journey(Base):
     )
     stops = relationship(
         "JourneyStop", back_populates="journey", cascade="all, delete-orphan"
+    )
+    segments = relationship(
+        "JourneySegment", back_populates="journey", cascade="all, delete-orphan"
     )
     documents = relationship(
         "JourneyDocument", back_populates="journey", cascade="all, delete-orphan"

@@ -1,11 +1,10 @@
-from fastapi.security import HTTPAuthorizationCredentials
-from fastapi import HTTPException
-
 import pytest
+from fastapi import HTTPException
+from fastapi.security import HTTPAuthorizationCredentials
 
+from app import models
 from app.core import deps
 from app.core.security import create_access_token, create_refresh_token
-from app import models
 
 
 @pytest.mark.anyio

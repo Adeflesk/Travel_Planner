@@ -2,18 +2,18 @@
 tests/test_sharing.py - Tests for trip sharing endpoints.
 """
 
-import pytest
 from datetime import date
+
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.core.security import create_access_token, get_password_hash
 from app.main import app
-from app.models import Base, User, Trip, UserRole
-from app.core.security import get_password_hash, create_access_token
+from app.models import Base, Trip, User, UserRole
 from database import get_db
-
 
 # Test database setup
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"

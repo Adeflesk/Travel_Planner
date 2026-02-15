@@ -6,14 +6,7 @@ Defines the `FlightLayover` model for layover stops on flight journeys.
 Author: Travel Planner Team
 """
 
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    DateTime,
-    Text,
-    ForeignKey,
-)
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from .base import Base

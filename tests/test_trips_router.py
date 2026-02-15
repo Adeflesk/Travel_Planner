@@ -1,7 +1,7 @@
 from datetime import date
 
-from app.core.security import create_access_token
 from app import models
+from app.core.security import create_access_token
 
 
 def create_user_and_token(db, email="other@example.com"):

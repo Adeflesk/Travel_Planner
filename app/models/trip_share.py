@@ -7,14 +7,8 @@ Author: Travel Planner Team
 """
 
 from datetime import datetime, timezone
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    DateTime,
-    ForeignKey,
-    UniqueConstraint,
-)
+
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from .base import Base

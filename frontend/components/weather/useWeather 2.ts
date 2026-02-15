@@ -25,11 +25,13 @@ export function useWeather(destinationId: number) {
       const response = await weatherApi.getByDestinationId(destinationId);
       setWeather(response.data);
       setError(null);
-    } catch (err: any) {
-      console.error('Error fetching weather:', err);
-      // Graceful degradation - don't show error to user, just don't display weather
-      setWeather(null);
-      setError(err.message || 'Failed to load weather');
+      } catch (err: unknown) {
+        console.error('Error fetching weather:', err);
+        // Graceful degradation - don't show error to user, just don't display weather
+        setWeather(null);
+        const message = err instanceof Error ? err.message : 'Failed to load weather';
+        setError(message);
+      setError(message);
     } finally {
       setLoading(false);
     }

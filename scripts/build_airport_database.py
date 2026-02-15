@@ -20,8 +20,8 @@ Requirements:
     pip install timezonefinder
 """
 
-import json
 import csv
+import json
 import sys
 from typing import Dict, List, Optional
 

@@ -70,6 +70,9 @@ test.describe('Journey Management', () => {
     // Wait for the form to load
     await expect(authenticatedPage.getByRole('heading', { name: 'Add Journey' })).toBeVisible();
 
+    // Continue past the segment builder step
+    await authenticatedPage.getByRole('button', { name: 'Continue to details' }).click();
+
     // Fill in the journey form - select transport mode
     await authenticatedPage.locator('select').first().selectOption('flight');
     await authenticatedPage.getByPlaceholder('e.g., British Airways, Eurostar').fill('British Airways');

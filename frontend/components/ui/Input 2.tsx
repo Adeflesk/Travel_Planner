@@ -26,7 +26,6 @@ const sizeStyles: Record<InputSize, string> = {
 const baseInputStyles = `
   w-full bg-white border border-slate-300 rounded-md
   text-slate-900 placeholder:text-slate-400
-  focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500
   disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed
   transition-colors
 `;
@@ -97,7 +96,6 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
       label,
       error,
       hint,
-      inputSize = 'md',
       className = '',
       ...props
     },

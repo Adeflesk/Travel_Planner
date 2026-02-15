@@ -9,40 +9,41 @@ Author: Travel Planner Team
 
 import os
 from pathlib import Path
+
 from dotenv import load_dotenv
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from slowapi.errors import RateLimitExceeded
+
+import models
+from app.core.migrations import run_migrations
+from app.core.rate_limit import limiter
+from app.routers import (
+    activities_router,
+    admin_router,
+    auth_router,
+    dashboard_router,
+    destinations_router,
+    expenses_router,
+    flight_layovers_router,
+    health_router,
+    journey_documents_router,
+    journey_options_router,
+    journey_segments_router,
+    journey_stops_router,
+    journeys_router,
+    packing_router,
+    stop_options_router,
+    suggestions_router,
+    trips_router,
+)
+from database import engine
 
 # Load environment variables from .env file in project root
 project_root = Path(__file__).parent.parent
 env_path = project_root / ".env"
 load_dotenv(dotenv_path=env_path)
-
-from fastapi import FastAPI, Request  # noqa: E402
-from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
-from fastapi.responses import JSONResponse  # noqa: E402
-from slowapi.errors import RateLimitExceeded  # noqa: E402
-
-from app.core.rate_limit import limiter  # noqa: E402
-from app.core.migrations import run_migrations  # noqa: E402
-from app.routers import (  # noqa: E402
-    health_router,
-    auth_router,
-    admin_router,
-    trips_router,
-    destinations_router,
-    activities_router,
-    expenses_router,
-    packing_router,
-    journeys_router,
-    journey_stops_router,
-    stop_options_router,
-    journey_documents_router,
-    journey_options_router,
-    flight_layovers_router,
-    dashboard_router,
-    suggestions_router,
-)
-import models  # noqa: E402
-from database import engine  # noqa: E402
 
 # Ensure tables exist (kept for compatibility)
 models.Base.metadata.create_all(bind=engine)
@@ -110,6 +111,7 @@ def create_app() -> FastAPI:
     app.include_router(packing_router)
     app.include_router(journeys_router)
     app.include_router(journey_stops_router)
+    app.include_router(journey_segments_router)
     app.include_router(stop_options_router)
     app.include_router(journey_documents_router)
     app.include_router(journey_options_router)

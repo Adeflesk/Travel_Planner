@@ -8,15 +8,16 @@ Author: Travel Planner Team
 """
 
 from datetime import datetime, timezone
+
 from sqlalchemy import (
     Column,
-    Integer,
-    String,
-    Text,
     Date,
     DateTime,
-    Numeric,
     ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    Text,
 )
 from sqlalchemy.orm import relationship
 

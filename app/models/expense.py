@@ -6,15 +6,7 @@ Defines the `Expense` model and its relationships to trip, destination and activ
 Author: Travel Planner Team
 """
 
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    Date,
-    Numeric,
-    Boolean,
-    ForeignKey,
-)
+from sqlalchemy import Boolean, Column, Date, ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import relationship
 
 from .base import Base

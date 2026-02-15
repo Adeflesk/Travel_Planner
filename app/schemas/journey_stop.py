@@ -7,9 +7,10 @@ Defines JourneyStop-related Pydantic models: `JourneyStopBase`, `JourneyStopCrea
 Author: Travel Planner Team
 """
 
-from pydantic import BaseModel, ConfigDict, model_validator
 from datetime import datetime
-from typing import Optional, List
+from typing import List, Optional
+
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 class JourneyStopBase(BaseModel):

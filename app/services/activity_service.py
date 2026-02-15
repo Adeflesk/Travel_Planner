@@ -6,7 +6,7 @@ Provides functions to compute trip progress and destinations-with-activities.
 Author: Travel Planner Team
 """
 
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
 
 from sqlalchemy.orm import Session, selectinload
 

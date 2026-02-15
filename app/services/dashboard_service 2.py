@@ -10,7 +10,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 from typing import Dict, List, Optional
 
-from sqlalchemy import func, distinct
+from sqlalchemy import distinct, func
 from sqlalchemy.orm import Session
 
 from app import models, schemas

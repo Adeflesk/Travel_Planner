@@ -36,6 +36,7 @@ const getInitialFormData = (tripId: number): JourneyFormData => ({
   booking_deadline: '',
   frequency: '',
   flexibility_level: 'exact',
+  segments: [],
 });
 
 export function useJourneyForm(tripId: number, onSuccess: () => void) {
@@ -208,6 +209,7 @@ export function useJourneyForm(tripId: number, onSuccess: () => void) {
       currency: journey.currency || 'USD',
       notes: journey.notes || '',
       status: journey.status || 'planned',
+      segments: [],
     });
   };
 
@@ -242,6 +244,7 @@ export function useJourneyForm(tripId: number, onSuccess: () => void) {
       arrival_datetime: '',
       booking_reference: '',
       status: 'planned',
+      segments: [],
     });
     setErrors({});
     setWarnings({});
