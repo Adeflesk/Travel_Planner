@@ -19,6 +19,7 @@ from .journey_stops import router as journey_stops_router
 from .stop_options import router as stop_options_router
 from .journey_documents import router as journey_documents_router
 from .journey_segments import router as journey_segments_router
+from .segment_options import router as segment_options_router
 from .dashboard import router as dashboard_router
 from .suggestions import router as suggestions_router
 
@@ -36,6 +37,7 @@ __all__ = [
     "stop_options_router",
     "journey_documents_router",
     "journey_segments_router",
+    "segment_options_router",
     "dashboard_router",
     "suggestions_router",
 ]

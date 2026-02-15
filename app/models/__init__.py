@@ -19,6 +19,7 @@ from .journey_stop import JourneyStop
 from .stop_option import StopOption
 from .journey_document import JourneyDocument
 from .journey_segment import JourneySegment
+from .segment_option import SegmentOption
 
 __all__ = [
     "Base",
@@ -35,4 +36,5 @@ __all__ = [
     "StopOption",
     "JourneyDocument",
     "JourneySegment",
+    "SegmentOption",
 ]

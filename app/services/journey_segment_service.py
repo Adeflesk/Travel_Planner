@@ -15,7 +15,11 @@ def _serialize_segment(segment: models.JourneySegment) -> schemas.JourneySegment
     metadata = None
     if segment.metadata_json:
         try:
-            metadata = json.loads(segment.metadata_json)
+            # Postgres returns JSON as dict, SQLite as string
+            if isinstance(segment.metadata_json, str):
+                metadata = json.loads(segment.metadata_json)
+            else:
+                metadata = segment.metadata_json
         except json.JSONDecodeError:
             metadata = None
 

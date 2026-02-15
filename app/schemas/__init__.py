@@ -16,6 +16,7 @@ from .journey_stop import *  # noqa: F401, F403
 from .stop_option import *  # noqa: F401, F403
 from .journey_document import *  # noqa: F401, F403
 from .journey_segment import *  # noqa: F401, F403
+from .segment_option import *  # noqa: F401, F403
 from .aggregates import *  # noqa: F401, F403
 from .auth import *  # noqa: F401, F403
 from .budget import *  # noqa: F401, F403

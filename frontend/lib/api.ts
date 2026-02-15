@@ -22,6 +22,8 @@ import {
   ActivityFormData,
   JourneyFormData,
   JourneySegment,
+  SegmentOption,
+  SegmentOptionFormData,
   ExpenseSummary,
   PackingSummary,
   TripProgress,
@@ -282,6 +284,44 @@ export const journeySegmentApi = {
   update: (segmentId: number, data: Partial<JourneySegment>) =>
     api.put<JourneySegment>(`/journey-segments/${segmentId}`, data),
   delete: (segmentId: number) => api.delete(`/journey-segments/${segmentId}`),
+};
+
+// Segment Option API
+export const segmentOptionApi = {
+  getBySegmentId: (segmentId: number) =>
+    api.get<SegmentOption[]>(`/segment-options/segment/${segmentId}`),
+  getById: (optionId: number) =>
+    api.get<SegmentOption>(`/segment-options/${optionId}`),
+  create: (data: SegmentOptionFormData) => {
+    const cleanedData: Partial<SegmentOptionFormData> = {};
+    (Object.keys(data) as Array<keyof SegmentOptionFormData>).forEach((key) => {
+      const value = data[key];
+      if (value !== '' && value !== undefined && value !== null) {
+        if (key === 'cost' && typeof value === 'string') {
+          cleanedData[key] = parseFloat(value) as never;
+        } else {
+          cleanedData[key] = value as never;
+        }
+      }
+    });
+    return api.post<SegmentOption>('/segment-options/', cleanedData);
+  },
+  update: (optionId: number, data: Partial<SegmentOptionFormData>) => {
+    const cleanedData: Partial<SegmentOptionFormData> = {};
+    (Object.keys(data) as Array<keyof SegmentOptionFormData>).forEach((key) => {
+      const value = data[key];
+      if (key === 'segment_id') return; // Don't update segment_id
+      if (value !== '' && value !== undefined && value !== null) {
+        if (key === 'cost' && typeof value === 'string') {
+          cleanedData[key] = parseFloat(value) as never;
+        } else {
+          cleanedData[key] = value as never;
+        }
+      }
+    });
+    return api.put<SegmentOption>(`/segment-options/${optionId}`, cleanedData);
+  },
+  delete: (optionId: number) => api.delete(`/segment-options/${optionId}`),
 };
 
 // Journey Stop API

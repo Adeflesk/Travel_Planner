@@ -104,10 +104,13 @@ export const useSegmentBuilder = (
   );
 
   const addSegment = useCallback(() => {
+    const lastSegment = segments[segments.length - 1];
+    const inheritedTimezone = lastSegment?.destination_timezone || options?.timezone;
+    
     setSegments(
       reindexSegments([
         ...segments,
-        createEmptySegment(segments.length, options?.timezone),
+        createEmptySegment(segments.length, inheritedTimezone),
       ])
     );
   }, [options?.timezone, segments, setSegments]);
@@ -246,6 +249,24 @@ export const useSegmentBuilder = (
     (index: number, field: keyof JourneySegmentDraft, value: unknown) => {
       const next = [...segments];
       next[index] = { ...next[index], [field]: value } as JourneySegmentDraft;
+
+      // Auto-propagate destination_timezone to next segment's origin_timezone
+      if (field === 'destination_timezone' && next[index + 1]) {
+        const currentSegment = next[index];
+        const nextSegment = next[index + 1];
+        
+        // If next segment is a transfer/layover and locations match
+        if (
+          (nextSegment.segment_type === 'TRANSFER' || nextSegment.segment_type === 'LAYOVER') &&
+          locationsMatch(currentSegment.destination, nextSegment.origin)
+        ) {
+          next[index + 1] = {
+            ...nextSegment,
+            origin_timezone: value as string,
+          };
+        }
+      }
+
       setSegments(reindexSegments(next));
     },
     [segments, setSegments]

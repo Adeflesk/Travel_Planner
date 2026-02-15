@@ -36,6 +36,7 @@ from app.routers import (  # noqa: E402
     journey_segments_router,
     journey_stops_router,
     stop_options_router,
+    segment_options_router,
     journey_documents_router,
     dashboard_router,
     suggestions_router,
@@ -64,6 +65,7 @@ def get_cors_origins() -> list[str]:
     origins = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+        "https://travel-planner-one-weld.vercel.app",
     ]
 
     # Add production frontend URL if configured
@@ -111,6 +113,7 @@ def create_app() -> FastAPI:
     app.include_router(journey_segments_router)
     app.include_router(journey_stops_router)
     app.include_router(stop_options_router)
+    app.include_router(segment_options_router)
     app.include_router(journey_documents_router)
     app.include_router(dashboard_router)
     app.include_router(suggestions_router)

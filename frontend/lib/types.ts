@@ -304,6 +304,38 @@ export interface JourneySegmentDraft {
   notes?: string;
 }
 
+// Segment Option Types
+export type SegmentOptionStatus = 'researching' | 'selected' | 'booked' | 'rejected';
+
+export interface SegmentOption {
+  id: number;
+  segment_id: number;
+  name: string;
+  provider?: string;
+  frequency?: string;
+  estimated_duration?: number;  // Duration in minutes
+  cost?: number;
+  currency: string;
+  booking_url?: string;
+  notes?: string;
+  status: SegmentOptionStatus;
+  order: number;
+}
+
+export interface SegmentOptionFormData {
+  segment_id: number;
+  name: string;
+  provider?: string;
+  frequency?: string;
+  estimated_duration?: number;
+  cost?: number;
+  currency?: string;
+  booking_url?: string;
+  notes?: string;
+  status?: SegmentOptionStatus;
+  order?: number;
+}
+
 // Journey Stop Types
 export type StopOptionType = 'activity' | 'meal' | 'sightseeing' | 'rest' | 'fuel' | 'shopping' | 'other';
 export type StopOptionStatus = 'considering' | 'selected' | 'skipped' | 'done';

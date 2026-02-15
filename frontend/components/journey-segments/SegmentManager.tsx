@@ -1,9 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { JourneySegment, JourneySegmentDraft, LocationRef, SegmentType } from '@/lib/types';
-import { journeySegmentApi } from '@/lib/api';
+import { JourneySegment, JourneySegmentDraft, LocationRef, SegmentType, SegmentOption, SegmentOptionFormData } from '@/lib/types';
+import { journeySegmentApi, segmentOptionApi } from '@/lib/api';
 import { SegmentCard } from './SegmentCard';
+import { SegmentOptionsManager } from './SegmentOptionsManager';
 import { Button } from '@/components/ui/Button';
 
 interface SegmentManagerProps {
@@ -49,6 +50,7 @@ export default function SegmentManager({ journeyId }: SegmentManagerProps) {
   const [loading, setLoading] = useState(true);
   const [editingSegment, setEditingSegment] = useState<JourneySegment | null>(null);
   const [editingDraft, setEditingDraft] = useState<JourneySegmentDraft | null>(null);
+  const [segmentOptions, setSegmentOptions] = useState<SegmentOption[]>([]);
 
   const sortedSegments = useMemo(
     () => [...segments].sort((a, b) => a.order - b.order),
@@ -70,14 +72,31 @@ export default function SegmentManager({ journeyId }: SegmentManagerProps) {
     loadSegments();
   }, [loadSegments]);
 
+  const loadSegmentOptions = useCallback(async (segmentId: number) => {
+    try {
+      const response = await segmentOptionApi.getBySegmentId(segmentId);
+      setSegmentOptions(response.data);
+    } catch (error) {
+      console.error('Error loading segment options:', error);
+      setSegmentOptions([]);
+    }
+  }, []);
+
   const openEditor = (segment: JourneySegment) => {
     setEditingSegment(segment);
     setEditingDraft(toDraft(segment));
+    // Load options for transfer/bus/rail segments
+    if (['TRANSFER', 'BUS', 'RAIL'].includes(segment.segment_type)) {
+      loadSegmentOptions(segment.id);
+    } else {
+      setSegmentOptions([]);
+    }
   };
 
   const closeEditor = () => {
     setEditingSegment(null);
     setEditingDraft(null);
+    setSegmentOptions([]);
   };
 
   const handleSave = async () => {
@@ -132,6 +151,41 @@ export default function SegmentManager({ journeyId }: SegmentManagerProps) {
     updateDraftField(field, value as never);
   };
 
+  const handleAddSegmentOption = async (option: SegmentOptionFormData) => {
+    try {
+      const response = await segmentOptionApi.create(option);
+      setSegmentOptions((prev) => [...prev, response.data]);
+    } catch (error) {
+      console.error('Error adding segment option:', error);
+      throw error;
+    }
+  };
+
+  const handleUpdateSegmentOption = async (
+    optionId: number,
+    updates: Partial<SegmentOptionFormData>
+  ) => {
+    try {
+      const response = await segmentOptionApi.update(optionId, updates);
+      setSegmentOptions((prev) =>
+        prev.map((opt) => (opt.id === optionId ? response.data : opt))
+      );
+    } catch (error) {
+      console.error('Error updating segment option:', error);
+      throw error;
+    }
+  };
+
+  const handleDeleteSegmentOption = async (optionId: number) => {
+    try {
+      await segmentOptionApi.delete(optionId);
+      setSegmentOptions((prev) => prev.filter((opt) => opt.id !== optionId));
+    } catch (error) {
+      console.error('Error deleting segment option:', error);
+      throw error;
+    }
+  };
+
   if (loading) {
     return <p className="text-sm text-slate-500">Loading segments...</p>;
   }
@@ -175,9 +229,9 @@ export default function SegmentManager({ journeyId }: SegmentManagerProps) {
       </div>
 
       {editingSegment && editingDraft && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-3xl bg-white rounded-lg shadow-xl">
-            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-3xl bg-white rounded-lg shadow-xl max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 flex-shrink-0">
               <div>
                 <div className="text-sm text-slate-500">Edit segment</div>
                 <div className="text-lg font-semibold text-slate-900">
@@ -192,7 +246,7 @@ export default function SegmentManager({ journeyId }: SegmentManagerProps) {
                 Close
               </button>
             </div>
-            <div className="p-4">
+            <div className="p-4 overflow-y-auto flex-1">
               <SegmentCard
                 segment={editingDraft}
                 index={editingSegment.order}
@@ -204,8 +258,21 @@ export default function SegmentManager({ journeyId }: SegmentManagerProps) {
                 onRemove={() => null}
                 canRemove={false}
               />
+
+              {/* Transport Options for TRANSFER/BUS/RAIL segments */}
+              {['TRANSFER', 'BUS', 'RAIL'].includes(editingSegment.segment_type) && (
+                <div className="mt-4 pt-4 border-t border-slate-200">
+                  <SegmentOptionsManager
+                    segmentId={editingSegment.id}
+                    options={segmentOptions}
+                    onAddOption={handleAddSegmentOption}
+                    onUpdateOption={handleUpdateSegmentOption}
+                    onDeleteOption={handleDeleteSegmentOption}
+                  />
+                </div>
+              )}
             </div>
-            <div className="flex justify-end gap-3 border-t border-slate-200 bg-slate-50 px-4 py-3">
+            <div className="flex justify-end gap-3 border-t border-slate-200 bg-slate-50 px-4 py-3 flex-shrink-0">
               <Button type="button" variant="secondary" onClick={closeEditor}>
                 Cancel
               </Button>
