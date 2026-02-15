@@ -716,19 +716,17 @@ export function JourneyForm({
               </div>
             </div>
           )}
-        </div>        </>
+        </div>
       )}
 
-          {showAdvanced && isEditing && (
-            <div className="mt-6">
-              <SegmentBuilder
-                segments={formData.segments || []}
-                onChange={(segments) => updateField('segments', segments)}
-                defaultTimezone={defaultSegmentTimezone}
-              />
-            </div>
-          )}
-        </>
+      {showAdvanced && isEditing && (
+        <div className="mt-6">
+          <SegmentBuilder
+            segments={formData.segments || []}
+            onChange={(segments) => updateField('segments', segments)}
+            defaultTimezone={defaultSegmentTimezone}
+          />
+        </div>
       )}
 
       <div className="mt-3 flex gap-4 items-center">
