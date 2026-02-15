@@ -24,6 +24,9 @@ interface AutocompleteInputProps extends BaseInputProps, Omit<InputHTMLAttribute
   recentItems?: string[];
   loading?: boolean;
   emptyMessage?: string;
+  virtualize?: boolean;
+  virtualItemHeight?: number;
+  virtualMaxItems?: number;
 }
 
 export const AutocompleteInput = forwardRef<HTMLInputElement, AutocompleteInputProps>(
@@ -36,6 +39,9 @@ export const AutocompleteInput = forwardRef<HTMLInputElement, AutocompleteInputP
       recentItems = [],
       loading = false,
       emptyMessage = 'No suggestions found. Start typing to create new.',
+      virtualize = false,
+      virtualItemHeight = 36,
+      virtualMaxItems = 8,
       value,
       onChange,
       onFocus,
@@ -53,6 +59,7 @@ export const AutocompleteInput = forwardRef<HTMLInputElement, AutocompleteInputP
   ) => {
     const [isOpen, setIsOpen] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(-1);
+    const [scrollTop, setScrollTop] = useState(0);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -153,12 +160,47 @@ export const AutocompleteInput = forwardRef<HTMLInputElement, AutocompleteInputP
     // Scroll selected item into view
     useEffect(() => {
       if (selectedIndex >= 0 && dropdownRef.current) {
-        const selectedElement = dropdownRef.current.querySelector(
-          `[data-index="${selectedIndex}"]`
-        );
-        selectedElement?.scrollIntoView({ block: 'nearest' });
+        if (virtualize) {
+          const containerHeight = Math.min(filteredSuggestions.length, virtualMaxItems)
+            * virtualItemHeight;
+          const itemTop = selectedIndex * virtualItemHeight;
+          const itemBottom = itemTop + virtualItemHeight;
+          const currentTop = dropdownRef.current.scrollTop;
+          const currentBottom = currentTop + containerHeight;
+
+          if (itemTop < currentTop) {
+            dropdownRef.current.scrollTop = itemTop;
+          } else if (itemBottom > currentBottom) {
+            dropdownRef.current.scrollTop = itemBottom - containerHeight;
+          }
+        } else {
+          const selectedElement = dropdownRef.current.querySelector(
+            `[data-index="${selectedIndex}"]`
+          );
+          selectedElement?.scrollIntoView({ block: 'nearest' });
+        }
       }
-    }, [selectedIndex]);
+    }, [selectedIndex, filteredSuggestions.length, virtualItemHeight, virtualMaxItems, virtualize]);
+
+    const visibleRange = useMemo(() => {
+      if (!virtualize) {
+        return { startIndex: 0, endIndex: filteredSuggestions.length };
+      }
+
+      const startIndex = Math.floor(scrollTop / virtualItemHeight);
+      const endIndex = Math.min(
+        startIndex + virtualMaxItems,
+        filteredSuggestions.length
+      );
+      return { startIndex, endIndex };
+    }, [filteredSuggestions.length, scrollTop, virtualItemHeight, virtualMaxItems, virtualize]);
+
+    const virtualTopPadding = virtualize
+      ? visibleRange.startIndex * virtualItemHeight
+      : 0;
+    const virtualBottomPadding = virtualize
+      ? (filteredSuggestions.length - visibleRange.endIndex) * virtualItemHeight
+      : 0;
 
     // Organize suggestions into recent and other
     const recentSuggestions = showRecentFirst
@@ -208,13 +250,48 @@ export const AutocompleteInput = forwardRef<HTMLInputElement, AutocompleteInputP
         {showDropdown && (
           <div
             ref={dropdownRef}
-            className="absolute z-50 w-full mt-1 bg-white border border-slate-300 rounded-md shadow-lg max-h-60 overflow-y-auto"
+            onScroll={virtualize ? (e) => setScrollTop(e.currentTarget.scrollTop) : undefined}
+            className="absolute z-50 w-full mt-1 bg-white border border-slate-300 rounded-md shadow-lg overflow-y-auto"
+            style={virtualize
+              ? { maxHeight: Math.min(filteredSuggestions.length, virtualMaxItems) * virtualItemHeight }
+              : { maxHeight: '15rem' }
+            }
           >
             {loading ? (
               <div className="px-3 py-2 text-sm text-slate-500 text-center">
                 Loading suggestions...
               </div>
             ) : hasResults ? (
+              virtualize ? (
+                <div
+                  style={{
+                    paddingTop: virtualTopPadding,
+                    paddingBottom: virtualBottomPadding,
+                  }}
+                >
+                  {filteredSuggestions
+                    .slice(visibleRange.startIndex, visibleRange.endIndex)
+                    .map((suggestion, index) => {
+                      const globalIndex = visibleRange.startIndex + index;
+                      return (
+                        <button
+                          key={`virtual-${suggestion}-${globalIndex}`}
+                          data-index={globalIndex}
+                          type="button"
+                          className={`w-full text-left px-3 h-9 flex items-center text-sm hover:bg-primary-50 focus:bg-primary-50 focus:outline-none ${
+                            selectedIndex === globalIndex
+                              ? 'bg-primary-100 text-primary-900'
+                              : 'text-slate-700'
+                          }`}
+                          onClick={() => handleSuggestionClick(suggestion)}
+                          onMouseEnter={() => setSelectedIndex(globalIndex)}
+                        >
+                          {suggestion}
+                        </button>
+                      );
+                    })}
+                </div>
+              ) : (
               <>
                 {recentSuggestions.length > 0 && (
                   <div>
@@ -272,6 +349,7 @@ export const AutocompleteInput = forwardRef<HTMLInputElement, AutocompleteInputP
                   </div>
                 )}
               </>
+              )
             ) : (
               <div className="px-3 py-2 text-sm text-slate-500 text-center">
                 {emptyMessage}

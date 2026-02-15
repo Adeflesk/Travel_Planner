@@ -4,8 +4,10 @@ import {
   JourneySegmentIntent,
   LocationRef,
   SegmentType,
+  Destination,
 } from '@/lib/types';
 import { createSegmentTemplate } from '@/lib/segment-templates';
+import { getLocalTimezone } from '@/lib/timezone-utils';
 
 const createEmptyLocation = (): LocationRef => ({
   type: 'custom',
@@ -68,8 +70,28 @@ interface SegmentBuilderActions {
 export const useSegmentBuilder = (
   segments: JourneySegmentDraft[],
   setSegments: (segments: JourneySegmentDraft[]) => void,
-  options?: { timezone?: string; startDate?: Date }
+  options?: { timezone?: string; startDate?: Date; destinations?: Destination[] }
 ): SegmentBuilderActions => {
+  const resolveTimezone = (location: LocationRef): string | undefined => {
+    if (!options?.destinations?.length) return undefined;
+
+    if (location.destination_id) {
+      return options.destinations.find((dest) => dest.id === location.destination_id)?.timezone;
+    }
+
+    const name = location.name?.trim().toLowerCase();
+    if (!name) return undefined;
+    const matchedTimezone = options.destinations.find(
+      (dest) => dest.name.trim().toLowerCase() === name
+    )?.timezone;
+    if (matchedTimezone) return matchedTimezone;
+
+    if (name.includes('home')) {
+      return getLocalTimezone();
+    }
+
+    return undefined;
+  };
   const applyIntent = useCallback(
     (intent: JourneySegmentIntent) => {
       const template = createSegmentTemplate(intent, {
@@ -136,7 +158,24 @@ export const useSegmentBuilder = (
       const current = next[index];
       const previousDestination = current.destination;
 
+      const matchedTimezone = resolveTimezone(location);
+
       next[index] = { ...current, [side]: location };
+
+      if (matchedTimezone) {
+        if (side === 'origin') {
+          next[index] = { ...next[index], origin_timezone: matchedTimezone };
+        } else {
+          next[index] = { ...next[index], destination_timezone: matchedTimezone };
+        }
+        if (current.segment_type === 'LAYOVER') {
+          next[index] = {
+            ...next[index],
+            origin_timezone: matchedTimezone,
+            destination_timezone: matchedTimezone,
+          };
+        }
+      }
 
       if (side === 'destination' && next[index + 1]) {
         const nextSegment = next[index + 1];
@@ -146,6 +185,12 @@ export const useSegmentBuilder = (
 
         if (shouldSync) {
           next[index + 1] = { ...nextSegment, origin: location };
+          if (matchedTimezone) {
+            next[index + 1] = {
+              ...next[index + 1],
+              origin_timezone: matchedTimezone,
+            };
+          }
         }
       }
 
@@ -194,7 +239,7 @@ export const useSegmentBuilder = (
 
       setSegments(reindexSegments(next));
     },
-    [segments, setSegments]
+    [options?.destinations, segments, setSegments]
   );
 
   const updateField = useCallback(

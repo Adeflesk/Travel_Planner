@@ -1,0 +1,1490 @@
+{
+  "airports": [
+    {
+      "iata": "ABV",
+      "name": "Nnamdi Azikiwe International Airport",
+      "city": "Abuja",
+      "country": "Nigeria",
+      "timezone": "Africa/Lagos"
+    },
+    {
+      "iata": "ACC",
+      "name": "Kotoka International Airport",
+      "city": "Accra",
+      "country": "Ghana",
+      "timezone": "Africa/Accra"
+    },
+    {
+      "iata": "ADD",
+      "name": "Addis Ababa Bole International Airport",
+      "city": "Addis Ababa",
+      "country": "Ethiopia",
+      "timezone": "Africa/Addis_Ababa"
+    },
+    {
+      "iata": "ADL",
+      "name": "Adelaide Airport",
+      "city": "Adelaide",
+      "state": "South Australia",
+      "country": "Australia",
+      "timezone": "Australia/Adelaide"
+    },
+    {
+      "iata": "AKL",
+      "name": "Auckland Airport",
+      "city": "Auckland",
+      "country": "New Zealand",
+      "timezone": "Pacific/Auckland"
+    },
+    {
+      "iata": "ALG",
+      "name": "Houari Boumediene Airport",
+      "city": "Algiers",
+      "country": "Algeria",
+      "timezone": "Africa/Algiers"
+    },
+    {
+      "iata": "AMM",
+      "name": "Queen Alia International Airport",
+      "city": "Amman",
+      "country": "Jordan",
+      "timezone": "Asia/Amman"
+    },
+    {
+      "iata": "AMS",
+      "name": "Amsterdam Airport Schiphol",
+      "city": "Amsterdam",
+      "country": "Netherlands",
+      "timezone": "Europe/Amsterdam"
+    },
+    {
+      "iata": "ANC",
+      "name": "Ted Stevens Anchorage International Airport",
+      "city": "Anchorage",
+      "state": "Alaska",
+      "country": "United States",
+      "timezone": "America/Anchorage"
+    },
+    {
+      "iata": "ARN",
+      "name": "Stockholm Arlanda Airport",
+      "city": "Stockholm",
+      "country": "Sweden",
+      "timezone": "Europe/Stockholm"
+    },
+    {
+      "iata": "ASU",
+      "name": "Silvio Pettirossi International Airport",
+      "city": "Asunción",
+      "country": "Paraguay",
+      "timezone": "America/Asuncion"
+    },
+    {
+      "iata": "ATH",
+      "name": "Athens International Airport",
+      "city": "Athens",
+      "country": "Greece",
+      "timezone": "Europe/Athens"
+    },
+    {
+      "iata": "ATL",
+      "name": "Hartsfield-Jackson Atlanta International Airport",
+      "city": "Atlanta",
+      "state": "Georgia",
+      "country": "United States",
+      "timezone": "America/New_York"
+    },
+    {
+      "iata": "AUH",
+      "name": "Abu Dhabi International Airport",
+      "city": "Abu Dhabi",
+      "country": "United Arab Emirates",
+      "timezone": "Asia/Dubai"
+    },
+    {
+      "iata": "AUS",
+      "name": "Austin-Bergstrom International Airport",
+      "city": "Austin",
+      "state": "Texas",
+      "country": "United States",
+      "timezone": "America/Chicago"
+    },
+    {
+      "iata": "BAH",
+      "name": "Bahrain International Airport",
+      "city": "Manama",
+      "country": "Bahrain",
+      "timezone": "Asia/Bahrain"
+    },
+    {
+      "iata": "BCN",
+      "name": "Barcelona-El Prat Airport",
+      "city": "Barcelona",
+      "country": "Spain",
+      "timezone": "Europe/Madrid"
+    },
+    {
+      "iata": "BDL",
+      "name": "Bradley International Airport",
+      "city": "Hartford",
+      "state": "Connecticut",
+      "country": "United States",
+      "timezone": "America/New_York"
+    },
+    {
+      "iata": "BEG",
+      "name": "Belgrade Nikola Tesla Airport",
+      "city": "Belgrade",
+      "country": "Serbia",
+      "timezone": "Europe/Belgrade"
+    },
+    {
+      "iata": "BEY",
+      "name": "Beirut-Rafic Hariri International Airport",
+      "city": "Beirut",
+      "country": "Lebanon",
+      "timezone": "Asia/Beirut"
+    },
+    {
+      "iata": "BKK",
+      "name": "Suvarnabhumi Airport",
+      "city": "Bangkok",
+      "country": "Thailand",
+      "timezone": "Asia/Bangkok"
+    },
+    {
+      "iata": "BLR",
+      "name": "Kempegowda International Airport",
+      "city": "Bangalore",
+      "country": "India",
+      "timezone": "Asia/Kolkata"
+    },
+    {
+      "iata": "BNA",
+      "name": "Nashville International Airport",
+      "city": "Nashville",
+      "state": "Tennessee",
+      "country": "United States",
+      "timezone": "America/Chicago"
+    },
+    {
+      "iata": "BNE",
+      "name": "Brisbane Airport",
+      "city": "Brisbane",
+      "state": "Queensland",
+      "country": "Australia",
+      "timezone": "Australia/Brisbane"
+    },
+    {
+      "iata": "BOG",
+      "name": "El Dorado International Airport",
+      "city": "Bogotá",
+      "country": "Colombia",
+      "timezone": "America/Bogota"
+    },
+    {
+      "iata": "BOM",
+      "name": "Chhatrapati Shivaji Maharaj International Airport",
+      "city": "Mumbai",
+      "country": "India",
+      "timezone": "Asia/Kolkata"
+    },
+    {
+      "iata": "BOS",
+      "name": "Boston Logan International Airport",
+      "city": "Boston",
+      "state": "Massachusetts",
+      "country": "United States",
+      "timezone": "America/New_York"
+    },
+    {
+      "iata": "BRU",
+      "name": "Brussels Airport",
+      "city": "Brussels",
+      "country": "Belgium",
+      "timezone": "Europe/Brussels"
+    },
+    {
+      "iata": "BSB",
+      "name": "Brasília International Airport",
+      "city": "Brasília",
+      "country": "Brazil",
+      "timezone": "America/Sao_Paulo"
+    },
+    {
+      "iata": "BUD",
+      "name": "Budapest Ferenc Liszt International Airport",
+      "city": "Budapest",
+      "country": "Hungary",
+      "timezone": "Europe/Budapest"
+    },
+    {
+      "iata": "BWI",
+      "name": "Baltimore/Washington International Airport",
+      "city": "Baltimore",
+      "state": "Maryland",
+      "country": "United States",
+      "timezone": "America/New_York"
+    },
+    {
+      "iata": "CAI",
+      "name": "Cairo International Airport",
+      "city": "Cairo",
+      "country": "Egypt",
+      "timezone": "Africa/Cairo"
+    },
+    {
+      "iata": "CAN",
+      "name": "Guangzhou Baiyun International Airport",
+      "city": "Guangzhou",
+      "country": "China",
+      "timezone": "Asia/Shanghai"
+    },
+    {
+      "iata": "CCS",
+      "name": "Simón Bolívar International Airport",
+      "city": "Caracas",
+      "country": "Venezuela",
+      "timezone": "America/Caracas"
+    },
+    {
+      "iata": "CCU",
+      "name": "Netaji Subhas Chandra Bose International Airport",
+      "city": "Kolkata",
+      "country": "India",
+      "timezone": "Asia/Kolkata"
+    },
+    {
+      "iata": "CDG",
+      "name": "Charles de Gaulle Airport",
+      "city": "Paris",
+      "country": "France",
+      "timezone": "Europe/Paris"
+    },
+    {
+      "iata": "CEB",
+      "name": "Mactan-Cebu International Airport",
+      "city": "Cebu",
+      "country": "Philippines",
+      "timezone": "Asia/Manila"
+    },
+    {
+      "iata": "CGK",
+      "name": "Soekarno-Hatta International Airport",
+      "city": "Jakarta",
+      "country": "Indonesia",
+      "timezone": "Asia/Jakarta"
+    },
+    {
+      "iata": "CHC",
+      "name": "Christchurch International Airport",
+      "city": "Christchurch",
+      "country": "New Zealand",
+      "timezone": "Pacific/Auckland"
+    },
+    {
+      "iata": "CLE",
+      "name": "Cleveland Hopkins International Airport",
+      "city": "Cleveland",
+      "state": "Ohio",
+      "country": "United States",
+      "timezone": "America/New_York"
+    },
+    {
+      "iata": "CLT",
+      "name": "Charlotte Douglas International Airport",
+      "city": "Charlotte",
+      "state": "North Carolina",
+      "country": "United States",
+      "timezone": "America/New_York"
+    },
+    {
+      "iata": "CMB",
+      "name": "Bandaranaike International Airport",
+      "city": "Colombo",
+      "country": "Sri Lanka",
+      "timezone": "Asia/Colombo"
+    },
+    {
+      "iata": "CMH",
+      "name": "John Glenn Columbus International Airport",
+      "city": "Columbus",
+      "state": "Ohio",
+      "country": "United States",
+      "timezone": "America/New_York"
+    },
+    {
+      "iata": "CMN",
+      "name": "Mohammed V International Airport",
+      "city": "Casablanca",
+      "country": "Morocco",
+      "timezone": "Africa/Casablanca"
+    },
+    {
+      "iata": "CPH",
+      "name": "Copenhagen Airport",
+      "city": "Copenhagen",
+      "country": "Denmark",
+      "timezone": "Europe/Copenhagen"
+    },
+    {
+      "iata": "CPT",
+      "name": "Cape Town International Airport",
+      "city": "Cape Town",
+      "country": "South Africa",
+      "timezone": "Africa/Johannesburg"
+    },
+    {
+      "iata": "CSX",
+      "name": "Changsha Huanghua International Airport",
+      "city": "Changsha",
+      "country": "China",
+      "timezone": "Asia/Shanghai"
+    },
+    {
+      "iata": "CTS",
+      "name": "New Chitose Airport",
+      "city": "Sapporo",
+      "country": "Japan",
+      "timezone": "Asia/Tokyo"
+    },
+    {
+      "iata": "CTU",
+      "name": "Chengdu Shuangliu International Airport",
+      "city": "Chengdu",
+      "country": "China",
+      "timezone": "Asia/Shanghai"
+    },
+    {
+      "iata": "CUN",
+      "name": "Cancún International Airport",
+      "city": "Cancún",
+      "country": "Mexico",
+      "timezone": "America/Cancun"
+    },
+    {
+      "iata": "CVG",
+      "name": "Cincinnati/Northern Kentucky International Airport",
+      "city": "Cincinnati",
+      "state": "Kentucky",
+      "country": "United States",
+      "timezone": "America/New_York"
+    },
+    {
+      "iata": "DAL",
+      "name": "Dallas Love Field",
+      "city": "Dallas",
+      "state": "Texas",
+      "country": "United States",
+      "timezone": "America/Chicago"
+    },
+    {
+      "iata": "DAR",
+      "name": "Julius Nyerere International Airport",
+      "city": "Dar es Salaam",
+      "country": "Tanzania",
+      "timezone": "Africa/Dar_es_Salaam"
+    },
+    {
+      "iata": "DEL",
+      "name": "Indira Gandhi International Airport",
+      "city": "New Delhi",
+      "country": "India",
+      "timezone": "Asia/Kolkata"
+    },
+    {
+      "iata": "DEN",
+      "name": "Denver International Airport",
+      "city": "Denver",
+      "state": "Colorado",
+      "country": "United States",
+      "timezone": "America/Denver"
+    },
+    {
+      "iata": "DFW",
+      "name": "Dallas/Fort Worth International Airport",
+      "city": "Dallas",
+      "state": "Texas",
+      "country": "United States",
+      "timezone": "America/Chicago"
+    },
+    {
+      "iata": "DMK",
+      "name": "Don Mueang International Airport",
+      "city": "Bangkok",
+      "country": "Thailand",
+      "timezone": "Asia/Bangkok"
+    },
+    {
+      "iata": "DOH",
+      "name": "Hamad International Airport",
+      "city": "Doha",
+      "country": "Qatar",
+      "timezone": "Asia/Qatar"
+    },
+    {
+      "iata": "DPS",
+      "name": "Ngurah Rai International Airport",
+      "city": "Bali",
+      "country": "Indonesia",
+      "timezone": "Asia/Makassar"
+    },
+    {
+      "iata": "DTW",
+      "name": "Detroit Metropolitan Wayne County Airport",
+      "city": "Detroit",
+      "state": "Michigan",
+      "country": "United States",
+      "timezone": "America/Detroit"
+    },
+    {
+      "iata": "DUB",
+      "name": "Dublin Airport",
+      "city": "Dublin",
+      "country": "Ireland",
+      "timezone": "Europe/Dublin"
+    },
+    {
+      "iata": "DUR",
+      "name": "King Shaka International Airport",
+      "city": "Durban",
+      "country": "South Africa",
+      "timezone": "Africa/Johannesburg"
+    },
+    {
+      "iata": "DUS",
+      "name": "Düsseldorf Airport",
+      "city": "Düsseldorf",
+      "country": "Germany",
+      "timezone": "Europe/Berlin"
+    },
+    {
+      "iata": "DXB",
+      "name": "Dubai International Airport",
+      "city": "Dubai",
+      "country": "United Arab Emirates",
+      "timezone": "Asia/Dubai"
+    },
+    {
+      "iata": "EDI",
+      "name": "Edinburgh Airport",
+      "city": "Edinburgh",
+      "country": "United Kingdom",
+      "timezone": "Europe/London"
+    },
+    {
+      "iata": "EWR",
+      "name": "Newark Liberty International Airport",
+      "city": "Newark",
+      "state": "New Jersey",
+      "country": "United States",
+      "timezone": "America/New_York"
+    },
+    {
+      "iata": "EZE",
+      "name": "Ministro Pistarini International Airport",
+      "city": "Buenos Aires",
+      "country": "Argentina",
+      "timezone": "America/Argentina/Buenos_Aires"
+    },
+    {
+      "iata": "FCO",
+      "name": "Leonardo da Vinci-Fiumicino Airport",
+      "city": "Rome",
+      "country": "Italy",
+      "timezone": "Europe/Rome"
+    },
+    {
+      "iata": "FRA",
+      "name": "Frankfurt Airport",
+      "city": "Frankfurt",
+      "country": "Germany",
+      "timezone": "Europe/Berlin"
+    },
+    {
+      "iata": "FUK",
+      "name": "Fukuoka Airport",
+      "city": "Fukuoka",
+      "country": "Japan",
+      "timezone": "Asia/Tokyo"
+    },
+    {
+      "iata": "GDL",
+      "name": "Guadalajara International Airport",
+      "city": "Guadalajara",
+      "country": "Mexico",
+      "timezone": "America/Mexico_City"
+    },
+    {
+      "iata": "GIG",
+      "name": "Rio de Janeiro/Galeão International Airport",
+      "city": "Rio de Janeiro",
+      "country": "Brazil",
+      "timezone": "America/Sao_Paulo"
+    },
+    {
+      "iata": "GMP",
+      "name": "Gimpo International Airport",
+      "city": "Seoul",
+      "country": "South Korea",
+      "timezone": "Asia/Seoul"
+    },
+    {
+      "iata": "GRU",
+      "name": "São Paulo/Guarulhos International Airport",
+      "city": "São Paulo",
+      "country": "Brazil",
+      "timezone": "America/Sao_Paulo"
+    },
+    {
+      "iata": "GVA",
+      "name": "Geneva Airport",
+      "city": "Geneva",
+      "country": "Switzerland",
+      "timezone": "Europe/Zurich"
+    },
+    {
+      "iata": "HAN",
+      "name": "Noi Bai International Airport",
+      "city": "Hanoi",
+      "country": "Vietnam",
+      "timezone": "Asia/Ho_Chi_Minh"
+    },
+    {
+      "iata": "HEL",
+      "name": "Helsinki Airport",
+      "city": "Helsinki",
+      "country": "Finland",
+      "timezone": "Europe/Helsinki"
+    },
+    {
+      "iata": "HKG",
+      "name": "Hong Kong International Airport",
+      "city": "Hong Kong",
+      "country": "Hong Kong",
+      "timezone": "Asia/Hong_Kong"
+    },
+    {
+      "iata": "HKT",
+      "name": "Phuket International Airport",
+      "city": "Phuket",
+      "country": "Thailand",
+      "timezone": "Asia/Bangkok"
+    },
+    {
+      "iata": "HND",
+      "name": "Tokyo Haneda Airport",
+      "city": "Tokyo",
+      "country": "Japan",
+      "timezone": "Asia/Tokyo"
+    },
+    {
+      "iata": "HNL",
+      "name": "Daniel K. Inouye International Airport",
+      "city": "Honolulu",
+      "state": "Hawaii",
+      "country": "United States",
+      "timezone": "Pacific/Honolulu"
+    },
+    {
+      "iata": "HYD",
+      "name": "Rajiv Gandhi International Airport",
+      "city": "Hyderabad",
+      "country": "India",
+      "timezone": "Asia/Kolkata"
+    },
+    {
+      "iata": "IAD",
+      "name": "Washington Dulles International Airport",
+      "city": "Washington",
+      "state": "D.C.",
+      "country": "United States",
+      "timezone": "America/New_York"
+    },
+    {
+      "iata": "IAH",
+      "name": "George Bush Intercontinental Airport",
+      "city": "Houston",
+      "state": "Texas",
+      "country": "United States",
+      "timezone": "America/Chicago"
+    },
+    {
+      "iata": "ICN",
+      "name": "Incheon International Airport",
+      "city": "Seoul",
+      "country": "South Korea",
+      "timezone": "Asia/Seoul"
+    },
+    {
+      "iata": "IKA",
+      "name": "Imam Khomeini International Airport",
+      "city": "Tehran",
+      "country": "Iran",
+      "timezone": "Asia/Tehran"
+    },
+    {
+      "iata": "IND",
+      "name": "Indianapolis International Airport",
+      "city": "Indianapolis",
+      "state": "Indiana",
+      "country": "United States",
+      "timezone": "America/Indiana/Indianapolis"
+    },
+    {
+      "iata": "IST",
+      "name": "Istanbul Airport",
+      "city": "Istanbul",
+      "country": "Turkey",
+      "timezone": "Europe/Istanbul"
+    },
+    {
+      "iata": "JED",
+      "name": "King Abdulaziz International Airport",
+      "city": "Jeddah",
+      "country": "Saudi Arabia",
+      "timezone": "Asia/Riyadh"
+    },
+    {
+      "iata": "JFK",
+      "name": "John F. Kennedy International Airport",
+      "city": "New York",
+      "state": "New York",
+      "country": "United States",
+      "timezone": "America/New_York"
+    },
+    {
+      "iata": "JNB",
+      "name": "O. R. Tambo International Airport",
+      "city": "Johannesburg",
+      "country": "South Africa",
+      "timezone": "Africa/Johannesburg"
+    },
+    {
+      "iata": "KIX",
+      "name": "Kansai International Airport",
+      "city": "Osaka",
+      "country": "Japan",
+      "timezone": "Asia/Tokyo"
+    },
+    {
+      "iata": "KMG",
+      "name": "Kunming Changshui International Airport",
+      "city": "Kunming",
+      "country": "China",
+      "timezone": "Asia/Shanghai"
+    },
+    {
+      "iata": "KRK",
+      "name": "John Paul II International Airport Kraków-Balice",
+      "city": "Krakow",
+      "country": "Poland",
+      "timezone": "Europe/Warsaw"
+    },
+    {
+      "iata": "KUL",
+      "name": "Kuala Lumpur International Airport",
+      "city": "Kuala Lumpur",
+      "country": "Malaysia",
+      "timezone": "Asia/Kuala_Lumpur"
+    },
+    {
+      "iata": "KWI",
+      "name": "Kuwait International Airport",
+      "city": "Kuwait City",
+      "country": "Kuwait",
+      "timezone": "Asia/Kuwait"
+    },
+    {
+      "iata": "LAS",
+      "name": "Harry Reid International Airport",
+      "city": "Las Vegas",
+      "state": "Nevada",
+      "country": "United States",
+      "timezone": "America/Los_Angeles"
+    },
+    {
+      "iata": "LAX",
+      "name": "Los Angeles International Airport",
+      "city": "Los Angeles",
+      "state": "California",
+      "country": "United States",
+      "timezone": "America/Los_Angeles"
+    },
+    {
+      "iata": "LCY",
+      "name": "London City Airport",
+      "city": "London",
+      "country": "United Kingdom",
+      "timezone": "Europe/London"
+    },
+    {
+      "iata": "LGA",
+      "name": "LaGuardia Airport",
+      "city": "New York",
+      "state": "New York",
+      "country": "United States",
+      "timezone": "America/New_York"
+    },
+    {
+      "iata": "LGW",
+      "name": "London Gatwick Airport",
+      "city": "London",
+      "country": "United Kingdom",
+      "timezone": "Europe/London"
+    },
+    {
+      "iata": "LHR",
+      "name": "London Heathrow Airport",
+      "city": "London",
+      "country": "United Kingdom",
+      "timezone": "Europe/London"
+    },
+    {
+      "iata": "LIM",
+      "name": "Jorge Chávez International Airport",
+      "city": "Lima",
+      "country": "Peru",
+      "timezone": "America/Lima"
+    },
+    {
+      "iata": "LIS",
+      "name": "Lisbon Portela Airport",
+      "city": "Lisbon",
+      "country": "Portugal",
+      "timezone": "Europe/Lisbon"
+    },
+    {
+      "iata": "LOS",
+      "name": "Murtala Muhammed International Airport",
+      "city": "Lagos",
+      "country": "Nigeria",
+      "timezone": "Africa/Lagos"
+    },
+    {
+      "iata": "LUX",
+      "name": "Luxembourg Airport",
+      "city": "Luxembourg",
+      "country": "Luxembourg",
+      "timezone": "Europe/Luxembourg"
+    },
+    {
+      "iata": "LYS",
+      "name": "Lyon-Saint Exupéry Airport",
+      "city": "Lyon",
+      "country": "France",
+      "timezone": "Europe/Paris"
+    },
+    {
+      "iata": "MAA",
+      "name": "Chennai International Airport",
+      "city": "Chennai",
+      "country": "India",
+      "timezone": "Asia/Kolkata"
+    },
+    {
+      "iata": "MAD",
+      "name": "Adolfo Suárez Madrid–Barajas Airport",
+      "city": "Madrid",
+      "country": "Spain",
+      "timezone": "Europe/Madrid"
+    },
+    {
+      "iata": "MAN",
+      "name": "Manchester Airport",
+      "city": "Manchester",
+      "country": "United Kingdom",
+      "timezone": "Europe/London"
+    },
+    {
+      "iata": "MCI",
+      "name": "Kansas City International Airport",
+      "city": "Kansas City",
+      "state": "Missouri",
+      "country": "United States",
+      "timezone": "America/Chicago"
+    },
+    {
+      "iata": "MCO",
+      "name": "Orlando International Airport",
+      "city": "Orlando",
+      "state": "Florida",
+      "country": "United States",
+      "timezone": "America/New_York"
+    },
+    {
+      "iata": "MCT",
+      "name": "Muscat International Airport",
+      "city": "Muscat",
+      "country": "Oman",
+      "timezone": "Asia/Muscat"
+    },
+    {
+      "iata": "MDW",
+      "name": "Chicago Midway International Airport",
+      "city": "Chicago",
+      "state": "Illinois",
+      "country": "United States",
+      "timezone": "America/Chicago"
+    },
+    {
+      "iata": "MEL",
+      "name": "Melbourne Airport",
+      "city": "Melbourne",
+      "state": "Victoria",
+      "country": "Australia",
+      "timezone": "Australia/Melbourne"
+    },
+    {
+      "iata": "MEX",
+      "name": "Mexico City International Airport",
+      "city": "Mexico City",
+      "country": "Mexico",
+      "timezone": "America/Mexico_City"
+    },
+    {
+      "iata": "MFM",
+      "name": "Macau International Airport",
+      "city": "Macau",
+      "country": "Macau",
+      "timezone": "Asia/Macau"
+    },
+    {
+      "iata": "MIA",
+      "name": "Miami International Airport",
+      "city": "Miami",
+      "state": "Florida",
+      "country": "United States",
+      "timezone": "America/New_York"
+    },
+    {
+      "iata": "MKE",
+      "name": "Milwaukee Mitchell International Airport",
+      "city": "Milwaukee",
+      "state": "Wisconsin",
+      "country": "United States",
+      "timezone": "America/Chicago"
+    },
+    {
+      "iata": "MNL",
+      "name": "Ninoy Aquino International Airport",
+      "city": "Manila",
+      "country": "Philippines",
+      "timezone": "Asia/Manila"
+    },
+    {
+      "iata": "MSP",
+      "name": "Minneapolis-St. Paul International Airport",
+      "city": "Minneapolis",
+      "state": "Minnesota",
+      "country": "United States",
+      "timezone": "America/Chicago"
+    },
+    {
+      "iata": "MTY",
+      "name": "Monterrey International Airport",
+      "city": "Monterrey",
+      "country": "Mexico",
+      "timezone": "America/Monterrey"
+    },
+    {
+      "iata": "MUC",
+      "name": "Munich Airport",
+      "city": "Munich",
+      "country": "Germany",
+      "timezone": "Europe/Berlin"
+    },
+    {
+      "iata": "MVD",
+      "name": "Carrasco International Airport",
+      "city": "Montevideo",
+      "country": "Uruguay",
+      "timezone": "America/Montevideo"
+    },
+    {
+      "iata": "MXP",
+      "name": "Milan Malpensa Airport",
+      "city": "Milan",
+      "country": "Italy",
+      "timezone": "Europe/Rome"
+    },
+    {
+      "iata": "NBO",
+      "name": "Jomo Kenyatta International Airport",
+      "city": "Nairobi",
+      "country": "Kenya",
+      "timezone": "Africa/Nairobi"
+    },
+    {
+      "iata": "NCE",
+      "name": "Nice Côte d'Azur Airport",
+      "city": "Nice",
+      "country": "France",
+      "timezone": "Europe/Paris"
+    },
+    {
+      "iata": "NRT",
+      "name": "Narita International Airport",
+      "city": "Tokyo",
+      "country": "Japan",
+      "timezone": "Asia/Tokyo"
+    },
+    {
+      "iata": "OAK",
+      "name": "Oakland International Airport",
+      "city": "Oakland",
+      "state": "California",
+      "country": "United States",
+      "timezone": "America/Los_Angeles"
+    },
+    {
+      "iata": "ORD",
+      "name": "O'Hare International Airport",
+      "city": "Chicago",
+      "state": "Illinois",
+      "country": "United States",
+      "timezone": "America/Chicago"
+    },
+    {
+      "iata": "ORY",
+      "name": "Paris Orly Airport",
+      "city": "Paris",
+      "country": "France",
+      "timezone": "Europe/Paris"
+    },
+    {
+      "iata": "OSL",
+      "name": "Oslo Airport",
+      "city": "Oslo",
+      "country": "Norway",
+      "timezone": "Europe/Oslo"
+    },
+    {
+      "iata": "OTP",
+      "name": "Henri Coandă International Airport",
+      "city": "Bucharest",
+      "country": "Romania",
+      "timezone": "Europe/Bucharest"
+    },
+    {
+      "iata": "PDX",
+      "name": "Portland International Airport",
+      "city": "Portland",
+      "state": "Oregon",
+      "country": "United States",
+      "timezone": "America/Los_Angeles"
+    },
+    {
+      "iata": "PEK",
+      "name": "Beijing Capital International Airport",
+      "city": "Beijing",
+      "country": "China",
+      "timezone": "Asia/Shanghai"
+    },
+    {
+      "iata": "PER",
+      "name": "Perth Airport",
+      "city": "Perth",
+      "state": "Western Australia",
+      "country": "Australia",
+      "timezone": "Australia/Perth"
+    },
+    {
+      "iata": "PHL",
+      "name": "Philadelphia International Airport",
+      "city": "Philadelphia",
+      "state": "Pennsylvania",
+      "country": "United States",
+      "timezone": "America/New_York"
+    },
+    {
+      "iata": "PHX",
+      "name": "Phoenix Sky Harbor International Airport",
+      "city": "Phoenix",
+      "state": "Arizona",
+      "country": "United States",
+      "timezone": "America/Phoenix"
+    },
+    {
+      "iata": "PIT",
+      "name": "Pittsburgh International Airport",
+      "city": "Pittsburgh",
+      "state": "Pennsylvania",
+      "country": "United States",
+      "timezone": "America/New_York"
+    },
+    {
+      "iata": "PNH",
+      "name": "Phnom Penh International Airport",
+      "city": "Phnom Penh",
+      "country": "Cambodia",
+      "timezone": "Asia/Phnom_Penh"
+    },
+    {
+      "iata": "PRG",
+      "name": "Václav Havel Airport Prague",
+      "city": "Prague",
+      "country": "Czech Republic",
+      "timezone": "Europe/Prague"
+    },
+    {
+      "iata": "PTY",
+      "name": "Tocumen International Airport",
+      "city": "Panama City",
+      "country": "Panama",
+      "timezone": "America/Panama"
+    },
+    {
+      "iata": "PUS",
+      "name": "Gimhae International Airport",
+      "city": "Busan",
+      "country": "South Korea",
+      "timezone": "Asia/Seoul"
+    },
+    {
+      "iata": "PVG",
+      "name": "Shanghai Pudong International Airport",
+      "city": "Shanghai",
+      "country": "China",
+      "timezone": "Asia/Shanghai"
+    },
+    {
+      "iata": "PVR",
+      "name": "Puerto Vallarta International Airport",
+      "city": "Puerto Vallarta",
+      "country": "Mexico",
+      "timezone": "America/Mexico_City"
+    },
+    {
+      "iata": "RDU",
+      "name": "Raleigh-Durham International Airport",
+      "city": "Raleigh/Durham",
+      "state": "North Carolina",
+      "country": "United States",
+      "timezone": "America/New_York"
+    },
+    {
+      "iata": "REK",
+      "name": "Keflavík International Airport",
+      "city": "Reykjavik",
+      "country": "Iceland",
+      "timezone": "Atlantic/Reykjavik"
+    },
+    {
+      "iata": "RGN",
+      "name": "Yangon International Airport",
+      "city": "Yangon",
+      "country": "Myanmar",
+      "timezone": "Asia/Yangon"
+    },
+    {
+      "iata": "RIX",
+      "name": "Riga International Airport",
+      "city": "Riga",
+      "country": "Latvia",
+      "timezone": "Europe/Riga"
+    },
+    {
+      "iata": "RSW",
+      "name": "Southwest Florida International Airport",
+      "city": "Fort Myers",
+      "state": "Florida",
+      "country": "United States",
+      "timezone": "America/New_York"
+    },
+    {
+      "iata": "RUH",
+      "name": "King Khalid International Airport",
+      "city": "Riyadh",
+      "country": "Saudi Arabia",
+      "timezone": "Asia/Riyadh"
+    },
+    {
+      "iata": "SAL",
+      "name": "El Salvador International Airport",
+      "city": "San Salvador",
+      "country": "El Salvador",
+      "timezone": "America/El_Salvador"
+    },
+    {
+      "iata": "SAN",
+      "name": "San Diego International Airport",
+      "city": "San Diego",
+      "state": "California",
+      "country": "United States",
+      "timezone": "America/Los_Angeles"
+    },
+    {
+      "iata": "SAW",
+      "name": "Sabiha Gökçen International Airport",
+      "city": "Istanbul",
+      "country": "Turkey",
+      "timezone": "Europe/Istanbul"
+    },
+    {
+      "iata": "SCL",
+      "name": "Arturo Merino Benítez International Airport",
+      "city": "Santiago",
+      "country": "Chile",
+      "timezone": "America/Santiago"
+    },
+    {
+      "iata": "SEA",
+      "name": "Seattle-Tacoma International Airport",
+      "city": "Seattle",
+      "state": "Washington",
+      "country": "United States",
+      "timezone": "America/Los_Angeles"
+    },
+    {
+      "iata": "SFO",
+      "name": "San Francisco International Airport",
+      "city": "San Francisco",
+      "state": "California",
+      "country": "United States",
+      "timezone": "America/Los_Angeles"
+    },
+    {
+      "iata": "SGN",
+      "name": "Tan Son Nhat International Airport",
+      "city": "Ho Chi Minh City",
+      "country": "Vietnam",
+      "timezone": "Asia/Ho_Chi_Minh"
+    },
+    {
+      "iata": "SHA",
+      "name": "Shanghai Hongqiao International Airport",
+      "city": "Shanghai",
+      "country": "China",
+      "timezone": "Asia/Shanghai"
+    },
+    {
+      "iata": "SIN",
+      "name": "Singapore Changi Airport",
+      "city": "Singapore",
+      "country": "Singapore",
+      "timezone": "Asia/Singapore"
+    },
+    {
+      "iata": "SJC",
+      "name": "Norman Y. Mineta San José International Airport",
+      "city": "San Jose",
+      "state": "California",
+      "country": "United States",
+      "timezone": "America/Los_Angeles"
+    },
+    {
+      "iata": "SJO",
+      "name": "Juan Santamaría International Airport",
+      "city": "San José",
+      "country": "Costa Rica",
+      "timezone": "America/Costa_Rica"
+    },
+    {
+      "iata": "SJU",
+      "name": "Luis Muñoz Marín International Airport",
+      "city": "San Juan",
+      "state": "Puerto Rico",
+      "country": "United States",
+      "timezone": "America/Puerto_Rico"
+    },
+    {
+      "iata": "SLC",
+      "name": "Salt Lake City International Airport",
+      "city": "Salt Lake City",
+      "state": "Utah",
+      "country": "United States",
+      "timezone": "America/Denver"
+    },
+    {
+      "iata": "SMF",
+      "name": "Sacramento International Airport",
+      "city": "Sacramento",
+      "state": "California",
+      "country": "United States",
+      "timezone": "America/Los_Angeles"
+    },
+    {
+      "iata": "SNA",
+      "name": "John Wayne Airport",
+      "city": "Santa Ana",
+      "state": "California",
+      "country": "United States",
+      "timezone": "America/Los_Angeles"
+    },
+    {
+      "iata": "SOF",
+      "name": "Sofia Airport",
+      "city": "Sofia",
+      "country": "Bulgaria",
+      "timezone": "Europe/Sofia"
+    },
+    {
+      "iata": "STL",
+      "name": "St. Louis Lambert International Airport",
+      "city": "St. Louis",
+      "state": "Missouri",
+      "country": "United States",
+      "timezone": "America/Chicago"
+    },
+    {
+      "iata": "STN",
+      "name": "London Stansted Airport",
+      "city": "London",
+      "country": "United Kingdom",
+      "timezone": "Europe/London"
+    },
+    {
+      "iata": "SUB",
+      "name": "Juanda International Airport",
+      "city": "Surabaya",
+      "country": "Indonesia",
+      "timezone": "Asia/Jakarta"
+    },
+    {
+      "iata": "SYD",
+      "name": "Sydney Kingsford Smith Airport",
+      "city": "Sydney",
+      "state": "New South Wales",
+      "country": "Australia",
+      "timezone": "Australia/Sydney"
+    },
+    {
+      "iata": "SZX",
+      "name": "Shenzhen Bao'an International Airport",
+      "city": "Shenzhen",
+      "country": "China",
+      "timezone": "Asia/Shanghai"
+    },
+    {
+      "iata": "TLL",
+      "name": "Tallinn Airport",
+      "city": "Tallinn",
+      "country": "Estonia",
+      "timezone": "Europe/Tallinn"
+    },
+    {
+      "iata": "TLV",
+      "name": "Ben Gurion Airport",
+      "city": "Tel Aviv",
+      "country": "Israel",
+      "timezone": "Asia/Jerusalem"
+    },
+    {
+      "iata": "TPA",
+      "name": "Tampa International Airport",
+      "city": "Tampa",
+      "state": "Florida",
+      "country": "United States",
+      "timezone": "America/New_York"
+    },
+    {
+      "iata": "TPE",
+      "name": "Taiwan Taoyuan International Airport",
+      "city": "Taipei",
+      "country": "Taiwan",
+      "timezone": "Asia/Taipei"
+    },
+    {
+      "iata": "TSA",
+      "name": "Songshan Airport",
+      "city": "Taipei",
+      "country": "Taiwan",
+      "timezone": "Asia/Taipei"
+    },
+    {
+      "iata": "TUN",
+      "name": "Tunis-Carthage International Airport",
+      "city": "Tunis",
+      "country": "Tunisia",
+      "timezone": "Africa/Tunis"
+    },
+    {
+      "iata": "TXL",
+      "name": "Berlin Brandenburg Airport",
+      "city": "Berlin",
+      "country": "Germany",
+      "timezone": "Europe/Berlin"
+    },
+    {
+      "iata": "UIO",
+      "name": "Mariscal Sucre International Airport",
+      "city": "Quito",
+      "country": "Ecuador",
+      "timezone": "America/Guayaquil"
+    },
+    {
+      "iata": "ULN",
+      "name": "Chinggis Khaan International Airport",
+      "city": "Ulaanbaatar",
+      "country": "Mongolia",
+      "timezone": "Asia/Ulaanbaatar"
+    },
+    {
+      "iata": "VCE",
+      "name": "Venice Marco Polo Airport",
+      "city": "Venice",
+      "country": "Italy",
+      "timezone": "Europe/Rome"
+    },
+    {
+      "iata": "VIE",
+      "name": "Vienna International Airport",
+      "city": "Vienna",
+      "country": "Austria",
+      "timezone": "Europe/Vienna"
+    },
+    {
+      "iata": "VTE",
+      "name": "Wattay International Airport",
+      "city": "Vientiane",
+      "country": "Laos",
+      "timezone": "Asia/Vientiane"
+    },
+    {
+      "iata": "VVI",
+      "name": "Viru Viru International Airport",
+      "city": "Santa Cruz",
+      "country": "Bolivia",
+      "timezone": "America/La_Paz"
+    },
+    {
+      "iata": "WAW",
+      "name": "Warsaw Chopin Airport",
+      "city": "Warsaw",
+      "country": "Poland",
+      "timezone": "Europe/Warsaw"
+    },
+    {
+      "iata": "WLG",
+      "name": "Wellington International Airport",
+      "city": "Wellington",
+      "country": "New Zealand",
+      "timezone": "Pacific/Auckland"
+    },
+    {
+      "iata": "WUH",
+      "name": "Wuhan Tianhe International Airport",
+      "city": "Wuhan",
+      "country": "China",
+      "timezone": "Asia/Shanghai"
+    },
+    {
+      "iata": "XIY",
+      "name": "Xi'an Xianyang International Airport",
+      "city": "Xi'an",
+      "country": "China",
+      "timezone": "Asia/Shanghai"
+    },
+    {
+      "iata": "YEG",
+      "name": "Edmonton International Airport",
+      "city": "Edmonton",
+      "state": "Alberta",
+      "country": "Canada",
+      "timezone": "America/Edmonton"
+    },
+    {
+      "iata": "YHZ",
+      "name": "Halifax Stanfield International Airport",
+      "city": "Halifax",
+      "state": "Nova Scotia",
+      "country": "Canada",
+      "timezone": "America/Halifax"
+    },
+    {
+      "iata": "YOW",
+      "name": "Ottawa Macdonald-Cartier International Airport",
+      "city": "Ottawa",
+      "state": "Ontario",
+      "country": "Canada",
+      "timezone": "America/Toronto"
+    },
+    {
+      "iata": "YQB",
+      "name": "Québec City Jean Lesage International Airport",
+      "city": "Quebec City",
+      "state": "Quebec",
+      "country": "Canada",
+      "timezone": "America/Toronto"
+    },
+    {
+      "iata": "YUL",
+      "name": "Montréal-Pierre Elliott Trudeau International Airport",
+      "city": "Montreal",
+      "state": "Quebec",
+      "country": "Canada",
+      "timezone": "America/Toronto"
+    },
+    {
+      "iata": "YVR",
+      "name": "Vancouver International Airport",
+      "city": "Vancouver",
+      "state": "British Columbia",
+      "country": "Canada",
+      "timezone": "America/Vancouver"
+    },
+    {
+      "iata": "YVR",
+      "name": "Victoria International Airport",
+      "city": "Victoria",
+      "state": "British Columbia",
+      "country": "Canada",
+      "timezone": "America/Vancouver"
+    },
+    {
+      "iata": "YWG",
+      "name": "Winnipeg James Armstrong Richardson International Airport",
+      "city": "Winnipeg",
+      "state": "Manitoba",
+      "country": "Canada",
+      "timezone": "America/Winnipeg"
+    },
+    {
+      "iata": "YYC",
+      "name": "Calgary International Airport",
+      "city": "Calgary",
+      "state": "Alberta",
+      "country": "Canada",
+      "timezone": "America/Edmonton"
+    },
+    {
+      "iata": "YYZ",
+      "name": "Toronto Pearson International Airport",
+      "city": "Toronto",
+      "state": "Ontario",
+      "country": "Canada",
+      "timezone": "America/Toronto"
+    },
+    {
+      "iata": "ZAG",
+      "name": "Zagreb Airport",
+      "city": "Zagreb",
+      "country": "Croatia",
+      "timezone": "Europe/Zagreb"
+    },
+    {
+      "iata": "ZRH",
+      "name": "Zurich Airport",
+      "city": "Zurich",
+      "country": "Switzerland",
+      "timezone": "Europe/Zurich"
+    }
+  ],
+  "metadata": {
+    "version": "2.0.0",
+    "last_updated": "2026-02-14",
+    "total_airports": 201,
+    "coverage": {
+      "north_america": 63,
+      "south_america": 12,
+      "europe": 44,
+      "asia": 57,
+      "oceania": 8,
+      "africa": 13,
+      "middle_east": 15
+    },
+    "source": "Curated list of major global airports",
+    "notes": "Covers 200+ major airports worldwide, representing primary hubs on all continents"
+  }
+}

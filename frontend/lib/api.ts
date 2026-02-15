@@ -21,6 +21,7 @@ import {
   PackingItemFormData,
   ActivityFormData,
   JourneyFormData,
+  JourneySegment,
   ExpenseSummary,
   PackingSummary,
   TripProgress,
@@ -269,6 +270,18 @@ export const journeyApi = {
   delete: (id: number) => api.delete(`/journeys/${id}`),
   getTimeline: (journeyId: number) =>
     api.get<JourneyTimelineResponse>(`/journeys/${journeyId}/timeline`),
+};
+
+export const journeySegmentApi = {
+  getByJourneyId: (journeyId: number) =>
+    api.get<JourneySegment[]>(`/journeys/${journeyId}/segments`),
+  getById: (segmentId: number) =>
+    api.get<JourneySegment>(`/journey-segments/${segmentId}`),
+  create: (journeyId: number, data: Omit<JourneySegment, 'id'>) =>
+    api.post<JourneySegment>(`/journeys/${journeyId}/segments`, data),
+  update: (segmentId: number, data: Partial<JourneySegment>) =>
+    api.put<JourneySegment>(`/journey-segments/${segmentId}`, data),
+  delete: (segmentId: number) => api.delete(`/journey-segments/${segmentId}`),
 };
 
 // Journey Stop API

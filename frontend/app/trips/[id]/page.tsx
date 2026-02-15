@@ -16,6 +16,7 @@ import { ShareTripModal } from '@/components/sharing';
 import { BudgetProgress, useBudget } from '@/components/budget';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/lib/auth-context';
+import { TripProvider } from '@/lib/trip-context';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge, StatusBadge } from '@/components/ui/Badge';

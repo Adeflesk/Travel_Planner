@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { JourneySegmentDraft, JourneySegmentIntent } from '@/lib/types';
+import { Destination, JourneySegmentDraft, JourneySegmentIntent } from '@/lib/types';
 import { getLocalTimezone } from '@/lib/timezone-utils';
 import Button from '@/components/ui/Button';
 import { SegmentCard } from './SegmentCard';
@@ -9,6 +9,8 @@ interface SegmentBuilderProps {
   segments: JourneySegmentDraft[];
   onChange: (segments: JourneySegmentDraft[]) => void;
   defaultTimezone?: string;
+  destinations?: Destination[];
+  startDate?: Date;
 }
 
 const intentOptions: Array<{ value: JourneySegmentIntent; label: string; helper: string }> = [
@@ -38,6 +40,8 @@ export const SegmentBuilder = ({
   segments,
   onChange,
   defaultTimezone = getLocalTimezone(),
+  destinations,
+  startDate,
 }: SegmentBuilderProps) => {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
   const [selectedIntent, setSelectedIntent] = useState<JourneySegmentIntent>('SIMPLE');
@@ -52,7 +56,8 @@ export const SegmentBuilder = ({
     updateField,
   } = useSegmentBuilder(segments, onChange, {
     timezone: defaultTimezone,
-    startDate: new Date(),
+    startDate: startDate ?? new Date(),
+    destinations,
   });
 
   const handleIntentSelect = (intent: JourneySegmentIntent) => {

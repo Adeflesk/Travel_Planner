@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Journey, JourneyFormData, Trip } from '@/lib/types';
-import { journeyApi, tripApi } from '@/lib/api';
+import { Journey, JourneyFormData, JourneySegmentDraft, Trip } from '@/lib/types';
+import { activityApi, expenseApi, journeyApi, journeySegmentApi, tripApi } from '@/lib/api';
 import { useSuggestions } from '@/lib/hooks/useSuggestions';
 
 export interface ValidationErrors {
@@ -146,12 +146,145 @@ export function useJourneyForm(tripId: number, onSuccess: () => void) {
     }
 
     try {
+      const parkingSegments = (formData.segments ?? []).filter(
+        (segment) =>
+          segment.segment_type === 'TRANSFER' &&
+          String(segment.metadata?.mode ?? '') === 'car' &&
+          Boolean(segment.metadata?.parkingEnabled)
+      );
+
+      const missingParkingCost = parkingSegments.some(
+        (segment) => segment.metadata?.parkingCost === undefined || segment.metadata?.parkingCost === ''
+      );
+      if (missingParkingCost) {
+        alert('Please enter a parking cost for the enabled airport parking option.');
+        return;
+      }
+
+      const { segments, ...journeyPayload } = formData;
+
+      const deriveJourneyPayload = () => {
+        const nextPayload = { ...journeyPayload };
+        const draftSegments = segments ?? [];
+        if (draftSegments.length === 0) return nextPayload;
+
+        if (!nextPayload.transport_mode) {
+          const hasFlight = draftSegments.some((segment) => segment.segment_type === 'FLIGHT');
+          nextPayload.transport_mode = hasFlight ? 'flight' : 'car';
+        }
+
+        const firstSegment = draftSegments[0];
+        const lastSegment = draftSegments[draftSegments.length - 1];
+
+        if (!nextPayload.origin_id && !nextPayload.origin_name) {
+          nextPayload.origin_id = firstSegment.origin.destination_id;
+          nextPayload.origin_name = firstSegment.origin.name || undefined;
+        }
+
+        if (!nextPayload.destination_id && !nextPayload.destination_name) {
+          nextPayload.destination_id = lastSegment.destination.destination_id;
+          nextPayload.destination_name = lastSegment.destination.name || undefined;
+        }
+
+        if (!nextPayload.departure_datetime && firstSegment.start_datetime) {
+          nextPayload.departure_datetime = firstSegment.start_datetime;
+        }
+
+        if (!nextPayload.arrival_datetime && lastSegment.end_datetime) {
+          nextPayload.arrival_datetime = lastSegment.end_datetime;
+        }
+
+        return nextPayload;
+      };
+
+      const derivedJourneyPayload = deriveJourneyPayload();
+
       if (editingId) {
-        await journeyApi.update(editingId, formData);
+        await journeyApi.update(editingId, derivedJourneyPayload);
         setEditingId(null);
       } else {
-        await journeyApi.create(formData);
+        const createResponse = await journeyApi.create(derivedJourneyPayload);
+        const journeyId = createResponse.data.id;
+
+        if (segments && segments.length > 0) {
+          const segmentPayloads = segments.map((segment, index) => {
+            const payload = {
+              journey_id: journeyId,
+              segment_type: segment.segment_type,
+              origin_id: segment.origin.destination_id,
+              origin_name: segment.origin.name || undefined,
+              destination_id: segment.destination.destination_id,
+              destination_name: segment.destination.name || undefined,
+              start_datetime: segment.start_datetime,
+              end_datetime: segment.end_datetime,
+              origin_timezone: segment.origin_timezone,
+              destination_timezone: segment.destination_timezone,
+              metadata: segment.metadata ?? {},
+              order: index,
+            };
+            return payload;
+          });
+
+          await Promise.all(
+            segmentPayloads.map((payload) =>
+              journeySegmentApi.create(journeyId, payload)
+            )
+          );
+        }
+
+        if (parkingSegments.length > 0) {
+          const destinationId = derivedJourneyPayload.origin_id ?? derivedJourneyPayload.destination_id;
+          const baseDate = derivedJourneyPayload.departure_datetime || derivedJourneyPayload.arrival_datetime || '';
+          const datePart = baseDate ? baseDate.split('T')[0] : '';
+          const timePart = baseDate && baseDate.includes('T')
+            ? baseDate.split('T')[1]?.replace('Z', '').slice(0, 5)
+            : undefined;
+
+          if (!destinationId) {
+            console.warn('No destination selected for airport parking activity. Skipping activity creation.');
+          }
+
+          await Promise.all(parkingSegments.map((segment, index) => {
+            const parkingCostRaw = segment.metadata?.parkingCost;
+            const parkingCost = typeof parkingCostRaw === 'number'
+              ? parkingCostRaw
+              : parseFloat(String(parkingCostRaw));
+            const parkingReference = String(segment.metadata?.parkingReference ?? '').trim();
+            const expenseDescription = parkingReference
+              ? `Airport parking (ref: ${parkingReference})`
+              : 'Airport parking';
+
+            const activityPromise = destinationId
+              ? activityApi.create({
+                destination_id: destinationId,
+                name: 'Airport parking',
+                activity_type: 'parking',
+                scheduled_date: datePart || undefined,
+                scheduled_time: timePart,
+                cost: parkingCost,
+                booking_reference: parkingReference || undefined,
+                notes: `Segment ${index + 1} parking`,
+                status: 'planned',
+              })
+              : Promise.resolve(null);
+
+            const expensePromise = expenseApi.create({
+              trip_id: tripId,
+              destination_id: destinationId ?? undefined,
+              category: 'parking',
+              amount: parkingCost,
+              currency: derivedJourneyPayload.currency || 'USD',
+              description: expenseDescription,
+              date: datePart || new Date().toISOString().slice(0, 10),
+              booked: true,
+              paid: false,
+            });
+
+            return Promise.all([activityPromise, expensePromise]);
+          }));
+        }
       }
+
       setFormData(getInitialFormData(tripId));
       setErrors({});
       setWarnings({});

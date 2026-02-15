@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Journey, RouteType } from '@/lib/types';
 import { format } from 'date-fns';
 import { Trash2, Edit2, ArrowRight, Plane, Train, Bus, Car, Ship, Footprints, Copy, Route, ChevronDown, ChevronUp, FileText, MapPin, Clock, DollarSign } from 'lucide-react';
@@ -205,6 +206,14 @@ export function JourneyItem({
             >
               <Edit2 className="w-4 h-4" />
             </button>
+            <Link
+              href={`/trips/${journey.trip_id}/journeys/${journey.id}`}
+              className="text-slate-600 hover:text-slate-700 p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 focus-visible:ring-offset-2"
+              aria-label="Manage segments"
+              title="Manage segments"
+            >
+              <Route className="w-4 h-4" />
+            </Link>
             <button
               onClick={() => onDuplicateReturn(journey)}
               className="text-green-600 hover:text-green-700 p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 focus-visible:ring-offset-2"

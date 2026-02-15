@@ -64,3 +64,6 @@ class Journey(Base):
     documents = relationship(
         "JourneyDocument", back_populates="journey", cascade="all, delete-orphan"
     )
+    segments = relationship(
+        "JourneySegment", back_populates="journey", cascade="all, delete-orphan"
+    )

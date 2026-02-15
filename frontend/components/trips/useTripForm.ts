@@ -21,6 +21,16 @@ export function useTripForm(onTripCreated: () => void) {
   const [formData, setFormData] = useState<TripFormData>(initialFormData);
   const [loading, setLoading] = useState(false);
 
+  const updateField = <K extends keyof TripFormData>(
+    field: K,
+    value: TripFormData[K]
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -94,12 +104,12 @@ export function useTripForm(onTripCreated: () => void) {
     >
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: ['budget', 'budget_warning_threshold', 'budget_danger_threshold'].includes(name)
+    updateField(
+      name as keyof TripFormData,
+      (['budget', 'budget_warning_threshold', 'budget_danger_threshold'].includes(name)
         ? (value ? parseFloat(value) : undefined)
-        : value,
-    }));
+        : value) as TripFormData[keyof TripFormData]
+    );
   };
 
   return {
@@ -107,5 +117,6 @@ export function useTripForm(onTripCreated: () => void) {
     loading,
     handleSubmit,
     handleChange,
+    updateField,
   };
 }

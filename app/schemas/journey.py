@@ -8,7 +8,7 @@ Author: Travel Planner Team
 """
 
 from pydantic import BaseModel, ConfigDict, model_validator
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Literal, Optional
 
@@ -40,7 +40,16 @@ class JourneyBase(BaseModel):
     @model_validator(mode="after")
     def validate_departure_before_arrival(self):
         if self.departure_datetime and self.arrival_datetime:
-            if self.departure_datetime >= self.arrival_datetime:
+
+            def to_utc_naive(value: datetime) -> datetime:
+                if value.tzinfo is None or value.tzinfo.utcoffset(value) is None:
+                    return value.replace(tzinfo=None)
+                return value.astimezone(timezone.utc).replace(tzinfo=None)
+
+            departure = to_utc_naive(self.departure_datetime)
+            arrival = to_utc_naive(self.arrival_datetime)
+
+            if departure >= arrival:
                 raise ValueError("Departure datetime must be before arrival datetime")
         return self
 
@@ -81,7 +90,16 @@ class JourneyUpdate(BaseModel):
     @model_validator(mode="after")
     def validate_departure_before_arrival(self):
         if self.departure_datetime and self.arrival_datetime:
-            if self.departure_datetime >= self.arrival_datetime:
+
+            def to_utc_naive(value: datetime) -> datetime:
+                if value.tzinfo is None or value.tzinfo.utcoffset(value) is None:
+                    return value.replace(tzinfo=None)
+                return value.astimezone(timezone.utc).replace(tzinfo=None)
+
+            departure = to_utc_naive(self.departure_datetime)
+            arrival = to_utc_naive(self.arrival_datetime)
+
+            if departure >= arrival:
                 raise ValueError("Departure datetime must be before arrival datetime")
         return self
 

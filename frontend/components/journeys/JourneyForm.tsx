@@ -1,23 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { JourneyFormData, Destination, RouteType } from '@/lib/types';
-import { transportModes } from './useJourneys';
+import { useMemo } from 'react';
+import { JourneyFormData, Destination } from '@/lib/types';
 import { ValidationErrors, ValidationWarnings } from './useJourneyForm';
-import { AlertCircle, AlertTriangle, ChevronDown, ChevronUp, Route } from 'lucide-react';
-import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
-import { AirportAutocomplete } from '@/components/ui/AirportAutocomplete';
+import { AlertCircle, AlertTriangle } from 'lucide-react';
+import { SegmentBuilder } from '@/components/journey-segments/SegmentBuilder';
 import { useTripContext } from '@/lib/trip-context';
 import { getDateTimeConstraints } from '@/lib/date-constraints';
-import { calculateFlightDuration, getLocalTimezone } from '@/lib/timezone-utils';
-
-const routeTypes: { value: RouteType; label: string }[] = [
-  { value: 'fastest', label: 'Fastest (Highways)' },
-  { value: 'shortest', label: 'Shortest Distance' },
-  { value: 'scenic', label: 'Scenic Route' },
-  { value: 'avoid_highways', label: 'Avoid Highways' },
-  { value: 'avoid_tolls', label: 'Avoid Tolls' },
-];
+import { getLocalTimezone } from '@/lib/timezone-utils';
 
 interface JourneyFormProps {
   formData: JourneyFormData;
@@ -45,17 +35,7 @@ export function JourneyForm({
   onSubmit,
   onCancel,
   updateField,
-  carrierSuggestions = [],
-  recentCarriers = [],
-  loadingCarriers = false,
 }: JourneyFormProps) {
-  const [showRouteDetails, setShowRouteDetails] = useState(
-    // Auto-expand if route details exist
-    !!(formData.distance_km || formData.distance_miles || formData.estimated_duration_minutes || formData.route_type || formData.has_tolls || formData.toll_cost || formData.route_notes)
-  );
-  const [showAdvanced, setShowAdvanced] = useState(true);
-  const [showBuilderStep, setShowBuilderStep] = useState(() => !isEditing);
-
   // Get trip context for date constraints
   const tripContext = useTripContext();
   const localTimezone = getLocalTimezone();
@@ -80,129 +60,95 @@ export function JourneyForm({
       defaultTime: '09:00',
     }
   );
+  const segmentStartDate = dateTimeConstraints.defaultDateTime
+    ? new Date(dateTimeConstraints.defaultDateTime)
+    : undefined;
 
-  // Journey options hook (only for existing journeys)
-  const journeyOptions = useJourneyOptions(editingId || 0);
-
-  // Transport mode capabilities
-  const modeCapabilities = useTransportModeCapabilities(formData.transport_mode);
-
-  // Apply smart defaults when transport mode changes (only for new journeys)
-  useEffect(() => {
-    if (!isEditing && formData.transport_mode && modeCapabilities.config) {
-      // Set default flexibility level
-      if (modeCapabilities.defaultFlexibility && !formData.flexibility_level) {
-        updateField('flexibility_level', modeCapabilities.defaultFlexibility);
-      }
-      
-      // Set default booking status
-      if (typeof modeCapabilities.defaultIsBooked !== 'undefined' && typeof formData.is_booked === 'undefined') {
-        updateField('is_booked', modeCapabilities.defaultIsBooked);
-      }
-    }
-  }, [formData.transport_mode, modeCapabilities.config, modeCapabilities.defaultFlexibility, modeCapabilities.defaultIsBooked, formData.flexibility_level, formData.is_booked, isEditing, updateField]);
-
-  // Date input mode: 'time' = explicit arrival time, 'duration' = calculate from duration
-  const [dateInputMode, setDateInputMode] = useState<'time' | 'duration'>('time');
-  const [durationHours, setDurationHours] = useState<number>(0);
-  const [durationMinutes, setDurationMinutes] = useState<number>(0);
-
-  // Route details are primarily for ground transport
-  const canHaveRouteDetails = ['car', 'bus', 'train'].includes(formData.transport_mode);
-
-  // Calculate duration from departure and arrival times
-  const calculateDuration = () => {
-    if (formData.departure_datetime && formData.arrival_datetime) {
-      const departure = new Date(formData.departure_datetime);
-      const arrival = new Date(formData.arrival_datetime);
-      const diffMs = arrival.getTime() - departure.getTime();
-      const diffMinutes = Math.floor(diffMs / 60000);
+  const segmentSummary = useMemo(() => {
+    const segments = formData.segments ?? [];
+    if (segments.length === 0) {
       return {
-        hours: Math.floor(diffMinutes / 60),
-        minutes: diffMinutes % 60,
-        totalMinutes: diffMinutes
+        title: 'No segments yet',
+        subtitle: 'Build a segment plan to see a summary.',
+        totalSegments: 0,
+        startLabel: 'TBD',
+        endLabel: 'TBD',
+        totalDurationLabel: 'TBD',
+        warnings: ['Add at least one segment to continue.'],
       };
     }
-    return { hours: 0, minutes: 0, totalMinutes: 0 };
-  };
 
-  // Calculate arrival time from departure + duration
-  const calculateArrival = (departureStr: string, hours: number, minutes: number) => {
-    if (!departureStr) return '';
-    const departure = new Date(departureStr);
-    const totalMinutes = (hours * 60) + minutes;
-    const arrival = new Date(departure.getTime() + totalMinutes * 60000);
+    const first = segments[0];
+    const last = segments[segments.length - 1];
+    const title = `${first.origin.name || 'Origin'} -> ${last.destination.name || 'Destination'}`;
 
-    // Format as datetime-local string: YYYY-MM-DDTHH:mm
-    const year = arrival.getFullYear();
-    const month = String(arrival.getMonth() + 1).padStart(2, '0');
-    const day = String(arrival.getDate()).padStart(2, '0');
-    const hour = String(arrival.getHours()).padStart(2, '0');
-    const minute = String(arrival.getMinutes()).padStart(2, '0');
-    return `${year}-${month}-${day}T${hour}:${minute}`;
-  };
+    const parsedStarts = segments
+      .map((segment) => (segment.start_datetime ? new Date(segment.start_datetime) : null))
+      .filter((value): value is Date => value !== null && !Number.isNaN(value.getTime()));
+    const parsedEnds = segments
+      .map((segment) => (segment.end_datetime ? new Date(segment.end_datetime) : null))
+      .filter((value): value is Date => value !== null && !Number.isNaN(value.getTime()));
 
-  // Update duration when mode switches to duration or times change
-  const handleModeSwitch = (mode: 'time' | 'duration') => {
-    setDateInputMode(mode);
-    if (mode === 'duration') {
-      // Switching to duration mode - calculate duration from current times
-      const duration = calculateDuration();
-      setDurationHours(duration.hours);
-      setDurationMinutes(duration.minutes);
-    } else {
-      // Switching to time mode - calculate arrival from current duration
-      if (formData.departure_datetime && (durationHours > 0 || durationMinutes > 0)) {
-        const arrival = calculateArrival(formData.departure_datetime, durationHours, durationMinutes);
-        updateField('arrival_datetime', arrival);
+    const start = parsedStarts.length > 0
+      ? parsedStarts.sort((a, b) => a.getTime() - b.getTime())[0]
+      : undefined;
+    const end = parsedEnds.length > 0
+      ? parsedEnds.sort((a, b) => b.getTime() - a.getTime())[0]
+      : undefined;
+
+    const formatDateTime = (date?: Date) => {
+      if (!date) return 'TBD';
+      return date.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
+    };
+
+    const totalDurationLabel = start && end
+      ? (() => {
+        const diffMinutes = Math.max(0, Math.floor((end.getTime() - start.getTime()) / 60000));
+        const hours = Math.floor(diffMinutes / 60);
+        const minutes = diffMinutes % 60;
+        return `${hours}h ${minutes}m`;
+      })()
+      : 'TBD';
+
+    const warnings: string[] = [];
+    const missingTimes = segments.some((segment) => !segment.start_datetime || !segment.end_datetime);
+    if (missingTimes) {
+      warnings.push('Some segments are missing start or end times.');
+    }
+
+    const connectionThresholdMinutes = 45;
+    segments.forEach((segment, index) => {
+      const next = segments[index + 1];
+      if (!next) return;
+      if (!segment.end_datetime || !next.start_datetime) return;
+
+      const endTime = new Date(segment.end_datetime);
+      const nextStart = new Date(next.start_datetime);
+      if (Number.isNaN(endTime.getTime()) || Number.isNaN(nextStart.getTime())) return;
+
+      const gapMinutes = Math.floor((nextStart.getTime() - endTime.getTime()) / 60000);
+      if (gapMinutes >= 0 && gapMinutes < connectionThresholdMinutes) {
+        warnings.push(
+          `Tight connection between segment ${index + 1} and ${index + 2} (${gapMinutes} min).`
+        );
       }
-    }
-  };
+      if (gapMinutes < 0) {
+        warnings.push(
+          `Segment ${index + 2} starts before segment ${index + 1} ends.`
+        );
+      }
+    });
 
-  // Handle journey duration change - recalculate arrival time
-  const handleJourneyDurationChange = (hours: number, minutes: number) => {
-    setDurationHours(hours);
-    setDurationMinutes(minutes);
-    if (formData.departure_datetime) {
-      const arrival = calculateArrival(formData.departure_datetime, hours, minutes);
-      updateField('arrival_datetime', arrival);
-    }
-  };
-
-  // Sync duration values when times change (e.g., when editing existing journey)
-  useEffect(() => {
-    if (dateInputMode === 'duration' && formData.departure_datetime && formData.arrival_datetime) {
-      const departure = new Date(formData.departure_datetime);
-      const arrival = new Date(formData.arrival_datetime);
-      const diffMs = arrival.getTime() - departure.getTime();
-      const diffMinutes = Math.floor(diffMs / 60000);
-      const hours = Math.floor(diffMinutes / 60);
-      const minutes = diffMinutes % 60;
-
-      // Synchronize local duration state with form data - valid use case for effect
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setDurationHours(hours);
-      setDurationMinutes(minutes);
-    }
-  }, [formData.departure_datetime, formData.arrival_datetime, dateInputMode, setDurationHours, setDurationMinutes]);
-
-
-  // Format duration for display (hours and minutes)
-  const formatDurationForInput = (minutes?: number): { hours: string; mins: string } => {
-    if (!minutes) return { hours: '', mins: '' };
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return { hours: hours.toString(), mins: mins.toString() };
-  };
-
-  const handleDurationChange = (hours: string, mins: string) => {
-    const h = parseInt(hours) || 0;
-    const m = parseInt(mins) || 0;
-    const totalMinutes = h * 60 + m;
-    updateField('estimated_duration_minutes', totalMinutes > 0 ? totalMinutes : undefined);
-  };
-
-  const durationParts = formatDurationForInput(formData.estimated_duration_minutes);
+    return {
+      title,
+      subtitle: `${segments.length} segment${segments.length === 1 ? '' : 's'}`,
+      totalSegments: segments.length,
+      startLabel: formatDateTime(start),
+      endLabel: formatDateTime(end),
+      totalDurationLabel,
+      warnings,
+    };
+  }, [formData.segments]);
 
   return (
     <form onSubmit={onSubmit} className="bg-gray-50 p-4 rounded-lg mb-4">
@@ -218,531 +164,67 @@ export function JourneyForm({
           Close
         </button>
       </div>
-      {!isEditing && showBuilderStep && (
-        <div className="mb-6">
-          <SegmentBuilder
-            segments={formData.segments || []}
-            onChange={(segments) => updateField('segments', segments)}
-            defaultTimezone={defaultSegmentTimezone}
-          />
-          <div className="mt-4 flex justify-end">
-            <button
-              type="button"
-              onClick={() => setShowBuilderStep(false)}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-            >
-              Continue to details
-            </button>
+      <div className="mb-6">
+        <SegmentBuilder
+          segments={formData.segments || []}
+          onChange={(segments) => updateField('segments', segments)}
+          defaultTimezone={defaultSegmentTimezone}
+          destinations={destinations}
+          startDate={segmentStartDate}
+        />
+      </div>
+
+      <div className="mb-4 rounded-lg border border-slate-200 bg-white p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="text-sm font-semibold text-slate-900">Segment summary</div>
+            <div className="text-sm text-slate-600">{segmentSummary.title}</div>
+            <div className="text-xs text-slate-500">{segmentSummary.subtitle}</div>
           </div>
         </div>
-      )}
-      {!showBuilderStep && (
-        <>
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
-            <div>
-              {!isEditing && (
-                <button
-                  type="button"
-                  onClick={() => setShowBuilderStep(true)}
-                  className="mb-1 text-xs font-medium text-slate-500 hover:text-slate-700"
-                >
-                  Back to segment builder
-                </button>
-              )}
-              <p className="text-sm font-semibold text-slate-900">Quick setup</p>
-              <p className="text-sm text-slate-600">
-                Start with the essentials. Add details later if you need them.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowAdvanced((prev) => !prev)}
-              className="text-sm font-medium text-primary-600 hover:text-primary-700"
-            >
-              {showAdvanced ? 'Hide details' : 'Show details'}
-            </button>
+        <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3 text-sm text-slate-700">
+          <div>
+            <div className="text-xs text-slate-500">Start</div>
+            <div className="font-medium">{segmentSummary.startLabel}</div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">Transport Mode</label>
-          <select
-            value={formData.transport_mode}
-            onChange={(e) => updateField('transport_mode', e.target.value)}
-            required
-            className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
-          >
-            <option value="">Select Transport</option>
-            {transportModes.map((mode) => (
-              <option key={mode.value} value={mode.value}>
-                {mode.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <AutocompleteInput
-            label="Carrier"
-            hint="optional"
-            value={formData.carrier}
-            onChange={(e) => updateField('carrier', e.target.value)}
-            onSelect={(value) => updateField('carrier', value)}
-            suggestions={carrierSuggestions}
-            recentItems={recentCarriers}
-            loading={loadingCarriers}
-            placeholder="e.g., British Airways, Eurostar"
-            showRecentFirst={true}
-          />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">From</label>
-          <select
-            value={formData.origin_id ? String(formData.origin_id) : (formData.origin_name !== undefined ? 'other' : '')}
-            onChange={(e) => {
-              const value = e.target.value;
-              if (value === 'other') {
-                updateField('origin_id', undefined);
-                updateField('origin_name', formData.origin_name || '');
-                // Clear timezone when switching to manual entry
-                if (formData.transport_mode !== 'flight') {
-                  updateField('origin_timezone', tripTimezone);
-                }
-              } else if (value) {
-                const originId = parseInt(value);
-                const destinationTimezone = getDestinationTimezone(originId);
-                updateField('origin_id', originId);
-                updateField('origin_name', undefined);
-                updateField(
-                  'origin_timezone',
-                  destinationTimezone || tripTimezone
-                );
-              } else {
-                updateField('origin_id', undefined);
-                updateField('origin_name', undefined);
-              }
-            }}
-            className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
-          >
-            <option value="">Select Origin</option>
-            {destinations.map((dest) => (
-              <option key={dest.id} value={dest.id}>
-                {dest.name}
-                {dest.country ? `, ${dest.country}` : ''}
-              </option>
-            ))}
-            <option value="other">📍 Other Location (e.g., Home Airport)</option>
-          </select>
-          {formData.origin_name !== undefined && (
-            <input
-              type="text"
-              value={formData.origin_name || ''}
-              onChange={(e) => updateField('origin_name', e.target.value)}
-              placeholder="e.g., Dublin Airport (DUB)"
-              className="mt-2 bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
-            />
-          )}
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">To</label>
-          <select
-            value={formData.destination_id ? String(formData.destination_id) : (formData.destination_name !== undefined ? 'other' : '')}
-            onChange={(e) => {
-              const value = e.target.value;
-              if (value === 'other') {
-                updateField('destination_id', undefined);
-                updateField('destination_name', formData.destination_name || '');
-                // Clear timezone when switching to manual entry
-                if (formData.transport_mode !== 'flight') {
-                  updateField('destination_timezone', tripTimezone);
-                }
-              } else if (value) {
-                const destinationId = parseInt(value);
-                const destinationTimezone = getDestinationTimezone(destinationId);
-                updateField('destination_id', destinationId);
-                updateField('destination_name', undefined);
-                updateField(
-                  'destination_timezone',
-                  destinationTimezone || tripTimezone
-                );
-              } else {
-                updateField('destination_id', undefined);
-                updateField('destination_name', undefined);
-              }
-            }}
-            className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
-          >
-            <option value="">Select Destination</option>
-            {destinations.map((dest) => (
-              <option key={dest.id} value={dest.id}>
-                {dest.name}
-                {dest.country ? `, ${dest.country}` : ''}
-              </option>
-            ))}
-            <option value="other">📍 Other Location (e.g., Home Airport)</option>
-          </select>
-          {formData.destination_name !== undefined && (
-            <input
-              type="text"
-              value={formData.destination_name || ''}
-              onChange={(e) => updateField('destination_name', e.target.value)}
-              placeholder="e.g., Dublin Airport (DUB)"
-              className="mt-2 bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
-            />
-          )}
-        </div>
-        {/* Date Input Mode Toggle */}
-        <div className="md:col-span-2">
-          <div className="flex items-center gap-2 mb-2">
-            <label className="text-sm font-medium text-gray-700">Journey Timing:</label>
-            <div className="inline-flex rounded-md shadow-sm" role="group">
-              <button
-                type="button"
-                onClick={() => handleModeSwitch('time')}
-                className={`px-3 py-1.5 text-sm font-medium rounded-l-md border ${
-                  dateInputMode === 'time'
-                    ? 'bg-primary-600 text-white border-primary-600'
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                Exact Times
-              </button>
-              <button
-                type="button"
-                onClick={() => handleModeSwitch('duration')}
-                className={`px-3 py-1.5 text-sm font-medium rounded-r-md border-t border-r border-b ${
-                  dateInputMode === 'duration'
-                    ? 'bg-primary-600 text-white border-primary-600'
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                Duration
-              </button>
-            </div>
+          <div>
+            <div className="text-xs text-slate-500">End</div>
+            <div className="font-medium">{segmentSummary.endLabel}</div>
+          </div>
+          <div>
+            <div className="text-xs text-slate-500">Total duration</div>
+            <div className="font-medium">{segmentSummary.totalDurationLabel}</div>
           </div>
         </div>
-
-        {/* Time Mode: Departure + Arrival */}
-        {dateInputMode === 'time' && (
-          <>
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-700">Departure</label>
-              <input
-                type="datetime-local"
-                value={formData.departure_datetime}
-                onChange={(e) => updateField('departure_datetime', e.target.value)}
-                className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-700">Arrival</label>
-              <input
-                type="datetime-local"
-                value={formData.arrival_datetime}
-                onChange={(e) => updateField('arrival_datetime', e.target.value)}
-                className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
-              />
-              {formData.departure_datetime && formData.arrival_datetime && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Duration: {calculateDuration().hours}h {calculateDuration().minutes}m
-                </p>
-              )}
-            </div>
-          </>
-        )}
-
-        {/* Duration Mode: Departure + Duration */}
-        {dateInputMode === 'duration' && (
-          <>
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-700">Departure</label>
-              <input
-                type="datetime-local"
-                value={formData.departure_datetime}
-                onChange={(e) => {
-                  updateField('departure_datetime', e.target.value);
-                  // Recalculate arrival when departure changes
-                  if (e.target.value && (durationHours > 0 || durationMinutes > 0)) {
-                    const arrival = calculateArrival(e.target.value, durationHours, durationMinutes);
-                    updateField('arrival_datetime', arrival);
-                  }
-                }}
-                className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-700">Journey Duration</label>
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <div className="flex items-center">
-                    <input
-                      type="number"
-                      min="0"
-                      max="72"
-                      value={durationHours}
-                      onChange={(e) => handleJourneyDurationChange(parseInt(e.target.value) || 0, durationMinutes)}
-                      className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
-                      placeholder="0"
-                    />
-                    <span className="ml-2 text-sm text-gray-600">hours</span>
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center">
-                    <input
-                      type="number"
-                      min="0"
-                      max="59"
-                      value={durationMinutes}
-                      onChange={(e) => handleJourneyDurationChange(durationHours, parseInt(e.target.value) || 0)}
-                      className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
-                      placeholder="0"
-                    />
-                    <span className="ml-2 text-sm text-gray-600">minutes</span>
-                  </div>
-                </div>
-              </div>
-              {formData.departure_datetime && (durationHours > 0 || durationMinutes > 0) && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Arrival: {formData.arrival_datetime ? new Date(formData.arrival_datetime).toLocaleString('en-GB', {
-                    dateStyle: 'medium',
-                    timeStyle: 'short'
-                  }) : 'N/A'}
-                </p>
-              )}
-            </div>
-          </>
-        )}
-
-        {/* Validation Messages */}
-        {(errors.departure_arrival || warnings.outside_trip_dates) && (
-          <div className="md:col-span-2 space-y-2">
-            {errors.departure_arrival && (
-              <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 p-2 rounded">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                <span>{errors.departure_arrival}</span>
-              </div>
-            )}
-            {warnings.outside_trip_dates && (
-              <div className="flex items-center gap-2 text-amber-600 text-sm bg-amber-50 p-2 rounded">
+        {segmentSummary.warnings.length > 0 && (
+          <div className="mt-3 space-y-1">
+            {segmentSummary.warnings.map((warning) => (
+              <div key={warning} className="flex items-start gap-2 text-amber-700 text-xs">
                 <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                <span>{warnings.outside_trip_dates}</span>
+                <span>{warning}</span>
               </div>
-            )}
+            ))}
           </div>
         )}
-
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">
-            Cost <span className="text-gray-400 font-normal">(optional)</span>
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="number"
-              value={formData.cost || ''}
-              onChange={(e) =>
-                updateField(
-                  'cost',
-                  e.target.value ? parseFloat(e.target.value) : undefined
-                )
-              }
-              placeholder="0.00"
-              step="0.01"
-              className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
-            />
-            <select
-              value={formData.currency}
-              onChange={(e) => updateField('currency', e.target.value)}
-              className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 px-3 py-2.5 shadow-xs"
-            >
-              <option value="USD">USD</option>
-              <option value="EUR">EUR</option>
-              <option value="GBP">GBP</option>
-              <option value="CAD">CAD</option>
-              <option value="AUD">AUD</option>
-              <option value="JPY">JPY</option>
-              <option value="CHF">CHF</option>
-              <option value="CNY">CNY</option>
-              <option value="INR">INR</option>
-              <option value="MXN">MXN</option>
-            </select>
-          </div>
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">
-            Booking Reference <span className="text-gray-400 font-normal">(optional)</span>
-          </label>
-          <input
-            type="text"
-            value={formData.booking_reference}
-            onChange={(e) => updateField('booking_reference', e.target.value)}
-            placeholder="e.g., ABC123"
-            className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
-          />
-        </div>
       </div>
 
-      {/* Route Details Section (expandable, for ground transport) */}
-      {canHaveRouteDetails && (
-        <div className="mt-4 border border-gray-200 rounded-lg">
-          <button
-            type="button"
-            onClick={() => setShowRouteDetails(!showRouteDetails)}
-            className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 rounded-lg"
-          >
-            <div className="flex items-center gap-2">
-              <Route className="w-4 h-4 text-gray-600" />
-              <span className="font-medium text-gray-700">Route Details</span>
-              <span className="text-sm text-gray-400">(optional)</span>
+      {(errors.departure_arrival || warnings.outside_trip_dates) && (
+        <div className="space-y-2">
+          {errors.departure_arrival && (
+            <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 p-2 rounded">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>{errors.departure_arrival}</span>
             </div>
-            {showRouteDetails ? (
-              <ChevronUp className="w-4 h-4 text-gray-500" />
-            ) : (
-              <ChevronDown className="w-4 h-4 text-gray-500" />
-            )}
-          </button>
-
-          {showRouteDetails && (
-            <div className="px-4 pb-4 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-200 pt-4">
-              {/* Distance */}
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-gray-700">Distance</label>
-                <div className="flex gap-2">
-                  <div className="flex-1">
-                    <input
-                      type="number"
-                      value={formData.distance_miles || ''}
-                      onChange={(e) => updateField('distance_miles', e.target.value ? parseFloat(e.target.value) : undefined)}
-                      placeholder="0"
-                      step="0.1"
-                      className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
-                    />
-                    <span className="text-xs text-gray-500 mt-1">miles</span>
-                  </div>
-                  <div className="flex-1">
-                    <input
-                      type="number"
-                      value={formData.distance_km || ''}
-                      onChange={(e) => updateField('distance_km', e.target.value ? parseFloat(e.target.value) : undefined)}
-                      placeholder="0"
-                      step="0.1"
-                      className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
-                    />
-                    <span className="text-xs text-gray-500 mt-1">km</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Estimated Duration */}
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-gray-700">Driving Time (without stops)</label>
-                <div className="flex gap-2 items-center">
-                  <input
-                    type="number"
-                    value={durationParts.hours}
-                    onChange={(e) => handleDurationChange(e.target.value, durationParts.mins)}
-                    placeholder="0"
-                    min="0"
-                    className="w-20 bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block px-3 py-2.5 shadow-xs placeholder:text-slate-400"
-                  />
-                  <span className="text-sm text-gray-600">h</span>
-                  <input
-                    type="number"
-                    value={durationParts.mins}
-                    onChange={(e) => handleDurationChange(durationParts.hours, e.target.value)}
-                    placeholder="0"
-                    min="0"
-                    max="59"
-                    className="w-20 bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block px-3 py-2.5 shadow-xs placeholder:text-slate-400"
-                  />
-                  <span className="text-sm text-gray-600">min</span>
-                </div>
-              </div>
-
-              {/* Route Type */}
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-gray-700">Route Type</label>
-                <select
-                  value={formData.route_type || ''}
-                  onChange={(e) => updateField('route_type', e.target.value as RouteType || undefined)}
-                  className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
-                >
-                  <option value="">Not specified</option>
-                  {routeTypes.map((rt) => (
-                    <option key={rt.value} value={rt.value}>
-                      {rt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Tolls */}
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-gray-700">Tolls</label>
-                <div className="flex gap-3 items-center">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={formData.has_tolls || false}
-                      onChange={(e) => updateField('has_tolls', e.target.checked)}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="text-sm text-gray-600">Has toll roads</span>
-                  </label>
-                  {formData.has_tolls && (
-                    <div className="flex items-center gap-1">
-                      <span className="text-sm text-gray-500">{formData.currency || 'USD'}</span>
-                      <input
-                        type="number"
-                        value={formData.toll_cost || ''}
-                        onChange={(e) => updateField('toll_cost', e.target.value ? parseFloat(e.target.value) : undefined)}
-                        placeholder="0.00"
-                        step="0.01"
-                        className="w-24 bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block px-3 py-2 shadow-xs placeholder:text-slate-400"
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Route Notes */}
-              <div className="md:col-span-2 flex flex-col gap-1">
-                <label className="text-sm font-medium text-gray-700">Route Notes</label>
-                <textarea
-                  value={formData.route_notes || ''}
-                  onChange={(e) => updateField('route_notes', e.target.value || undefined)}
-                  placeholder="e.g., Take I-70 through Glenwood Canyon for scenic views"
-                  rows={2}
-                  className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400 resize-none"
-                />
-              </div>
+          )}
+          {warnings.outside_trip_dates && (
+            <div className="flex items-center gap-2 text-amber-600 text-sm bg-amber-50 p-2 rounded">
+              <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+              <span>{warnings.outside_trip_dates}</span>
             </div>
           )}
         </div>
       )}
 
-      {showAdvanced && isEditing && (
-        <div className="mt-6">
-          <SegmentBuilder
-            segments={formData.segments || []}
-            onChange={(segments) => updateField('segments', segments)}
-            defaultTimezone={defaultSegmentTimezone}
-          />
-        </div>
-      )}
-
-      <div className="mt-3 flex gap-4 items-center">
-        <label className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-700">Status:</span>
-          <select
-            value={formData.status}
-            onChange={(e) => updateField('status', e.target.value)}
-            className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 px-3 py-1.5 shadow-xs"
-          >
-            <option value="planned">Planned</option>
-            <option value="booked">Booked</option>
-            <option value="completed">Completed</option>
-          </select>
-        </label>
-      </div>
       <div className="mt-3 flex gap-2">
         <button
           type="submit"

@@ -258,6 +258,46 @@ export interface JourneyFormData {
   has_tolls?: boolean;
   toll_cost?: number;
   route_notes?: string;
+  segments?: JourneySegmentDraft[];
+}
+
+export type JourneySegmentIntent = 'SIMPLE' | 'AIR_TRAVEL' | 'AIR_LAYOVER' | 'MULTI_STOP';
+
+export type SegmentType = 'TRANSFER' | 'FLIGHT' | 'LAYOVER' | 'STOP';
+
+export interface JourneySegment {
+  id: number;
+  journey_id: number;
+  segment_type: SegmentType;
+  origin_id?: number;
+  origin_name?: string;
+  destination_id?: number;
+  destination_name?: string;
+  start_datetime?: string;
+  end_datetime?: string;
+  origin_timezone?: string;
+  destination_timezone?: string;
+  metadata?: Record<string, unknown>;
+  order: number;
+}
+
+export interface LocationRef {
+  type: 'custom' | 'destination';
+  destination_id?: number;
+  name?: string;
+}
+
+export interface JourneySegmentDraft {
+  segment_type: SegmentType;
+  origin: LocationRef;
+  destination: LocationRef;
+  order: number;
+  start_datetime?: string;
+  end_datetime?: string;
+  origin_timezone?: string;
+  destination_timezone?: string;
+  metadata?: Record<string, unknown>;
+  notes?: string;
 }
 
 // Journey Stop Types

@@ -24,6 +24,22 @@ export function getLocalTimezone(): string {
   }
 }
 
+export function getSupportedTimezones(): string[] {
+  try {
+    if (typeof Intl !== 'undefined' && 'supportedValuesOf' in Intl) {
+      const values = (Intl as { supportedValuesOf?: (key: string) => string[] })
+        .supportedValuesOf;
+      if (values) {
+        return values('timeZone');
+      }
+    }
+  } catch {
+    return ['UTC'];
+  }
+
+  return ['UTC'];
+}
+
 /**
  * Format a datetime string with timezone display
  * Example: "Jan 15, 2026, 10:30 AM PST"

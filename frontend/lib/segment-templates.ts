@@ -7,6 +7,7 @@ interface TemplateOptions {
 }
 
 const defaultTimezone = getLocalTimezone();
+const defaultSegmentDurationMinutes = 120;
 
 const buildSegment = (
   order: number,
@@ -15,13 +16,17 @@ const buildSegment = (
   destinationName: string,
   options?: TemplateOptions
 ): JourneySegmentDraft => {
-  const start_datetime = options?.startDate ? options.startDate.toISOString() : undefined;
+  const startDate = options?.startDate;
+  const start_datetime = startDate ? startDate.toISOString() : undefined;
+  const end_datetime = startDate
+    ? new Date(startDate.getTime() + defaultSegmentDurationMinutes * 60000).toISOString()
+    : undefined;
   return {
     segment_type,
     origin: { type: 'custom', name: originName },
     destination: { type: 'custom', name: destinationName },
     start_datetime,
-    end_datetime: undefined,
+    end_datetime,
     origin_timezone: options?.timezone ?? defaultTimezone,
     destination_timezone: options?.timezone ?? defaultTimezone,
     metadata: {},
