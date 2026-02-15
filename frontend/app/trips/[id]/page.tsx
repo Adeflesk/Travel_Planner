@@ -68,8 +68,14 @@ function TripDetailContent() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      <div className="max-w-6xl mx-auto px-6 py-8">
+    <TripProvider
+      tripId={tripId}
+      startDate={trip.start_date}
+      endDate={trip.end_date}
+      timezone={trip.timezone}
+    >
+      <div className="min-h-screen bg-slate-100">
+        <div className="max-w-6xl mx-auto px-6 py-8">
       <Button
         variant="link"
         onClick={() => router.push('/trips')}
@@ -228,8 +234,9 @@ function TripDetailContent() {
         isOpen={showShareModal}
         onClose={() => setShowShareModal(false)}
       />
-    </div>
-    </div>
+        </div>
+      </div>
+    </TripProvider>
   );
 }
 

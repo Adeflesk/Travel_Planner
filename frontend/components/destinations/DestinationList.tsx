@@ -4,12 +4,14 @@ import { useDestinations } from './useDestinations';
 import { useDestinationForm } from './useDestinationForm';
 import { DestinationForm } from './DestinationForm';
 import { DestinationItem } from './DestinationItem';
+import { useTripContext } from '@/lib/trip-context';
 
 interface DestinationListProps {
   tripId: number;
 }
 
 export default function DestinationList({ tripId }: DestinationListProps) {
+  const tripContext = useTripContext();
   const {
     destinations,
     loading,
@@ -27,7 +29,7 @@ export default function DestinationList({ tripId }: DestinationListProps) {
     startEdit,
     resetForm,
     updateField,
-  } = useDestinationForm(tripId, reload);
+  } = useDestinationForm(tripId, reload, tripContext?.timezone);
 
   const handleDelete = async (id: number) => {
     if (confirm('Delete this destination?')) {

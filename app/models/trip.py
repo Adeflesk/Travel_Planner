@@ -31,6 +31,7 @@ class Trip(Base):
     description = Column(Text)
     start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=False)
+    timezone = Column(String(50), nullable=True)
     budget = Column(Numeric(10, 2))
     budget_warning_threshold = Column(Integer, default=75)
     budget_danger_threshold = Column(Integer, default=90)

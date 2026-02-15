@@ -6,6 +6,10 @@ import { transportModes } from './useJourneys';
 import { ValidationErrors, ValidationWarnings } from './useJourneyForm';
 import { AlertCircle, AlertTriangle, ChevronDown, ChevronUp, Route } from 'lucide-react';
 import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
+import { AirportAutocomplete } from '@/components/ui/AirportAutocomplete';
+import { useTripContext } from '@/lib/trip-context';
+import { getDateTimeConstraints } from '@/lib/date-constraints';
+import { calculateFlightDuration, getLocalTimezone } from '@/lib/timezone-utils';
 
 const routeTypes: { value: RouteType; label: string }[] = [
   { value: 'fastest', label: 'Fastest (Highways)' },
@@ -49,6 +53,54 @@ export function JourneyForm({
     // Auto-expand if route details exist
     !!(formData.distance_km || formData.distance_miles || formData.estimated_duration_minutes || formData.route_type || formData.has_tolls || formData.toll_cost || formData.route_notes)
   );
+  const [showAdvanced, setShowAdvanced] = useState(true);
+  const [showBuilderStep, setShowBuilderStep] = useState(() => !isEditing);
+
+  // Get trip context for date constraints
+  const tripContext = useTripContext();
+  const localTimezone = getLocalTimezone();
+  const tripTimezone = tripContext?.timezone || localTimezone;
+  const getDestinationTimezone = (destinationId?: number) =>
+    destinations.find((dest) => dest.id === destinationId)?.timezone;
+  const defaultSegmentTimezone =
+    formData.origin_timezone ||
+    getDestinationTimezone(formData.origin_id) ||
+    formData.destination_timezone ||
+    getDestinationTimezone(formData.destination_id) ||
+    tripTimezone;
+
+  // Calculate date/time constraints based on trip dates
+  const dateTimeConstraints = getDateTimeConstraints(
+    tripContext?.startDate,
+    tripContext?.endDate,
+    {
+      allowBeforeStart: true, // Allow booking flights before trip starts
+      allowAfterEnd: true,     // Allow return flights after trip ends
+      defaultTo: 'start',
+      defaultTime: '09:00',
+    }
+  );
+
+  // Journey options hook (only for existing journeys)
+  const journeyOptions = useJourneyOptions(editingId || 0);
+
+  // Transport mode capabilities
+  const modeCapabilities = useTransportModeCapabilities(formData.transport_mode);
+
+  // Apply smart defaults when transport mode changes (only for new journeys)
+  useEffect(() => {
+    if (!isEditing && formData.transport_mode && modeCapabilities.config) {
+      // Set default flexibility level
+      if (modeCapabilities.defaultFlexibility && !formData.flexibility_level) {
+        updateField('flexibility_level', modeCapabilities.defaultFlexibility);
+      }
+      
+      // Set default booking status
+      if (typeof modeCapabilities.defaultIsBooked !== 'undefined' && typeof formData.is_booked === 'undefined') {
+        updateField('is_booked', modeCapabilities.defaultIsBooked);
+      }
+    }
+  }, [formData.transport_mode, modeCapabilities.config, modeCapabilities.defaultFlexibility, modeCapabilities.defaultIsBooked, formData.flexibility_level, formData.is_booked, isEditing, updateField]);
 
   // Date input mode: 'time' = explicit arrival time, 'duration' = calculate from duration
   const [dateInputMode, setDateInputMode] = useState<'time' | 'duration'>('time');
@@ -154,10 +206,63 @@ export function JourneyForm({
 
   return (
     <form onSubmit={onSubmit} className="bg-gray-50 p-4 rounded-lg mb-4">
-      <h3 className="font-semibold mb-3">
-        {isEditing ? 'Edit Journey' : 'Add Journey'}
-      </h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="font-semibold">
+          {isEditing ? 'Edit Journey' : 'Add Journey'}
+        </h3>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="text-sm font-medium text-slate-500 hover:text-slate-700"
+        >
+          Close
+        </button>
+      </div>
+      {!isEditing && showBuilderStep && (
+        <div className="mb-6">
+          <SegmentBuilder
+            segments={formData.segments || []}
+            onChange={(segments) => updateField('segments', segments)}
+            defaultTimezone={defaultSegmentTimezone}
+          />
+          <div className="mt-4 flex justify-end">
+            <button
+              type="button"
+              onClick={() => setShowBuilderStep(false)}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            >
+              Continue to details
+            </button>
+          </div>
+        </div>
+      )}
+      {!showBuilderStep && (
+        <>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
+            <div>
+              {!isEditing && (
+                <button
+                  type="button"
+                  onClick={() => setShowBuilderStep(true)}
+                  className="mb-1 text-xs font-medium text-slate-500 hover:text-slate-700"
+                >
+                  Back to segment builder
+                </button>
+              )}
+              <p className="text-sm font-semibold text-slate-900">Quick setup</p>
+              <p className="text-sm text-slate-600">
+                Start with the essentials. Add details later if you need them.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowAdvanced((prev) => !prev)}
+              className="text-sm font-medium text-primary-600 hover:text-primary-700"
+            >
+              {showAdvanced ? 'Hide details' : 'Show details'}
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-700">Transport Mode</label>
           <select
@@ -197,9 +302,19 @@ export function JourneyForm({
               if (value === 'other') {
                 updateField('origin_id', undefined);
                 updateField('origin_name', formData.origin_name || '');
+                // Clear timezone when switching to manual entry
+                if (formData.transport_mode !== 'flight') {
+                  updateField('origin_timezone', tripTimezone);
+                }
               } else if (value) {
-                updateField('origin_id', parseInt(value));
+                const originId = parseInt(value);
+                const destinationTimezone = getDestinationTimezone(originId);
+                updateField('origin_id', originId);
                 updateField('origin_name', undefined);
+                updateField(
+                  'origin_timezone',
+                  destinationTimezone || tripTimezone
+                );
               } else {
                 updateField('origin_id', undefined);
                 updateField('origin_name', undefined);
@@ -235,9 +350,19 @@ export function JourneyForm({
               if (value === 'other') {
                 updateField('destination_id', undefined);
                 updateField('destination_name', formData.destination_name || '');
+                // Clear timezone when switching to manual entry
+                if (formData.transport_mode !== 'flight') {
+                  updateField('destination_timezone', tripTimezone);
+                }
               } else if (value) {
-                updateField('destination_id', parseInt(value));
+                const destinationId = parseInt(value);
+                const destinationTimezone = getDestinationTimezone(destinationId);
+                updateField('destination_id', destinationId);
                 updateField('destination_name', undefined);
+                updateField(
+                  'destination_timezone',
+                  destinationTimezone || tripTimezone
+                );
               } else {
                 updateField('destination_id', undefined);
                 updateField('destination_name', undefined);
@@ -591,7 +716,19 @@ export function JourneyForm({
               </div>
             </div>
           )}
-        </div>
+        </div>        </>
+      )}
+
+          {showAdvanced && isEditing && (
+            <div className="mt-6">
+              <SegmentBuilder
+                segments={formData.segments || []}
+                onChange={(segments) => updateField('segments', segments)}
+                defaultTimezone={defaultSegmentTimezone}
+              />
+            </div>
+          )}
+        </>
       )}
 
       <div className="mt-3 flex gap-4 items-center">

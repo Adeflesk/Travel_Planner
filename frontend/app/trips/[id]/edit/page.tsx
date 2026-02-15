@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { TripFormData } from '@/lib/types';
 import { tripApi } from '@/lib/api';
+import { getLocalTimezone } from '@/lib/timezone-utils';
 import { ArrowLeft } from 'lucide-react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/lib/auth-context';
@@ -22,6 +23,7 @@ function EditTripContent() {
     description: '',
     start_date: '',
     end_date: '',
+    timezone: getLocalTimezone(),
     budget: undefined,
     status: 'planning',
   });
@@ -35,6 +37,7 @@ function EditTripContent() {
         description: trip.description || '',
         start_date: trip.start_date,
         end_date: trip.end_date,
+        timezone: trip.timezone || getLocalTimezone(),
         budget: trip.budget,
         budget_warning_threshold: trip.budget_warning_threshold ?? 75,
         budget_danger_threshold: trip.budget_danger_threshold ?? 90,
@@ -214,6 +217,19 @@ function EditTripContent() {
                 onChange={handleChange}
                 required
                 className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Timezone
+              </label>
+              <input
+                type="text"
+                name="timezone"
+                value={formData.timezone || ''}
+                onChange={handleChange}
+                className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
+                placeholder="e.g., America/Denver"
               />
             </div>
           </div>

@@ -5,6 +5,7 @@ export interface Trip {
   description?: string;
   start_date: string;
   end_date: string;
+  timezone?: string;
   budget?: number;
   budget_warning_threshold?: number;
   budget_danger_threshold?: number;
@@ -57,6 +58,7 @@ export interface Destination {
   name: string;
   country?: string;
   region?: string;
+  timezone?: string;
   arrival_date?: string;
   departure_date?: string;
   notes?: string;
@@ -179,6 +181,7 @@ export interface TripFormData {
   description?: string;
   start_date: string;
   end_date: string;
+  timezone?: string;
   budget?: number;
   budget_warning_threshold?: number;
   budget_danger_threshold?: number;
@@ -190,6 +193,7 @@ export interface DestinationFormData {
   name: string;
   country?: string;
   region?: string;
+  timezone?: string;
   arrival_date?: string;
   departure_date?: string;
 }

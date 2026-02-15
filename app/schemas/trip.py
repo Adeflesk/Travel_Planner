@@ -23,6 +23,7 @@ class TripBase(BaseModel):
     description: Optional[str] = None
     start_date: DateType
     end_date: DateType
+    timezone: Optional[str] = None
     budget: Optional[Decimal] = None
     budget_warning_threshold: Optional[int] = 75
     budget_danger_threshold: Optional[int] = 90
@@ -68,6 +69,7 @@ class TripUpdate(BaseModel):
     description: Optional[str] = None
     start_date: Optional[DateType] = None
     end_date: Optional[DateType] = None
+    timezone: Optional[str] = None
     budget: Optional[Decimal] = None
     budget_warning_threshold: Optional[int] = None
     budget_danger_threshold: Optional[int] = None

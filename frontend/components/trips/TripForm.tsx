@@ -87,6 +87,17 @@ export default function TripForm({ onTripCreated, onCancel }: TripFormProps) {
           />
         </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Input
+            label="Trip Timezone"
+            type="text"
+            name="timezone"
+            value={formData.timezone || ''}
+            onChange={handleChange}
+            placeholder="e.g., America/Denver"
+          />
+        </div>
+
         <Textarea
           label="Description"
           name="description"
