@@ -239,7 +239,7 @@ export const useSegmentBuilder = (
 
       setSegments(reindexSegments(next));
     },
-    [options?.destinations, segments, setSegments]
+    [options?.destinations, segments, setSegments, resolveTimezone]
   );
 
   const updateField = useCallback(

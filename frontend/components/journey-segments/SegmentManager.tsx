@@ -55,7 +55,7 @@ export default function SegmentManager({ journeyId }: SegmentManagerProps) {
     [segments]
   );
 
-  const loadSegments = async () => {
+  const loadSegments = useCallback(async () => {
     try {
       const response = await journeySegmentApi.getByJourneyId(journeyId);
       setSegments(response.data);
@@ -64,11 +64,11 @@ export default function SegmentManager({ journeyId }: SegmentManagerProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [journeyId]);
 
   useEffect(() => {
     loadSegments();
-  }, [journeyId]);
+  }, [loadSegments]);
 
   const openEditor = (segment: JourneySegment) => {
     setEditingSegment(segment);

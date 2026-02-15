@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Journey, JourneyFormData, JourneySegmentDraft, Trip } from '@/lib/types';
+import { Journey, JourneyFormData, Trip } from '@/lib/types';
 import { activityApi, expenseApi, journeyApi, journeySegmentApi, tripApi } from '@/lib/api';
 import { useSuggestions } from '@/lib/hooks/useSuggestions';
 
