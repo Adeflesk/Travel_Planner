@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { JourneySegment, JourneySegmentDraft, LocationRef, SegmentType } from '@/lib/types';
 import { journeySegmentApi } from '@/lib/api';
 import { SegmentCard } from './SegmentCard';

@@ -200,6 +200,7 @@ export interface DestinationFormData {
 
 export interface ExpenseFormData {
   trip_id: number;
+  destination_id?: number;
   category: string;
   amount: number;
   description?: string;
@@ -227,6 +228,7 @@ export interface ActivityFormData {
   duration?: number;
   cost?: number;
   booking_reference?: string;
+  notes?: string;
   status?: string;
   priority?: number;
   is_todo?: boolean;
@@ -243,6 +245,8 @@ export interface JourneyFormData {
   transport_mode: string;
   departure_datetime?: string;
   arrival_datetime?: string;
+  origin_timezone?: string;
+  destination_timezone?: string;
   carrier?: string;
   booking_reference?: string;
   cost?: number;

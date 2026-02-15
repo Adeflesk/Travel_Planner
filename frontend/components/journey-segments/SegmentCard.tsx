@@ -301,7 +301,7 @@ export const SegmentCard = ({
                       />
                       Add airport parking (activity + expense)
                     </label>
-                    {segment.metadata?.parkingEnabled && (
+                    {Boolean(segment.metadata?.parkingEnabled) ? (
                       <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
                         <Input
                           label="Parking cost"
@@ -328,7 +328,7 @@ export const SegmentCard = ({
                           }
                         />
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 )}
                 <Input
