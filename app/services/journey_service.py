@@ -34,7 +34,10 @@ def create_journey(journey_data, db: Session):
         if not destination:
             raise ValueError("Destination destination not found")
 
-    db_journey = models.Journey(**journey_data.model_dump())
+    journey_payload = journey_data.model_dump()
+    # Segments are managed via the segment endpoints.
+    journey_payload.pop("segments", None)
+    db_journey = models.Journey(**journey_payload)
     db.add(db_journey)
     db.commit()
     db.refresh(db_journey)
@@ -60,6 +63,8 @@ def update_journey(journey_id: int, journey_update, db: Session):
         raise ValueError("Journey not found")
 
     update_data = journey_update.model_dump(exclude_unset=True)
+    # Segments are updated via the segment endpoints.
+    update_data.pop("segments", None)
     if "origin_id" in update_data and update_data["origin_id"]:
         origin = (
             db.query(models.Destination)
