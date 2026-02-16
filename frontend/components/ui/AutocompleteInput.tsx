@@ -37,7 +37,6 @@ export const AutocompleteInput = forwardRef<HTMLInputElement, AutocompleteInputP
       recentItems = [],
       loading = false,
       emptyMessage = 'No suggestions found. Start typing to create new.',
-      virtualize,
       value,
       onChange,
       onFocus,

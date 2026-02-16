@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { JourneySegmentDraft, LocationRef, SegmentType } from '@/lib/types';
 import { Button } from '@/components/ui/Button';
 import { getSupportedTimezones } from '@/lib/timezone-utils';
@@ -40,15 +40,12 @@ export function SegmentCard({
   onRemove,
   canRemove,
 }: SegmentCardProps) {
-  const [metadataText, setMetadataText] = useState(
-    JSON.stringify(segment.metadata ?? {}, null, 2)
-  );
   const [metadataError, setMetadataError] = useState<string | null>(null);
   const timezones = useMemo(() => getSupportedTimezones(), []);
-
-  useEffect(() => {
-    setMetadataText(JSON.stringify(segment.metadata ?? {}, null, 2));
-  }, [segment.metadata]);
+  const metadataString = useMemo(
+    () => JSON.stringify(segment.metadata ?? {}, null, 2),
+    [segment.metadata]
+  );
 
   const handleLocationTypeChange = (
     side: 'origin' | 'destination',
@@ -75,15 +72,15 @@ export function SegmentCard({
     onUpdateField(index, side, next);
   };
 
-  const handleMetadataBlur = () => {
-    if (!metadataText.trim()) {
+  const handleMetadataBlur = (value: string) => {
+    if (!value.trim()) {
       onUpdateField(index, 'metadata', {});
       setMetadataError(null);
       return;
     }
 
     try {
-      const parsed = JSON.parse(metadataText);
+      const parsed = JSON.parse(value);
       onUpdateField(index, 'metadata', parsed);
       setMetadataError(null);
     } catch {
@@ -278,9 +275,10 @@ export function SegmentCard({
               Metadata (JSON)
             </label>
             <textarea
-              value={metadataText}
-              onChange={(e) => setMetadataText(e.target.value)}
-              onBlur={handleMetadataBlur}
+              key={metadataString}
+              defaultValue={metadataString}
+              onChange={() => setMetadataError(null)}
+              onBlur={(e) => handleMetadataBlur(e.currentTarget.value)}
               className="w-full rounded border border-slate-300 px-3 py-2 text-sm font-mono"
               rows={6}
             />
