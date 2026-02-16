@@ -24,6 +24,7 @@ interface AutocompleteInputProps extends BaseInputProps, Omit<InputHTMLAttribute
   recentItems?: string[];
   loading?: boolean;
   emptyMessage?: string;
+  virtualize?: boolean;
 }
 
 export const AutocompleteInput = forwardRef<HTMLInputElement, AutocompleteInputProps>(
@@ -36,6 +37,7 @@ export const AutocompleteInput = forwardRef<HTMLInputElement, AutocompleteInputP
       recentItems = [],
       loading = false,
       emptyMessage = 'No suggestions found. Start typing to create new.',
+      virtualize,
       value,
       onChange,
       onFocus,

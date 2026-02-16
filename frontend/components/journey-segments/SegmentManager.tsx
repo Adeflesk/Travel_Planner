@@ -256,6 +256,9 @@ export default function SegmentManager({ journeyId, tripId }: SegmentManagerProp
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [showActivityForm, setShowActivityForm] = useState(false);
   const [showExpenseForm, setShowExpenseForm] = useState(false);
+  const [segmentActivityCounts, setSegmentActivityCounts] = useState<Record<number, number>>({});
+  const [segmentExpenseCounts, setSegmentExpenseCounts] = useState<Record<number, number>>({});
+  const [segmentExpenseTotals, setSegmentExpenseTotals] = useState<Record<number, number>>({});
 
   const sortedSegments = useMemo(
     () => [...segments].sort((a, b) => a.order - b.order),
@@ -277,6 +280,54 @@ export default function SegmentManager({ journeyId, tripId }: SegmentManagerProp
     loadSegments();
   }, [loadSegments]);
 
+  const loadSegmentStats = useCallback(async (segmentList: JourneySegment[]) => {
+    if (segmentList.length === 0) {
+      setSegmentActivityCounts({});
+      setSegmentExpenseCounts({});
+      setSegmentExpenseTotals({});
+      return;
+    }
+
+    const activityCounts: Record<number, number> = {};
+    const expenseCounts: Record<number, number> = {};
+    const expenseTotals: Record<number, number> = {};
+
+    await Promise.all(
+      segmentList.map(async (segment) => {
+        if (segment.segment_type === 'STOP') {
+          try {
+            const activitiesResponse = await activityApi.getBySegmentId(segment.id);
+            activityCounts[segment.id] = activitiesResponse.data.length;
+          } catch (error) {
+            console.error('Error loading segment activity count:', error);
+            activityCounts[segment.id] = 0;
+          }
+        }
+
+        try {
+          const expensesResponse = await expenseApi.getBySegmentId(segment.id);
+          expenseCounts[segment.id] = expensesResponse.data.length;
+          expenseTotals[segment.id] = expensesResponse.data.reduce(
+            (sum, expense) => sum + expense.amount,
+            0
+          );
+        } catch (error) {
+          console.error('Error loading segment expense totals:', error);
+          expenseCounts[segment.id] = 0;
+          expenseTotals[segment.id] = 0;
+        }
+      })
+    );
+
+    setSegmentActivityCounts(activityCounts);
+    setSegmentExpenseCounts(expenseCounts);
+    setSegmentExpenseTotals(expenseTotals);
+  }, []);
+
+  useEffect(() => {
+    loadSegmentStats(segments);
+  }, [segments, loadSegmentStats]);
+
   const loadSegmentOptions = useCallback(async (segmentId: number) => {
     try {
       const response = await segmentOptionApi.getBySegmentId(segmentId);
@@ -291,9 +342,17 @@ export default function SegmentManager({ journeyId, tripId }: SegmentManagerProp
     try {
       const response = await activityApi.getBySegmentId(segmentId);
       setActivities(response.data);
+      setSegmentActivityCounts((prev) => ({
+        ...prev,
+        [segmentId]: response.data.length,
+      }));
     } catch (error) {
       console.error('Error loading segment activities:', error);
       setActivities([]);
+      setSegmentActivityCounts((prev) => ({
+        ...prev,
+        [segmentId]: 0,
+      }));
     }
   }, []);
 
@@ -301,9 +360,26 @@ export default function SegmentManager({ journeyId, tripId }: SegmentManagerProp
     try {
       const response = await expenseApi.getBySegmentId(segmentId);
       setExpenses(response.data);
+      const total = response.data.reduce((sum, expense) => sum + expense.amount, 0);
+      setSegmentExpenseCounts((prev) => ({
+        ...prev,
+        [segmentId]: response.data.length,
+      }));
+      setSegmentExpenseTotals((prev) => ({
+        ...prev,
+        [segmentId]: total,
+      }));
     } catch (error) {
       console.error('Error loading segment expenses:', error);
       setExpenses([]);
+      setSegmentExpenseCounts((prev) => ({
+        ...prev,
+        [segmentId]: 0,
+      }));
+      setSegmentExpenseTotals((prev) => ({
+        ...prev,
+        [segmentId]: 0,
+      }));
     }
   }, []);
 
@@ -432,6 +508,10 @@ export default function SegmentManager({ journeyId, tripId }: SegmentManagerProp
     try {
       const response = await activityApi.createForSegment(editingSegment.id, activityData);
       setActivities((prev) => [...prev, response.data]);
+      setSegmentActivityCounts((prev) => ({
+        ...prev,
+        [editingSegment.id]: (prev[editingSegment.id] ?? 0) + 1,
+      }));
       setShowActivityForm(false);
     } catch (error) {
       console.error('Error creating activity:', error);
@@ -443,6 +523,12 @@ export default function SegmentManager({ journeyId, tripId }: SegmentManagerProp
     try {
       await activityApi.delete(activityId);
       setActivities((prev) => prev.filter((a) => a.id !== activityId));
+      if (editingSegment) {
+        setSegmentActivityCounts((prev) => ({
+          ...prev,
+          [editingSegment.id]: Math.max(0, (prev[editingSegment.id] ?? 0) - 1),
+        }));
+      }
     } catch (error) {
       console.error('Error deleting activity:', error);
       throw error;
@@ -454,6 +540,14 @@ export default function SegmentManager({ journeyId, tripId }: SegmentManagerProp
     try {
       const response = await expenseApi.createForSegment(editingSegment.id, expenseData);
       setExpenses((prev) => [...prev, response.data]);
+      setSegmentExpenseCounts((prev) => ({
+        ...prev,
+        [editingSegment.id]: (prev[editingSegment.id] ?? 0) + 1,
+      }));
+      setSegmentExpenseTotals((prev) => ({
+        ...prev,
+        [editingSegment.id]: (prev[editingSegment.id] ?? 0) + response.data.amount,
+      }));
       setShowExpenseForm(false);
     } catch (error) {
       console.error('Error creating expense:', error);
@@ -463,8 +557,23 @@ export default function SegmentManager({ journeyId, tripId }: SegmentManagerProp
 
   const handleDeleteExpense = async (expenseId: number) => {
     try {
+      const expenseToRemove = expenses.find((expense) => expense.id === expenseId);
+      const amountToRemove = expenseToRemove?.amount ?? 0;
       await expenseApi.delete(expenseId);
       setExpenses((prev) => prev.filter((e) => e.id !== expenseId));
+      if (editingSegment) {
+        setSegmentExpenseCounts((prev) => ({
+          ...prev,
+          [editingSegment.id]: Math.max(0, (prev[editingSegment.id] ?? 0) - 1),
+        }));
+        setSegmentExpenseTotals((prev) => ({
+          ...prev,
+          [editingSegment.id]: Math.max(
+            0,
+            (prev[editingSegment.id] ?? 0) - amountToRemove
+          ),
+        }));
+      }
     } catch (error) {
       console.error('Error deleting expense:', error);
       throw error;
@@ -486,31 +595,46 @@ export default function SegmentManager({ journeyId, tripId }: SegmentManagerProp
   return (
     <>
       <div className="space-y-3">
-        {sortedSegments.map((segment) => (
-          <div
-            key={segment.id}
-            className="rounded-lg border border-slate-200 bg-white p-4"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="text-sm font-semibold text-slate-900">
-                  {segment.segment_type}
+        {sortedSegments.map((segment) => {
+          const activityCount = segmentActivityCounts[segment.id] ?? 0;
+          const expenseCount = segmentExpenseCounts[segment.id] ?? 0;
+          const expenseTotal = segmentExpenseTotals[segment.id] ?? 0;
+
+          return (
+            <div
+              key={segment.id}
+              className="rounded-lg border border-slate-200 bg-white p-4"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-sm font-semibold text-slate-900">
+                    {segment.segment_type}
+                  </div>
+                  <div className="text-sm text-slate-600">
+                    {(segment.origin_name || 'Origin') + ' -> ' + (segment.destination_name || 'Destination')}
+                  </div>
+                  <div className="text-xs text-slate-500 mt-1">
+                    {segment.start_datetime || 'Start TBD'}
+                    {' · '}
+                    {segment.end_datetime || 'End TBD'}
+                  </div>
+                  {segment.segment_type === 'STOP' && (
+                    <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-500">
+                      <span>{activityCount} activities</span>
+                      <span>{expenseCount} expenses</span>
+                      {expenseCount > 0 && (
+                        <span>Total: ${expenseTotal.toFixed(2)}</span>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <div className="text-sm text-slate-600">
-                  {(segment.origin_name || 'Origin') + ' -> ' + (segment.destination_name || 'Destination')}
-                </div>
-                <div className="text-xs text-slate-500 mt-1">
-                  {segment.start_datetime || 'Start TBD'}
-                  {' · '}
-                  {segment.end_datetime || 'End TBD'}
-                </div>
+                <Button type="button" variant="secondary" size="sm" onClick={() => openEditor(segment)}>
+                  Edit
+                </Button>
               </div>
-              <Button type="button" variant="secondary" size="sm" onClick={() => openEditor(segment)}>
-                Edit
-              </Button>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {editingSegment && editingDraft && (

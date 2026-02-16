@@ -13,6 +13,9 @@ import {
   StopOption,
   StopOptionFormData,
   StopOptionStatus,
+  JourneySegment,
+  SegmentOption,
+  SegmentOptionFormData,
   JourneyDocument,
   JourneyDocumentFormData,
   TripFormData,
@@ -307,6 +310,30 @@ export const journeyApi = {
   delete: (id: number) => api.delete(`/journeys/${id}`),
   getTimeline: (journeyId: number) =>
     api.get<JourneyTimelineResponse>(`/journeys/${journeyId}/timeline`),
+};
+
+// Journey Segment API
+export const journeySegmentApi = {
+  getByJourneyId: (journeyId: number) =>
+    api.get<JourneySegment[]>(`/journeys/${journeyId}/segments`),
+  getById: (segmentId: number) =>
+    api.get<JourneySegment>(`/journey-segments/${segmentId}`),
+  create: (journeyId: number, data: Partial<JourneySegment>) =>
+    api.post<JourneySegment>(`/journeys/${journeyId}/segments`, data),
+  update: (segmentId: number, data: Partial<JourneySegment>) =>
+    api.put<JourneySegment>(`/journey-segments/${segmentId}`, data),
+  delete: (segmentId: number) => api.delete(`/journey-segments/${segmentId}`),
+};
+
+// Segment Option API
+export const segmentOptionApi = {
+  getBySegmentId: (segmentId: number) =>
+    api.get<SegmentOption[]>(`/segment-options/segment/${segmentId}`),
+  create: (data: SegmentOptionFormData) =>
+    api.post<SegmentOption>('/segment-options/', data),
+  update: (optionId: number, data: Partial<SegmentOptionFormData>) =>
+    api.put<SegmentOption>(`/segment-options/${optionId}`, data),
+  delete: (optionId: number) => api.delete(`/segment-options/${optionId}`),
 };
 
 // Journey Stop API
