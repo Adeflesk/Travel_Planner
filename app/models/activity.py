@@ -26,7 +26,8 @@ class Activity(Base):
     __tablename__ = "activities"
 
     id = Column(Integer, primary_key=True, index=True)
-    destination_id = Column(Integer, ForeignKey("destinations.id"), nullable=False)
+    destination_id = Column(Integer, ForeignKey("destinations.id"), nullable=True)
+    segment_id = Column(Integer, ForeignKey("journey_segments.id"), nullable=True)
     name = Column(String(200), nullable=False)
     description = Column(Text)
     activity_type = Column(String(50))
@@ -41,4 +42,5 @@ class Activity(Base):
     is_completed = Column(Boolean, default=False)
 
     destination = relationship("Destination", back_populates="activities")
+    segment = relationship("JourneySegment", back_populates="activities")
     expenses = relationship("Expense", back_populates="activity")

@@ -15,6 +15,7 @@ from .activity import Activity
 from .expense import Expense
 from .packing_item import PackingItem
 from .journey import Journey
+from .journey_segment import JourneySegment
 from .journey_stop import JourneyStop
 from .stop_option import StopOption
 from .journey_document import JourneyDocument
@@ -30,6 +31,7 @@ __all__ = [
     "Expense",
     "PackingItem",
     "Journey",
+    "JourneySegment",
     "JourneyStop",
     "StopOption",
     "JourneyDocument",

@@ -8,9 +8,10 @@ import { TodoActivities } from './TodoActivities';
 
 interface ActivityListProps {
   destinationId: number;
+  destinationArrivalDate?: string;
 }
 
-export default function ActivityList({ destinationId }: ActivityListProps) {
+export default function ActivityList({ destinationId, destinationArrivalDate }: ActivityListProps) {
   const {
     activities,
     scheduled,
@@ -29,7 +30,7 @@ export default function ActivityList({ destinationId }: ActivityListProps) {
     startEdit,
     resetForm,
     updateField,
-  } = useActivityForm(destinationId, reload);
+  } = useActivityForm(destinationId, reload, destinationArrivalDate);
 
   const handleDelete = async (id: number) => {
     if (confirm('Delete this activity?')) {

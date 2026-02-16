@@ -153,8 +153,9 @@ export const test = base.extend<
       });
 
       if (!loginResponse.ok()) {
+        const errorText = await loginResponse.text();
         await requestContext.dispose();
-        throw new Error(`Login failed: ${await loginResponse.text()}`);
+        throw new Error(`Login failed: ${errorText}`);
       }
 
       const loginData = await loginResponse.json();

@@ -12,6 +12,7 @@ from .activity import *  # noqa: F401, F403
 from .expense import *  # noqa: F401, F403
 from .packing_item import *  # noqa: F401, F403
 from .journey import *  # noqa: F401, F403
+from .journey_segment import *  # noqa: F401, F403
 from .journey_stop import *  # noqa: F401, F403
 from .stop_option import *  # noqa: F401, F403
 from .journey_document import *  # noqa: F401, F403

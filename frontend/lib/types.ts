@@ -5,6 +5,7 @@ export interface Trip {
   description?: string;
   start_date: string;
   end_date: string;
+  timezone?: string;
   budget?: number;
   budget_warning_threshold?: number;
   budget_danger_threshold?: number;
@@ -57,6 +58,7 @@ export interface Destination {
   name: string;
   country?: string;
   region?: string;
+  timezone?: string;
   arrival_date?: string;
   departure_date?: string;
   notes?: string;
@@ -65,7 +67,8 @@ export interface Destination {
 
 export interface Activity {
   id: number;
-  destination_id: number;
+  destination_id?: number | null;
+  segment_id?: number | null;
   name: string;
   description?: string;
   activity_type?: string;
@@ -83,8 +86,9 @@ export interface Activity {
 export interface Expense {
   id: number;
   trip_id: number;
-  destination_id?: number;
-  activity_id?: number;
+  destination_id?: number | null;
+  activity_id?: number | null;
+  segment_id?: number | null;
   category: string;
   amount: number;
   currency: string;
@@ -179,6 +183,7 @@ export interface TripFormData {
   description?: string;
   start_date: string;
   end_date: string;
+  timezone?: string;
   budget?: number;
   budget_warning_threshold?: number;
   budget_danger_threshold?: number;
@@ -190,12 +195,16 @@ export interface DestinationFormData {
   name: string;
   country?: string;
   region?: string;
+  timezone?: string;
   arrival_date?: string;
   departure_date?: string;
 }
 
 export interface ExpenseFormData {
   trip_id: number;
+  destination_id?: number | null;
+  activity_id?: number | null;
+  segment_id?: number | null;
   category: string;
   amount: number;
   description?: string;
@@ -214,7 +223,8 @@ export interface PackingItemFormData {
 }
 
 export interface ActivityFormData {
-  destination_id: number;
+  destination_id?: number | null;
+  segment_id?: number | null;
   name: string;
   description?: string;
   activity_type?: string;
@@ -223,6 +233,7 @@ export interface ActivityFormData {
   duration?: number;
   cost?: number;
   booking_reference?: string;
+  notes?: string;
   status?: string;
   priority?: number;
   is_todo?: boolean;
@@ -239,6 +250,8 @@ export interface JourneyFormData {
   transport_mode: string;
   departure_datetime?: string;
   arrival_datetime?: string;
+  origin_timezone?: string;
+  destination_timezone?: string;
   carrier?: string;
   booking_reference?: string;
   cost?: number;
@@ -254,6 +267,78 @@ export interface JourneyFormData {
   has_tolls?: boolean;
   toll_cost?: number;
   route_notes?: string;
+  segments?: JourneySegmentDraft[];
+}
+
+export type JourneySegmentIntent = 'SIMPLE' | 'AIR_TRAVEL' | 'AIR_LAYOVER' | 'MULTI_STOP';
+
+export type SegmentType = 'TRANSFER' | 'BUS' | 'RAIL' | 'FLIGHT' | 'LAYOVER' | 'STOP';
+
+export interface JourneySegment {
+  id: number;
+  journey_id: number;
+  segment_type: SegmentType;
+  origin_id?: number;
+  origin_name?: string;
+  destination_id?: number;
+  destination_name?: string;
+  start_datetime?: string;
+  end_datetime?: string;
+  origin_timezone?: string;
+  destination_timezone?: string;
+  metadata?: Record<string, unknown>;
+  order: number;
+}
+
+export interface LocationRef {
+  type: 'custom' | 'destination';
+  destination_id?: number;
+  name?: string;
+}
+
+export interface JourneySegmentDraft {
+  segment_type: SegmentType;
+  origin: LocationRef;
+  destination: LocationRef;
+  order: number;
+  start_datetime?: string;
+  end_datetime?: string;
+  origin_timezone?: string;
+  destination_timezone?: string;
+  metadata?: Record<string, unknown>;
+  notes?: string;
+}
+
+// Segment Option Types
+export type SegmentOptionStatus = 'researching' | 'selected' | 'booked' | 'rejected';
+
+export interface SegmentOption {
+  id: number;
+  segment_id: number;
+  name: string;
+  provider?: string;
+  frequency?: string;
+  estimated_duration?: number;  // Duration in minutes
+  cost?: number;
+  currency: string;
+  booking_url?: string;
+  notes?: string;
+  status: SegmentOptionStatus;
+  order: number;
+}
+
+export interface SegmentOptionFormData {
+  segment_id: number;
+  name: string;
+  provider?: string;
+  frequency?: string;
+  estimated_duration?: number;
+  cost?: number;
+  currency?: string;
+  booking_url?: string;
+  notes?: string;
+  status?: SegmentOptionStatus;
+  order?: number;
 }
 
 // Journey Stop Types
