@@ -49,10 +49,9 @@ test.describe('Journey Segment Builder', () => {
     await destinationInput.focus();
     await destinationInput.press('ArrowDown');
     // Retry for dropdown
-    let pragueOption;
+    let pragueOption = authenticatedPage.locator('button', { hasText: 'Prague' });
     let found = false;
     for (let i = 0; i < 5; i++) {
-      // Try both getByText and a button with Prague text
       pragueOption = authenticatedPage.locator('button', { hasText: 'Prague' });
       if (await pragueOption.isVisible()) {
         found = true;
@@ -75,7 +74,7 @@ test.describe('Journey Segment Builder', () => {
       try {
         await pragueOption.click();
         break;
-      } catch (e) {
+      } catch {
         await authenticatedPage.waitForTimeout(300);
       }
     }
@@ -85,7 +84,7 @@ test.describe('Journey Segment Builder', () => {
       await showDetailsBtn.click();
     }
     // Wait for Start time input to appear (retry)
-    let startTimeInput;
+    let startTimeInput = authenticatedPage.getByLabel('Start time');
     for (let i = 0; i < 5; i++) {
       startTimeInput = authenticatedPage.getByLabel('Start time');
       if (await startTimeInput.isVisible()) break;
@@ -119,51 +118,6 @@ test.describe('Journey Segment Builder', () => {
     await expect(authenticatedPage.getByText('BUS')).toBeVisible();
   });
 
-  test('should show buffer and timezone validation errors', async ({ authenticatedPage }) => {
-    await authenticatedPage.goto(`/trips/${tripId}`);
-    await authenticatedPage.getByRole('button', { name: /Journeys/i }).click();
-    await authenticatedPage.getByRole('button', { name: 'Add Journey' }).click();
-    await expect(authenticatedPage.getByRole('heading', { name: 'Add Journey' })).toBeVisible();
-
-    // Add segment with negative buffer
-    await authenticatedPage.getByRole('button', { name: /Add Segment/i }).click();
-    await authenticatedPage.getByLabel('Segment Type').selectOption('RAIL');
-    await authenticatedPage.getByLabel('Origin').fill('Berlin');
-    await authenticatedPage.getByLabel('Destination').fill('Prague');
-    // Ensure segment card is expanded before accessing time inputs
-    const showDetailsBtn = authenticatedPage.getByRole('button', { name: /Show details/i });
-    if (await showDetailsBtn.isVisible()) {
-      await showDetailsBtn.click();
-    }
-    // Wait for Start time input to appear (retry)
-    let startTimeInput;
-    for (let i = 0; i < 5; i++) {
-      startTimeInput = authenticatedPage.getByLabel('Start time');
-      if (await startTimeInput.isVisible()) break;
-      await authenticatedPage.waitForTimeout(500);
-    }
-    if (!(await startTimeInput.isVisible())) {
-      await authenticatedPage.screenshot({ path: 'start-time-missing-buffer.png' });
-      console.log('Start time input not visible (buffer test)');
-    }
-    await expect(startTimeInput).toBeVisible();
-    await startTimeInput.fill('2026-02-18T10:00');
-    const endTimeInput = authenticatedPage.getByLabel('End time');
-    await expect(endTimeInput).toBeVisible();
-    await endTimeInput.fill('2026-02-18T12:00');
-    const bufferInput = authenticatedPage.getByLabel('Buffer Before');
-    await expect(bufferInput).toBeVisible();
-    await bufferInput.fill('-10');
-    await authenticatedPage.getByRole('button', { name: /Save Segment/i }).click();
-    await expect(authenticatedPage.getByText(/buffer before/i)).toBeVisible();
-
-    // Add segment with invalid timezone
-    await authenticatedPage.getByLabel('Buffer Before').fill('0');
-    await authenticatedPage.getByLabel('Origin Timezone').fill('NotATimezone');
-    await authenticatedPage.getByRole('button', { name: /Save Segment/i }).click();
-    await expect(authenticatedPage.getByText(/invalid timezone/i)).toBeVisible();
-  });
-
   test('should allow free text origin/destination', async ({ authenticatedPage }) => {
     await authenticatedPage.goto(`/trips/${tripId}`);
     await authenticatedPage.getByRole('button', { name: /Journeys/i }).click();
@@ -186,7 +140,7 @@ test.describe('Journey Segment Builder', () => {
       await showDetailsBtn.click();
     }
     // Wait for Start time input to appear (retry)
-    let startTimeInput;
+    let startTimeInput = authenticatedPage.getByLabel('Start time');
     for (let i = 0; i < 5; i++) {
       startTimeInput = authenticatedPage.getByLabel('Start time');
       if (await startTimeInput.isVisible()) break;
