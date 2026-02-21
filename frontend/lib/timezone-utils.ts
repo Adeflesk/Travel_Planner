@@ -5,6 +5,9 @@
  * that cross time zones, especially useful for flights.
  */
 
+import { differenceInMinutes } from 'date-fns';
+import { toDate, getTimezoneOffset, formatInTimeZone } from 'date-fns-tz';
+
 export interface Airport {
   iata: string;
   name: string;
@@ -22,6 +25,29 @@ export function getLocalTimezone(): string {
   } catch {
     return 'UTC';
   }
+}
+
+/**
+ * Returns true if `tz` is a valid IANA timezone string accepted by the
+ * browser's Intl API (e.g. "America/New_York", "Europe/Dublin").
+ * Rejects country-level codes like "USA", "UK", blank strings, etc.
+ */
+export function isValidTimezone(tz: unknown): tz is string {
+  if (!tz || typeof tz !== 'string' || tz.trim() === '') return false;
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone: tz });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Return the timezone string if valid, otherwise return undefined.
+ * Use this before storing a timezone value that came from user input or external data.
+ */
+export function sanitizeTimezone(tz: unknown): string | undefined {
+  return isValidTimezone(tz) ? tz : undefined;
 }
 
 export function getSupportedTimezones(): string[] {
@@ -44,6 +70,12 @@ export function getSupportedTimezones(): string[] {
  * Format a datetime string with timezone display
  * Example: "Jan 15, 2026, 10:30 AM PST"
  */
+export function ensureUTC(dt: string): string {
+  if (!dt) return dt;
+  if (dt.endsWith('Z') || dt.match(/([+-]\d{2}:?\d{2})$/)) return dt;
+  return `${dt}Z`;
+}
+
 export function formatDateTimeWithZone(
   datetime: string,
   timezone: string,
@@ -52,17 +84,14 @@ export function formatDateTimeWithZone(
     timeStyle?: 'full' | 'long' | 'medium' | 'short';
   }
 ): string {
+  // Always parse the precise visual date we stored without UTC adjustments!
+  const dt = datetime.length > 16 ? datetime.substring(0, 19) : datetime;
   try {
-    const date = new Date(datetime);
     const { dateStyle = 'medium', timeStyle = 'short' } = options || {};
-    
-    return new Intl.DateTimeFormat('en-US', {
-      dateStyle,
-      timeStyle,
-      timeZone: timezone,
-    }).format(date);
+    // Fall back to just formatting perfectly without tz shift:
+    return new Intl.DateTimeFormat('en-US', { dateStyle, timeStyle }).format(new Date(dt));
   } catch (error) {
-    console.error('Error formatting datetime with zone:', error);
+    console.error('Error formatting datetime:', error);
     return datetime;
   }
 }
@@ -74,18 +103,20 @@ export function getTimezoneAbbreviation(
   datetime: string,
   timezone: string
 ): string {
+  if (!isValidTimezone(timezone)) return '';
   try {
-    const date = new Date(datetime);
+    const dt = datetime.length > 16 ? datetime.substring(0, 19) : datetime;
+    const date = new Date(dt);
     const formatter = new Intl.DateTimeFormat('en-US', {
       timeZone: timezone,
       timeZoneName: 'short',
     });
     const parts = formatter.formatToParts(date);
     const tzPart = parts.find(part => part.type === 'timeZoneName');
-    return tzPart?.value || timezone;
+    return tzPart?.value || '';
   } catch (error) {
     console.error('Error getting timezone abbreviation:', error);
-    return timezone;
+    return '';
   }
 }
 
@@ -102,73 +133,23 @@ export function calculateFlightDuration(
   departureTimezone?: string,
   arrivalTimezone?: string
 ): number {
-  // If no timezones provided, fall back to simple calculation
-  if (!departureTimezone || !arrivalTimezone) {
-    const departure = new Date(departureTime);
-    const arrival = new Date(arrivalTime);
-    const durationMs = arrival.getTime() - departure.getTime();
-    return Math.floor(durationMs / 60000);
-  }
-
   try {
-    // Convert datetime-local strings to UTC timestamps considering their timezones
-    const depUTC = convertLocalTimeToUTC(departureTime, departureTimezone);
-    const arrUTC = convertLocalTimeToUTC(arrivalTime, arrivalTimezone);
-    
-    const durationMs = arrUTC - depUTC;
-    return Math.floor(durationMs / 60000);
+    const depStr = departureTime.length > 16 ? departureTime.substring(0, 19) : departureTime;
+    const arrStr = arrivalTime.length > 16 ? arrivalTime.substring(0, 19) : arrivalTime;
+
+    const departure = departureTimezone
+      ? toDate(depStr, { timeZone: departureTimezone })
+      : new Date(depStr);
+
+    const arrival = arrivalTimezone
+      ? toDate(arrStr, { timeZone: arrivalTimezone })
+      : new Date(arrStr);
+
+    return Math.max(0, differenceInMinutes(arrival, departure));
   } catch (error) {
     console.error('Error calculating flight duration with timezones:', error);
-    // Fall back to simple calculation
-    const departure = new Date(departureTime);
-    const arrival = new Date(arrivalTime);
-    const durationMs = arrival.getTime() - departure.getTime();
-    return Math.floor(durationMs / 60000);
+    return 0;
   }
-}
-
-/**
- * Convert a datetime-local string (YYYY-MM-DDTHH:mm) interpreted as being
- * in the given timezone to a UTC timestamp in milliseconds.
- * 
- * Strategy: Find the UTC time that, when formatted in the target timezone,
- * displays our input time.
- */
-function convertLocalTimeToUTC(datetimeStr: string, timezone: string): number {
-  // Parse the datetime components
-  const [datePart, timePart = '00:00'] = datetimeStr.split('T');
-  const [year, month, day] = datePart.split('-').map(Number);
-  const [hour, minute] = timePart.split(':').map(Number);
-  
-  // Start with a guess: interpret the date as UTC
-  const guessUtc = Date.UTC(year, month - 1, day, hour, minute, 0);
-  
-  // Format this UTC timestamp as it would appear in the target timezone
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: timezone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  });
-  
-  const formatted = formatter.format(new Date(guessUtc));
-  
-  // Parse what we got back: "MM/DD/YYYY, HH:mm:ss"
-  const [tzDatePart, tzTimePart] = formatted.split(', ');
-  const [tzMonth, tzDay, tzYear] = tzDatePart.split('/').map(Number);
-  const [tzHour, tzMinute, tzSecond] = tzTimePart.split(':').map(Number);
-  
-  // Calculate the difference in milliseconds
-  const wantedDate = Date.UTC(year, month - 1, day, hour, minute, 0);
-  const gotDate = Date.UTC(tzYear, tzMonth - 1, tzDay, tzHour, tzMinute, tzSecond);
-  const diffMs = wantedDate - gotDate;
-  
-  // The correct UTC time is our guess adjusted by this difference
-  return guessUtc + diffMs;
 }
 
 /**
@@ -177,10 +158,10 @@ function convertLocalTimeToUTC(datetimeStr: string, timezone: string): number {
  */
 export function formatDuration(minutes: number): string {
   if (minutes < 0) return '0m';
-  
+
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;
-  
+
   if (hours === 0) return `${mins}m`;
   if (mins === 0) return `${hours}h`;
   return `${hours}h ${mins}m`;
@@ -192,13 +173,13 @@ export function formatDuration(minutes: number): string {
  */
 export function formatDurationLong(minutes: number): string {
   if (minutes < 0) return '0 minutes';
-  
+
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;
-  
+
   const hourText = hours === 1 ? 'hour' : 'hours';
   const minText = mins === 1 ? 'minute' : 'minutes';
-  
+
   if (hours === 0) return `${mins} ${minText}`;
   if (mins === 0) return `${hours} ${hourText}`;
   return `${hours} ${hourText} ${mins} ${minText}`;
@@ -214,12 +195,9 @@ export function getTimezoneOffsetDifference(
   atDate: Date = new Date()
 ): number {
   try {
-    // Use the reference date to avoid unused variable warnings.
-    void atDate;
-    
-    // This is a simplified approach - for production, use a library like date-fns-tz
-    // For now, we'll just note that the times are in different zones
-    return 0; // Placeholder - implement full calculation if needed
+    const offset1 = getTimezoneOffset(timezone1, atDate) ?? 0;
+    const offset2 = getTimezoneOffset(timezone2, atDate) ?? 0;
+    return (offset2 - offset1) / 3600000;
   } catch (error) {
     console.error('Error calculating timezone offset:', error);
     return 0;
@@ -237,12 +215,12 @@ export function formatTimezoneDifference(
   atDate: Date = new Date()
 ): string {
   const diff = getTimezoneOffsetDifference(fromTimezone, toTimezone, atDate);
-  
+
   if (diff === 0) return 'Same timezone';
-  
+
   const hours = Math.abs(diff);
   const hourText = hours === 1 ? 'hour' : 'hours';
-  
+
   return diff > 0 ? `${hours} ${hourText} ahead` : `${hours} ${hourText} behind`;
 }
 
@@ -252,7 +230,7 @@ export function formatTimezoneDifference(
  */
 export function parseIATACode(input: string): string | null {
   if (!input) return null;
-  
+
   // Extract 3-letter code
   const match = input.match(/\b([A-Z]{3})\b/i);
   return match ? match[1].toUpperCase() : null;
@@ -264,10 +242,10 @@ export function parseIATACode(input: string): string | null {
 export function crossesMidnight(departureTime: string, arrivalTime: string): boolean {
   const departure = new Date(departureTime);
   const arrival = new Date(arrivalTime);
-  
+
   return departure.getDate() !== arrival.getDate() ||
-         departure.getMonth() !== arrival.getMonth() ||
-         departure.getFullYear() !== arrival.getFullYear();
+    departure.getMonth() !== arrival.getMonth() ||
+    departure.getFullYear() !== arrival.getFullYear();
 }
 
 /**
@@ -282,24 +260,24 @@ export function formatFlightTimeRange(
   options?: { showTimezones?: boolean; showDate?: boolean }
 ): string {
   const { showTimezones = true, showDate = false } = options || {};
-  
+
   const depFormatted = formatDateTimeWithZone(
     departureTime,
     departureTimezone,
     { dateStyle: showDate ? 'short' : undefined, timeStyle: 'short' }
   );
-  
+
   const arrFormatted = formatDateTimeWithZone(
     arrivalTime,
     arrivalTimezone,
     { dateStyle: showDate ? 'short' : undefined, timeStyle: 'short' }
   );
-  
+
   if (showTimezones) {
     const depTz = getTimezoneAbbreviation(departureTime, departureTimezone);
     const arrTz = getTimezoneAbbreviation(arrivalTime, arrivalTimezone);
     return `${depFormatted} ${depTz} → ${arrFormatted} ${arrTz}`;
   }
-  
+
   return `${depFormatted} → ${arrFormatted}`;
 }

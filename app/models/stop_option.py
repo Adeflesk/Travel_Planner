@@ -23,7 +23,8 @@ class StopOption(Base):
     __tablename__ = "stop_options"
 
     id = Column(Integer, primary_key=True, index=True)
-    stop_id = Column(Integer, ForeignKey("journey_stops.id"), nullable=False)
+    stop_id = Column(Integer, ForeignKey("journey_stops.id"), nullable=True)
+    segment_id = Column(Integer, ForeignKey("journey_segments.id"), nullable=True)
     name = Column(String(200), nullable=False)
     description = Column(Text, nullable=True)
     option_type = Column(String(50), nullable=False, default="other")
@@ -36,3 +37,4 @@ class StopOption(Base):
     order = Column(Integer, default=0)
 
     stop = relationship("JourneyStop", back_populates="options")
+    segment = relationship("JourneySegment", back_populates="stop_options")

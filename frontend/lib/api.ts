@@ -36,6 +36,7 @@ import {
   DashboardData,
   JourneyTimelineResponse,
   WeatherForecast,
+  PracticalityResponse,
 } from './types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -240,30 +241,98 @@ export const journeyApi = {
   getByTripId: (tripId: number) =>
     api.get<Journey[]>(`/trips/${tripId}/journeys/`),
   getById: (id: number) => api.get<Journey>(`/journeys/${id}`),
-  create: (data: JourneyFormData) => {
-    const cleanedData: Partial<JourneyFormData> = {};
-    (Object.keys(data) as Array<keyof JourneyFormData>).forEach((key) => {
-      const value = data[key];
+  create: async (data: JourneyFormData): Promise<{ data: Journey }> => {
+    // Phase 1: build journey-only payload (no segments — they are a relationship, not a column)
+    const { segments, ...journeyFields } = data;
+    const cleanedJourney: Record<string, unknown> = {};
+    (Object.keys(journeyFields) as Array<keyof typeof journeyFields>).forEach((key) => {
+      const value = journeyFields[key];
       if (value !== '' && value !== undefined && value !== null) {
         if (key === 'cost' && typeof value === 'string') {
-          cleanedData[key] = parseFloat(value) as never;
+          cleanedJourney[key] = parseFloat(value);
         } else {
-          cleanedData[key] = value as never;
+          cleanedJourney[key] = value;
         }
       }
     });
-    return api.post<Journey>('/journeys/', cleanedData);
+
+    const journeyRes = await api.post<Journey>('/journeys/', cleanedJourney);
+    const journeyId = journeyRes.data.id;
+
+    // Phase 2: create each segment individually, flattening origin/destination objects
+    if (segments && segments.length > 0) {
+      await Promise.all(
+        segments.map((seg, i) => {
+          const segPayload: Record<string, unknown> = {
+            journey_id: journeyId,
+            segment_type: seg.segment_type,
+            order: seg.order ?? i,
+          };
+          // Flatten LocationRef → flat name/id fields
+          if (seg.origin.destination_id) {
+            segPayload.origin_id = seg.origin.destination_id;
+          } else if (seg.origin.name) {
+            segPayload.origin_name = seg.origin.name;
+          }
+          if (seg.destination.destination_id) {
+            segPayload.destination_id = seg.destination.destination_id;
+          } else if (seg.destination.name) {
+            segPayload.destination_name = seg.destination.name;
+          }
+          if (seg.start_datetime) segPayload.start_datetime = seg.start_datetime;
+          if (seg.end_datetime) segPayload.end_datetime = seg.end_datetime;
+          if (seg.origin_timezone) segPayload.origin_timezone = seg.origin_timezone;
+          if (seg.destination_timezone) segPayload.destination_timezone = seg.destination_timezone;
+          if (seg.metadata && Object.keys(seg.metadata).length > 0) {
+            segPayload.metadata = seg.metadata;
+          }
+          return api.post<JourneySegment>(`/journeys/${journeyId}/segments`, segPayload);
+        })
+      );
+
+      // Phase 3: patch the journey's origin_name / destination_name from first → last segment
+      // so the journey card title shows "Glenflesk → Denver Inn" instead of "Unknown → Unknown"
+      const ordered = [...segments].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      const first = ordered[0];
+      const last = ordered[ordered.length - 1];
+
+      const derivedOriginName = first.origin.name || undefined;
+      const derivedOriginId = first.origin.destination_id || undefined;
+      const derivedDestName = last.destination.name || undefined;
+      const derivedDestId = last.destination.destination_id || undefined;
+
+      // Only patch if the journey doesn't already have explicit names/ids set
+      const needsPatch =
+        !journeyRes.data.origin_name && !journeyRes.data.origin_id &&
+        (derivedOriginName || derivedOriginId || derivedDestName || derivedDestId);
+
+      if (needsPatch) {
+        const patch: Record<string, unknown> = {};
+        if (derivedOriginId) patch.origin_id = derivedOriginId;
+        if (derivedOriginName && !derivedOriginId) patch.origin_name = derivedOriginName;
+        if (derivedDestId) patch.destination_id = derivedDestId;
+        if (derivedDestName && !derivedDestId) patch.destination_name = derivedDestName;
+
+        const patchedRes = await api.put<Journey>(`/journeys/${journeyId}`, patch);
+        return patchedRes;
+      }
+    }
+
+    return journeyRes;
   },
+
   update: (id: number, data: Partial<JourneyFormData>) => {
-    const cleanedData: Partial<JourneyFormData> = {};
-    (Object.keys(data) as Array<keyof JourneyFormData>).forEach((key) => {
-      const value = data[key];
+    // segments are managed via the segment API — strip them from the journey update payload
+    const { segments: _segments, ...updateFields } = data;
+    const cleanedData: Record<string, unknown> = {};
+    (Object.keys(updateFields) as Array<keyof typeof updateFields>).forEach((key) => {
+      const value = updateFields[key];
       if (key === 'trip_id') return; // Don't update trip_id
       if (value !== '' && value !== undefined && value !== null) {
         if (key === 'cost' && typeof value === 'string') {
-          cleanedData[key] = parseFloat(value) as never;
+          cleanedData[key] = parseFloat(value);
         } else {
-          cleanedData[key] = value as never;
+          cleanedData[key] = value;
         }
       }
     });
@@ -272,6 +341,8 @@ export const journeyApi = {
   delete: (id: number) => api.delete(`/journeys/${id}`),
   getTimeline: (journeyId: number) =>
     api.get<JourneyTimelineResponse>(`/journeys/${journeyId}/timeline`),
+  getPracticality: (journeyId: number, params?: { time_limit_minutes?: number; buffer_minutes?: number }) =>
+    api.get<PracticalityResponse>(`/journeys/${journeyId}/practicality`, { params }),
 };
 
 export const journeySegmentApi = {
@@ -396,6 +467,45 @@ export const stopOptionApi = {
     api.delete(`/stops/${stopId}/options/${optionId}`),
   updateStatus: (stopId: number, optionId: number, status: StopOptionStatus) =>
     api.patch<StopOption>(`/stops/${stopId}/options/${optionId}/status`, { status }),
+};
+
+// Segment Stop Option API (stop options attached to STOP-type segments)
+export const segmentStopOptionApi = {
+  getBySegmentId: (segmentId: number) =>
+    api.get<StopOption[]>(`/segments/${segmentId}/stop-options/`),
+  create: (segmentId: number, data: Omit<StopOptionFormData, 'stop_id' | 'segment_id'>) => {
+    const cleanedData: Record<string, unknown> = {};
+    (Object.keys(data) as Array<keyof typeof data>).forEach((key) => {
+      const value = data[key];
+      if (value !== '' && value !== undefined && value !== null) {
+        if (key === 'estimated_cost' && typeof value === 'string') {
+          cleanedData[key] = parseFloat(value);
+        } else {
+          cleanedData[key] = value;
+        }
+      }
+    });
+    return api.post<StopOption>(`/segments/${segmentId}/stop-options/`, cleanedData);
+  },
+  update: (segmentId: number, optionId: number, data: Partial<StopOptionFormData>) => {
+    const cleanedData: Record<string, unknown> = {};
+    (Object.keys(data) as Array<keyof StopOptionFormData>).forEach((key) => {
+      const value = data[key];
+      if (key === 'stop_id' || key === 'segment_id') return;
+      if (value !== '' && value !== undefined && value !== null) {
+        if (key === 'estimated_cost' && typeof value === 'string') {
+          cleanedData[key] = parseFloat(value);
+        } else {
+          cleanedData[key] = value;
+        }
+      }
+    });
+    return api.put<StopOption>(`/segments/${segmentId}/stop-options/${optionId}`, cleanedData);
+  },
+  delete: (segmentId: number, optionId: number) =>
+    api.delete(`/segments/${segmentId}/stop-options/${optionId}`),
+  updateStatus: (segmentId: number, optionId: number, status: StopOptionStatus) =>
+    api.patch<StopOption>(`/segments/${segmentId}/stop-options/${optionId}/status`, { status }),
 };
 
 // Journey Document API

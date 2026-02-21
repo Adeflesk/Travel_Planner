@@ -13,26 +13,42 @@ interface SegmentBuilderProps {
   startDate?: Date;
 }
 
-const intentOptions: Array<{ value: JourneySegmentIntent; label: string; helper: string }> = [
+const intentOptions: Array<{ value: JourneySegmentIntent; label: string; helper: string; icon: string }> = [
   {
     value: 'SIMPLE',
     label: 'Simple',
     helper: 'A to B with one segment.',
+    icon: '→',
   },
   {
     value: 'AIR_TRAVEL',
     label: 'Air travel',
     helper: 'Transfers plus a flight segment.',
+    icon: '✈️',
   },
   {
     value: 'AIR_LAYOVER',
     label: 'Air travel + layover',
     helper: 'Transfers, flights, and a layover.',
+    icon: '🔄',
   },
   {
     value: 'MULTI_STOP',
     label: 'Multi-stop',
     helper: 'Transfer, stop, transfer.',
+    icon: '📍',
+  },
+  {
+    value: 'ROAD_TRIP',
+    label: 'Road trip',
+    helper: 'Drive → stop → drive → stop. Includes Uber/Taxi options and activity ideas.',
+    icon: '🚗',
+  },
+  {
+    value: 'ROAD_TRIP_WITH_STOPS',
+    label: 'Extended road trip',
+    helper: '3-stop road trip with meals, sightseeing and transport alternatives.',
+    icon: '🗺️',
   },
 ];
 
@@ -84,13 +100,15 @@ export const SegmentBuilder = ({
               key={option.value}
               type="button"
               onClick={() => handleIntentSelect(option.value)}
-              className={`rounded-lg border px-4 py-3 text-left transition-colors ${
-                selectedIntent === option.value
+              className={`rounded-lg border px-4 py-3 text-left transition-colors ${selectedIntent === option.value
                   ? 'border-primary-500 bg-white shadow-sm'
                   : 'border-slate-200 bg-white hover:border-slate-300'
-              }`}
+                }`}
             >
-              <div className="text-sm font-semibold text-slate-900">{option.label}</div>
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <span>{option.icon}</span>
+                <span className="text-sm font-semibold text-slate-900">{option.label}</span>
+              </div>
               <div className="text-xs text-slate-500">{option.helper}</div>
             </button>
           ))}
@@ -102,6 +120,11 @@ export const SegmentBuilder = ({
             {(selectedIntent === 'AIR_TRAVEL' || selectedIntent === 'AIR_LAYOVER') && (
               <Button type="button" variant="secondary" size="sm" onClick={addLayoverAfterFirstFlight}>
                 Add layover
+              </Button>
+            )}
+            {(selectedIntent === 'ROAD_TRIP' || selectedIntent === 'ROAD_TRIP_WITH_STOPS' || selectedIntent === 'MULTI_STOP') && (
+              <Button type="button" variant="secondary" size="sm" onClick={addSegment}>
+                Add stop
               </Button>
             )}
             <Button type="button" variant="secondary" size="sm" onClick={addSegment}>

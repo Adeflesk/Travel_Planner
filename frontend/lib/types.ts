@@ -87,6 +87,8 @@ export interface Expense {
   trip_id: number;
   destination_id?: number;
   activity_id?: number;
+  segment_option_id?: number;
+  stop_option_id?: number;
   category: string;
   amount: number;
   currency: string;
@@ -127,6 +129,8 @@ export interface Journey {
   notes?: string;
   status: 'planned' | 'booked' | 'completed';
   order: number;
+  origin_timezone?: string;
+  destination_timezone?: string;
   // Route details (for road trips)
   distance_km?: number;
   distance_miles?: number;
@@ -265,7 +269,7 @@ export interface JourneyFormData {
   segments?: JourneySegmentDraft[];
 }
 
-export type JourneySegmentIntent = 'SIMPLE' | 'AIR_TRAVEL' | 'AIR_LAYOVER' | 'MULTI_STOP';
+export type JourneySegmentIntent = 'SIMPLE' | 'AIR_TRAVEL' | 'AIR_LAYOVER' | 'MULTI_STOP' | 'ROAD_TRIP' | 'ROAD_TRIP_WITH_STOPS';
 
 export type SegmentType = 'TRANSFER' | 'BUS' | 'RAIL' | 'FLIGHT' | 'LAYOVER' | 'STOP';
 
@@ -371,7 +375,8 @@ export interface JourneyStopFormData {
 
 export interface StopOption {
   id: number;
-  stop_id: number;
+  stop_id?: number;
+  segment_id?: number;
   name: string;
   description?: string;
   option_type: StopOptionType;
@@ -385,7 +390,8 @@ export interface StopOption {
 }
 
 export interface StopOptionFormData {
-  stop_id: number;
+  stop_id?: number;
+  segment_id?: number;
   name: string;
   description?: string;
   option_type?: StopOptionType;
@@ -622,3 +628,26 @@ export interface WeatherForecast {
 }
 
 export type TemperatureUnit = 'F' | 'C';
+
+// Practicality Engine Types
+export interface SegmentPracticality {
+  segment_id: number;
+  segment_type: string;
+  name: string;
+  duration_minutes: number;
+  cost: number;
+  items: string[];
+}
+
+export interface PracticalityResponse {
+  journey_id: number;
+  total_duration_minutes: number;
+  total_cost: number;
+  time_limit_minutes: number;
+  daily_budget: number | null;
+  time_feasible: boolean;
+  budget_feasible: boolean;
+  buffer_minutes_per_transition: number;
+  transition_count: number;
+  segments: SegmentPracticality[];
+}

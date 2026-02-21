@@ -8,6 +8,7 @@ import { MapPin, Plane } from 'lucide-react';
 interface AirportAutocompleteProps {
   value: string;
   onChange: (airport: Airport | null) => void;
+  onBlurFreeText?: (text: string) => void;
   placeholder?: string;
   className?: string;
   disabled?: boolean;
@@ -21,6 +22,7 @@ interface AirportAutocompleteProps {
 export function AirportAutocomplete({
   value,
   onChange,
+  onBlurFreeText,
   placeholder = 'Search airport or IATA code...',
   className = '',
   disabled = false,
@@ -28,6 +30,8 @@ export function AirportAutocomplete({
   const [query, setQuery] = useState(value || '');
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  // Tracks whether the current query maps to a formally-selected airport
+  const [hasSelection, setHasSelection] = useState(!!value);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -67,12 +71,22 @@ export function AirportAutocomplete({
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setQuery(value || '');
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setHasSelection(!!value);
   }, [value]);
 
   const handleSelect = (airport: Airport) => {
     setQuery(airport.iata);
     setIsOpen(false);
+    setHasSelection(true);
     onChange(airport);
+  };
+
+  const handleBlur = () => {
+    // User typed something but never picked from the dropdown — save the raw text
+    if (!hasSelection && query.trim() && onBlurFreeText) {
+      onBlurFreeText(query.trim());
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -116,10 +130,12 @@ export function AirportAutocomplete({
             setQuery(e.target.value);
             setIsOpen(true);
             setSelectedIndex(0);
+            setHasSelection(false); // reset — user is typing something new
           }}
           onFocus={() => {
             if (query.length >= 2) setIsOpen(true);
           }}
+          onBlur={handleBlur}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled}
@@ -137,12 +153,11 @@ export function AirportAutocomplete({
               type="button"
               onClick={() => handleSelect(airport)}
               onMouseEnter={() => setSelectedIndex(index)}
-              className={`w-full text-left px-4 py-3 hover:bg-primary-50 transition-colors ${
-                index === selectedIndex ? 'bg-primary-50' : ''
-              }`}
+              className={`w-full text-left px-4 py-3 hover:bg-primary-50 transition-colors ${index === selectedIndex ? 'bg-primary-50' : ''
+                }`}
             >
               <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 mt-0.5">
+                <div className="shrink-0 mt-0.5">
                   <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
                     <span className="text-primary-700 font-bold text-sm">
                       {airport.iata}

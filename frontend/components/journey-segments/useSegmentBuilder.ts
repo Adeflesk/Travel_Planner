@@ -57,6 +57,50 @@ const locationsMatch = (left: LocationRef, right: LocationRef): boolean => {
   return false;
 };
 
+/**
+ * Cascade an arrival timezone forward through all ground segments that follow
+ * the segment at `fromIndex`, until we hit the next FLIGHT (which has its own
+ * origin timezone from the departure airport).
+ *
+ * Rule:
+ *   - TRANSFER / BUS / RAIL / LAYOVER / STOP  → set both origin + destination TZ
+ *   - FLIGHT → set origin_timezone only (they land somewhere else), then stop cascade
+ *
+ * Any segment that already has an explicitly-chosen airport timezone for
+ * origin (via AirportAutocomplete) is NOT overwritten — we only overwrite
+ * if the segment's current origin_timezone is undefined or matches the old value.
+ */
+const cascadeTimezoneForward = (
+  segments: JourneySegmentDraft[],
+  fromIndex: number,
+  timezone: string,
+  previousTimezone?: string
+): JourneySegmentDraft[] => {
+  const next = [...segments];
+  for (let i = fromIndex + 1; i < next.length; i++) {
+    const seg = next[i];
+    // If this segment is a FLIGHT it departs from the arrival city — set its
+    // origin_timezone then stop (its destination_timezone is a different airport)
+    if (seg.segment_type === 'FLIGHT') {
+      const originTzIsDefault =
+        !seg.origin_timezone ||
+        seg.origin_timezone === previousTimezone ||
+        seg.origin_timezone === timezone;
+      if (originTzIsDefault) {
+        next[i] = { ...seg, origin_timezone: timezone };
+      }
+      break; // stop cascade — FLIGHT destination is a different timezone
+    }
+    // Ground / dwell segments: set both sides to arrival timezone
+    next[i] = {
+      ...seg,
+      origin_timezone: timezone,
+      destination_timezone: timezone,
+    };
+  }
+  return next;
+};
+
 interface SegmentBuilderActions {
   applyIntent: (intent: JourneySegmentIntent) => void;
   addSegment: () => void;
@@ -106,7 +150,7 @@ export const useSegmentBuilder = (
   const addSegment = useCallback(() => {
     const lastSegment = segments[segments.length - 1];
     const inheritedTimezone = lastSegment?.destination_timezone || options?.timezone;
-    
+
     setSegments(
       reindexSegments([
         ...segments,
@@ -157,7 +201,7 @@ export const useSegmentBuilder = (
 
   const updateLocation = useCallback(
     (index: number, side: 'origin' | 'destination', location: LocationRef) => {
-      const next = [...segments];
+      let next = [...segments];
       const current = next[index];
       const previousDestination = current.destination;
 
@@ -169,7 +213,10 @@ export const useSegmentBuilder = (
         if (side === 'origin') {
           next[index] = { ...next[index], origin_timezone: matchedTimezone };
         } else {
+          const previousTz = current.destination_timezone;
           next[index] = { ...next[index], destination_timezone: matchedTimezone };
+          // Cascade arrival timezone forward through all onward ground segments
+          next = cascadeTimezoneForward(next, index, matchedTimezone, previousTz);
         }
         if (current.segment_type === 'LAYOVER') {
           next[index] = {
@@ -247,23 +294,27 @@ export const useSegmentBuilder = (
 
   const updateField = useCallback(
     (index: number, field: keyof JourneySegmentDraft, value: unknown) => {
-      const next = [...segments];
+      let next = [...segments];
       next[index] = { ...next[index], [field]: value } as JourneySegmentDraft;
 
-      // Auto-propagate destination_timezone to next segment's origin_timezone
-      if (field === 'destination_timezone' && next[index + 1]) {
-        const currentSegment = next[index];
-        const nextSegment = next[index + 1];
-        
-        // If next segment is a transfer/layover and locations match
+      // When destination_timezone changes on a FLIGHT, cascade it forward
+      // through all ground segments until the next FLIGHT.
+      if (field === 'destination_timezone' && typeof value === 'string') {
+        const previousTz = segments[index].destination_timezone;
+        next = cascadeTimezoneForward(next, index, value, previousTz);
+      }
+
+      // When origin_timezone changes (e.g. editing a ground segment manually),
+      // also update the destination_timezone of the same segment if they were equal
+      // (i.e. both sides in the same city) then cascade.
+      if (field === 'origin_timezone' && typeof value === 'string') {
+        const seg = next[index];
         if (
-          (nextSegment.segment_type === 'TRANSFER' || nextSegment.segment_type === 'LAYOVER') &&
-          locationsMatch(currentSegment.destination, nextSegment.origin)
+          !seg.destination_timezone ||
+          seg.destination_timezone === segments[index].origin_timezone
         ) {
-          next[index + 1] = {
-            ...nextSegment,
-            origin_timezone: value as string,
-          };
+          next[index] = { ...next[index], destination_timezone: value };
+          next = cascadeTimezoneForward(next, index, value, segments[index].origin_timezone);
         }
       }
 

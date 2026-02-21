@@ -6,6 +6,7 @@ import { journeySegmentApi, segmentOptionApi } from '@/lib/api';
 import { SegmentCard } from './SegmentCard';
 import { SegmentOptionsManager } from './SegmentOptionsManager';
 import { Button } from '@/components/ui/Button';
+import { formatDateTimeWithZone, getTimezoneAbbreviation, calculateFlightDuration, formatDuration } from '@/lib/timezone-utils';
 
 interface SegmentManagerProps {
   journeyId: number;
@@ -214,10 +215,56 @@ export default function SegmentManager({ journeyId }: SegmentManagerProps) {
                 <div className="text-sm text-slate-600">
                   {(segment.origin_name || 'Origin') + ' -> ' + (segment.destination_name || 'Destination')}
                 </div>
+                {(() => {
+                  const meta = segment.metadata;
+                  if (!meta || Number(meta.cost) <= 0) return null;
+                  return (
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs font-medium text-slate-700">
+                        {Number(meta.cost).toFixed(2)}{' '}
+                        {String(meta.currency ?? 'USD')}
+                      </span>
+                      {Boolean(meta.booked) && (
+                        <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
+                          Booked
+                        </span>
+                      )}
+                      {Boolean(meta.paid) && (
+                        <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
+                          Paid
+                        </span>
+                      )}
+                    </div>
+                  );
+                })()}
                 <div className="text-xs text-slate-500 mt-1">
-                  {segment.start_datetime || 'Start TBD'}
-                  {' · '}
-                  {segment.end_datetime || 'End TBD'}
+                  {(() => {
+                    const depTz = segment.origin_timezone || undefined;
+                    const arrTz = segment.destination_timezone || undefined;
+                    const dep = segment.start_datetime;
+                    const arr = segment.end_datetime;
+
+                    const depStr = dep && depTz
+                      ? `${formatDateTimeWithZone(dep, depTz, { timeStyle: 'short' })} ${getTimezoneAbbreviation(dep, depTz)}`
+                      : dep ? new Date(dep).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Start TBD';
+
+                    const arrStr = arr && arrTz
+                      ? `${formatDateTimeWithZone(arr, arrTz, { timeStyle: 'short' })} ${getTimezoneAbbreviation(arr, arrTz)}`
+                      : arr ? new Date(arr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'End TBD';
+
+                    const durationMins = dep && arr
+                      ? calculateFlightDuration(dep, arr, depTz, arrTz)
+                      : null;
+
+                    return (
+                      <>
+                        {depStr} · {arrStr}
+                        {durationMins != null && durationMins > 0 && (
+                          <span className="ml-1 text-slate-400">({formatDuration(durationMins)})</span>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
               <Button type="button" variant="secondary" size="sm" onClick={() => openEditor(segment)}>

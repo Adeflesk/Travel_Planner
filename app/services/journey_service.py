@@ -34,7 +34,10 @@ def create_journey(journey_data, db: Session):
         if not destination:
             raise ValueError("Destination destination not found")
 
-    db_journey = models.Journey(**journey_data.model_dump())
+    journey_dict = journey_data.model_dump()
+    # 'segments' is a SQLAlchemy relationship, not a column — remove it before DB insert
+    journey_dict.pop("segments", None)
+    db_journey = models.Journey(**journey_dict)
     db.add(db_journey)
     db.commit()
     db.refresh(db_journey)

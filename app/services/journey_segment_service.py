@@ -9,6 +9,54 @@ from sqlalchemy.orm import Session
 
 import models
 from app import schemas
+from app.services.expense_service import sync_segment_expense
+
+
+def _sync_journey_datetime(journey_id: int, db: Session):
+    journey = db.query(models.Journey).filter(models.Journey.id == journey_id).first()
+    if not journey:
+        return
+
+    segments = (
+        db.query(models.JourneySegment)
+        .filter(models.JourneySegment.journey_id == journey_id)
+        .order_by(models.JourneySegment.order)
+        .all()
+    )
+
+    if segments:
+        first = segments[0]
+        last = segments[-1]
+
+        journey.departure_datetime = first.start_datetime or journey.departure_datetime
+        journey.arrival_datetime = last.end_datetime or journey.arrival_datetime
+
+        # Journey models don't have timezone Columns in DB, but if they
+        # did, we would attach them here. However, by patching naive times,
+        # the overarching DB bounds are now aligned with the flight segments!
+
+        # Calculate total segment cost
+        total_segment_cost = 0
+        for seg in segments:
+            # Check for direct metadata cost first
+            try:
+                import json
+
+                meta = seg.metadata_json
+                if meta:
+                    if isinstance(meta, str):
+                        meta = json.loads(meta)
+                    if isinstance(meta, dict) and "cost" in meta:
+                        try:
+                            total_segment_cost += float(meta["cost"])
+                        except (ValueError, TypeError):
+                            pass
+            except Exception:
+                pass
+
+        journey.cost = total_segment_cost if total_segment_cost > 0 else None
+
+        db.commit()
 
 
 def _serialize_segment(segment: models.JourneySegment) -> schemas.JourneySegment:
@@ -70,6 +118,11 @@ def create_journey_segment(
     db.add(db_segment)
     db.commit()
     db.refresh(db_segment)
+
+    # Sync expense record from cost metadata (creates/updates/deletes as needed)
+    sync_segment_expense(db_segment, db)
+    _sync_journey_datetime(db_segment.journey_id, db)
+
     return _serialize_segment(db_segment)
 
 
@@ -119,6 +172,11 @@ def update_journey_segment(
 
     db.commit()
     db.refresh(segment)
+
+    # Sync expense record from cost metadata (creates/updates/deletes as needed)
+    sync_segment_expense(segment, db)
+    _sync_journey_datetime(segment.journey_id, db)
+
     return _serialize_segment(segment)
 
 
@@ -131,6 +189,8 @@ def delete_journey_segment(segment_id: int, db: Session) -> bool:
     if not segment:
         raise ValueError("Journey segment not found")
 
+    journey_id = segment.journey_id
     db.delete(segment)
     db.commit()
+    _sync_journey_datetime(journey_id, db)
     return True
