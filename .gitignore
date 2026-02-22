@@ -103,6 +103,16 @@ playwright/.cache/
 .worktrees/
 
 # =========================
+# macOS duplicate files (Finder/iCloud " 2", " 3", " 4" suffixes)
+# =========================
+*\ 2
+*\ 2.*
+*\ 3
+*\ 3.*
+*\ 4
+*\ 4.*
+
+# =========================
 # Project-specific temp files
 # =========================
 Plans.txt
