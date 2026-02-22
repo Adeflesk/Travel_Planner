@@ -72,7 +72,7 @@ test.describe('Journey Management', () => {
 
     // Step 1: select template and advance to segment editor
     await authenticatedPage.getByRole('button', { name: /Simple/i }).click();
-    await authenticatedPage.getByRole('button', { name: 'Use template →' }).click();
+    await authenticatedPage.getByRole('button', { name: /Use template/i }).click();
 
     // Step 2: fill origin and destination
     await expect(authenticatedPage.getByText('1 / 1')).toBeVisible();

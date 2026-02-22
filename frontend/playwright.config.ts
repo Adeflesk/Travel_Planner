@@ -6,10 +6,10 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './e2e',
-  fullyParallel: false, // Keep false due to shared database state
+  fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 1 : 0, // Reduced from 2 to 1
-  workers: 1, // Keep 1 due to shared database state
+  retries: process.env.CI ? 1 : 0,
+  workers: process.env.CI ? 1 : undefined,
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'html',
   timeout: 30000, // 30 second test timeout
   expect: {

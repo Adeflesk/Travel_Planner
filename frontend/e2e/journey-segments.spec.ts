@@ -38,9 +38,9 @@ test.describe('Journey Segment Wizard', () => {
     return page.getByRole('button', { name: /^Review/ });
   }
 
-  /** Helper: footer back button ("← Template" or "← Previous") */
+  /** Helper: footer back button ("← Template" or "← Previous" or just "Template"/"Previous") */
   function prevBtn(page: Page) {
-    return page.getByRole('button', { name: /Template|Previous/ });
+    return page.getByRole('button', { name: /^(Template|Previous)$/ });
   }
 
   test('should show template picker on step 1', async ({ authenticatedPage }) => {
@@ -160,10 +160,10 @@ test.describe('Journey Segment Wizard', () => {
   test('should show transport option cards for TRANSFER segments', async ({ authenticatedPage }) => {
     await openWizard(authenticatedPage);
 
-    // Simple template creates one TRANSFER segment
-    await authenticatedPage.getByText('Simple', { exact: true }).click();
+    // Road trip template creates a TRANSFER segment as first leg
+    await authenticatedPage.getByText('Road trip', { exact: true }).click();
     await authenticatedPage.getByRole('button', { name: /Use template/i }).click();
-    await expect(authenticatedPage.getByText('1 / 1')).toBeVisible();
+    await expect(authenticatedPage.getByText('1 / 5')).toBeVisible();
 
     // TRANSFER segment shows transport option cards
     await expect(authenticatedPage.getByText('🚗 Transport options')).toBeVisible();
@@ -177,10 +177,10 @@ test.describe('Journey Segment Wizard', () => {
   test('should select a transport option card', async ({ authenticatedPage }) => {
     await openWizard(authenticatedPage);
 
-    // Simple → single TRANSFER segment with transport options
-    await authenticatedPage.getByText('Simple', { exact: true }).click();
+    // Road trip → single TRANSFER segment with transport options
+    await authenticatedPage.getByText('Road trip', { exact: true }).click();
     await authenticatedPage.getByRole('button', { name: /Use template/i }).click();
-    await expect(authenticatedPage.getByText('1 / 1')).toBeVisible();
+    await expect(authenticatedPage.getByText('1 / 5')).toBeVisible();
     await expect(authenticatedPage.getByText('🚗 Transport options')).toBeVisible();
 
     // Click the Uber card to select it
@@ -194,10 +194,10 @@ test.describe('Journey Segment Wizard', () => {
   test('should add a custom transport option', async ({ authenticatedPage }) => {
     await openWizard(authenticatedPage);
 
-    // Simple → single TRANSFER segment
-    await authenticatedPage.getByText('Simple', { exact: true }).click();
+    // Road trip → first segment is TRANSFER
+    await authenticatedPage.getByText('Road trip', { exact: true }).click();
     await authenticatedPage.getByRole('button', { name: /Use template/i }).click();
-    await expect(authenticatedPage.getByText('1 / 1')).toBeVisible();
+    await expect(authenticatedPage.getByText('1 / 5')).toBeVisible();
 
     // Transport options section is visible for TRANSFER segment
     await expect(authenticatedPage.getByText('🚗 Transport options')).toBeVisible();
