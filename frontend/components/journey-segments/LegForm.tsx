@@ -1,5 +1,5 @@
 'use client';
-import { JourneySegmentDraft, Destination } from '@/lib/types';
+import { JourneySegmentDraft } from '@/lib/types';
 import type { DraftSegmentOption } from '@/lib/segment-templates';
 import Input from '@/components/ui/Input';
 import { SegmentLocationInputs } from './SegmentLocationInputs';
@@ -21,10 +21,9 @@ interface LegFormProps {
   index: number;
   onUpdateField: (index: number, field: keyof JourneySegmentDraft, value: unknown) => void;
   onUpdateLocation: (index: number, side: 'origin' | 'destination', name: string, timezone?: string) => void;
-  destinations?: Destination[];
 }
 
-export const LegForm = ({ segment, index, onUpdateField, onUpdateLocation, destinations }: LegFormProps) => {
+export const LegForm = ({ segment, index, onUpdateField, onUpdateLocation }: LegFormProps) => {
   const meta = segment.metadata ?? {};
   const updateMeta = (updates: Record<string, unknown>) =>
     onUpdateField(index, 'metadata', { ...meta, ...updates });
