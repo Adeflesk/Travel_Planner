@@ -271,7 +271,7 @@ export interface JourneyFormData {
 
 export type JourneySegmentIntent = 'SIMPLE' | 'AIR_TRAVEL' | 'AIR_LAYOVER' | 'MULTI_STOP' | 'ROAD_TRIP' | 'ROAD_TRIP_WITH_STOPS';
 
-export type SegmentType = 'TRANSFER' | 'BUS' | 'RAIL' | 'FLIGHT' | 'LAYOVER' | 'STOP';
+export type SegmentType = 'TRANSFER' | 'LEG' | 'BUS' | 'RAIL' | 'FLIGHT' | 'LAYOVER' | 'STOP';
 
 export interface JourneySegment {
   id: number;
