@@ -16,7 +16,7 @@ jobs:
     
     strategy:
       matrix:
-        python-version: ['3.11', '3.12']
+        python-version: ['3.12', '3.13']
     
     steps:
     - name: Checkout code
@@ -65,7 +65,7 @@ jobs:
       continue-on-error: true
     
     - name: Create coverage badge
-      if: matrix.python-version == '3.11' && github.ref == 'refs/heads/master'
+      if: matrix.python-version == '3.12' && github.ref == 'refs/heads/master'
       run: |
         pip install coverage-badge
         coverage-badge -o coverage.svg -f
@@ -92,7 +92,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.11'
+        python-version: '3.13'
     
     - name: Install dependencies
       run: |
@@ -159,7 +159,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.11'
+        python-version: '3.13'
 
     - name: Set up Node.js
       uses: actions/setup-node@v4
