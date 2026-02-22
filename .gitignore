@@ -98,6 +98,11 @@ test-results/
 playwright/.cache/
 
 # =========================
+# Git worktrees
+# =========================
+.worktrees/
+
+# =========================
 # Project-specific temp files
 # =========================
 Plans.txt
