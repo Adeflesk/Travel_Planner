@@ -1,13 +1,19 @@
 // app/layout.tsx
 import type { Metadata } from 'next';
 import type { Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, Playfair_Display } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/lib/auth-context';
 import Navigation from '@/components/Navigation';
 import { Analytics } from '@vercel/analytics/next';
 
 const inter = Inter({ subsets: ['latin'] });
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  weight: ['400', '600', '700'],
+  style: ['normal', 'italic'],
+  variable: '--font-display',
+});
 
 export const metadata: Metadata = {
   title: 'Travel Planner',
@@ -32,7 +38,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="light" style={{ colorScheme: 'light' }}>
-      <body className={inter.className}>
+      <body className={`${inter.className} ${playfair.variable}`}>
         <AuthProvider>
           <header className="bg-blue-600 text-white shadow-lg">
             <div className="container mx-auto px-4 py-4">

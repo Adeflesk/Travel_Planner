@@ -3,7 +3,7 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { JourneyFormData } from '@/lib/types';
-import { SegmentBuilder } from '@/components/journey-segments';
+import { SegmentWizard } from '@/components/journey-segments';
 import { useTripContext } from '@/lib/trip-context';
 
 interface JourneyFormProps {
@@ -71,7 +71,7 @@ export function JourneyForm({
               <div className="text-red-500 text-xs mt-1">Transport mode is required.</div>
             )}
           </div>
-          <SegmentBuilder
+          <SegmentWizard
             segments={formData.segments || []}
             onChange={(segments) => updateField('segments', segments)}
             defaultTimezone={tripContext?.timezone || formData.origin_timezone || 'UTC'}

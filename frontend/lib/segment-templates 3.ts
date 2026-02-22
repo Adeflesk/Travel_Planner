@@ -1,11 +1,13 @@
 import { JourneySegmentDraft, JourneySegmentIntent, SegmentType } from './types';
+import { getLocalTimezone } from './timezone-utils';
 
 interface TemplateOptions {
   startDate?: Date;
   timezone?: string;
 }
 
-const defaultTimezone = 'UTC';
+const defaultTimezone = getLocalTimezone();
+const defaultSegmentDurationMinutes = 120;
 
 const buildSegment = (
   order: number,
@@ -14,17 +16,11 @@ const buildSegment = (
   destinationName: string,
   options?: TemplateOptions
 ): JourneySegmentDraft => {
-  let start_datetime: string | undefined = undefined;
-  let end_datetime: string | undefined = undefined;
-  if (options?.startDate) {
-    // Each segment: start at 09:00, end 3 hours later
-    const start = new Date(options.startDate);
-    start.setHours(9, 0, 0, 0);
-    start_datetime = start.toISOString();
-    const end = new Date(start);
-    end.setHours(end.getHours() + 3);
-    end_datetime = end.toISOString();
-  }
+  const startDate = options?.startDate;
+  const start_datetime = startDate ? startDate.toISOString() : undefined;
+  const end_datetime = startDate
+    ? new Date(startDate.getTime() + defaultSegmentDurationMinutes * 60000).toISOString()
+    : undefined;
   return {
     segment_type,
     origin: { type: 'custom', name: originName },

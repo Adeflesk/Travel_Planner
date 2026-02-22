@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { JourneySegmentDraft, JourneySegmentIntent } from '@/lib/types';
+import { getLocalTimezone } from '@/lib/timezone-utils';
 import Button from '@/components/ui/Button';
 import { SegmentCard } from './SegmentCard';
 import { useSegmentBuilder } from './useSegmentBuilder';
@@ -8,7 +9,6 @@ interface SegmentBuilderProps {
   segments: JourneySegmentDraft[];
   onChange: (segments: JourneySegmentDraft[]) => void;
   defaultTimezone?: string;
-  tripStartDate?: string; // ISO string, e.g. '2026-02-18'
 }
 
 const intentOptions: Array<{ value: JourneySegmentIntent; label: string; helper: string }> = [
@@ -37,8 +37,7 @@ const intentOptions: Array<{ value: JourneySegmentIntent; label: string; helper:
 export const SegmentBuilder = ({
   segments,
   onChange,
-  defaultTimezone = 'UTC',
-  tripStartDate,
+  defaultTimezone = getLocalTimezone(),
 }: SegmentBuilderProps) => {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
   const [selectedIntent, setSelectedIntent] = useState<JourneySegmentIntent>('SIMPLE');
@@ -53,13 +52,7 @@ export const SegmentBuilder = ({
     updateField,
   } = useSegmentBuilder(segments, onChange, {
     timezone: defaultTimezone,
-    startDate: tripStartDate
-      ? (() => {
-          const d = new Date(tripStartDate);
-          d.setHours(9, 0, 0, 0); // 09:00
-          return d;
-        })()
-      : (() => { const d = new Date(); d.setHours(9, 0, 0, 0); return d; })(),
+    startDate: new Date(),
   });
 
   const handleIntentSelect = (intent: JourneySegmentIntent) => {

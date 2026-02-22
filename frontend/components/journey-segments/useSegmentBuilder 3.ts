@@ -12,12 +12,17 @@ const createEmptyLocation = (): LocationRef => ({
   name: '',
 });
 
-const createEmptySegment = (order: number): JourneySegmentDraft => ({
+const createEmptySegment = (
+  order: number,
+  timezone?: string
+): JourneySegmentDraft => ({
   segment_type: 'TRANSFER',
   origin: createEmptyLocation(),
   destination: createEmptyLocation(),
   order,
   metadata: {},
+  origin_timezone: timezone,
+  destination_timezone: timezone,
 });
 
 const createLayoverSegment = (
@@ -77,8 +82,13 @@ export const useSegmentBuilder = (
   );
 
   const addSegment = useCallback(() => {
-    setSegments(reindexSegments([...segments, createEmptySegment(segments.length)]));
-  }, [segments, setSegments]);
+    setSegments(
+      reindexSegments([
+        ...segments,
+        createEmptySegment(segments.length, options?.timezone),
+      ])
+    );
+  }, [options?.timezone, segments, setSegments]);
 
   const removeSegment = useCallback(
     (index: number) => {

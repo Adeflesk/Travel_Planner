@@ -4,11 +4,11 @@ A full-stack travel planning application for organizing trips, destinations, jou
 
 ## Language & Compatibility
 
-This project uses TypeScript (frontend) and Python (backend). Always check Python version compatibility (project targets 3.9+). Use `from __future__ import annotations` or `typing` module aliases instead of PEP 604/PEP 585 syntax for Python type hints.
+This project uses TypeScript (frontend) and Python (backend). Always check Python version compatibility (project targets 3.11+). Use `from __future__ import annotations` or `typing` module aliases instead of PEP 604/PEP 585 syntax for Python type hints.
 
 ## CI/CD
 
-When fixing CI/CD or linter issues, verify the fix works against the exact CI environment version (e.g., Python 3.9 vs 3.10+) before committing. Check `.github/workflows/` files for runtime versions first.
+When fixing CI/CD or linter issues, verify the fix works against the exact CI environment version (e.g., Python 3.11 vs 3.12) before committing. Check `.github/workflows/` files for runtime versions first.
 
 ## Git Workflow
 
@@ -66,6 +66,8 @@ Travel_Planner/
 │   ├── models/            # SQLAlchemy models
 │   ├── schemas/           # Pydantic schemas
 │   ├── routers/           # API endpoints
+│   ├── services/          # Business logic layer
+│   ├── core/              # Security, deps, rate limiting, migrations
 │   └── main.py            # App entry point
 ├── frontend/              # Next.js frontend
 │   ├── app/               # Pages (App Router)
@@ -125,17 +127,34 @@ npm run dev
 
 ## Database
 
-SQLite database at `travel_planner.db`. To add new columns, use ALTER TABLE:
-```sql
-ALTER TABLE table_name ADD COLUMN column_name TYPE;
+SQLite database at `travel_planner.db`. To add schema changes:
+1. Create a Python migration script in `migrations/` following existing patterns
+2. Run `python migrate.py` to apply all pending migrations
+3. Test SQLite (local) and Postgres (production) compatibility before committing
+
+## Testing & Linting
+
+**Backend tests:**
+```bash
+source .venv/bin/activate
+pytest -q --cov=app tests/
+```
+
+**Backend lint:**
+```bash
+flake8 . --count --exit-zero --max-complexity=10 --max-line-length=100 --statistics
+```
+
+**Frontend lint + type check:**
+```bash
+cd frontend && npm run lint && npx tsc --noEmit
+```
+
+**E2E tests** (requires both servers running on ports 8000 and 3000):
+```bash
+cd frontend && NEXT_PUBLIC_API_URL=http://localhost:8000 npm run test:e2e
 ```
 
 ## Feature Documentation
 
-Planned features are documented in `docs/features/`. Each feature has its own markdown file with requirements, approach, and acceptance criteria.
-
-## Current Feature: Flexible Journey Locations
-
-Journeys can now use either:
-- `origin_id`/`destination_id` - Link to existing destinations
-- `origin_name`/`destination_name` - Free text for locations like home airports
+Feature specs are documented in `docs/features/`. Each file has requirements, approach, and acceptance criteria.

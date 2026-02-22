@@ -1,5 +1,7 @@
 frontend/
 .venv/
+.venv*/
+venv/
 __pycache__/
 *.pyc
 .git/
@@ -14,3 +16,4 @@ node_modules/
 *.md
 tests/
 .claude/
+.aider*

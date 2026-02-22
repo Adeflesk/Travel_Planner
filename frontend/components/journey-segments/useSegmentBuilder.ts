@@ -107,7 +107,7 @@ interface SegmentBuilderActions {
   removeSegment: (index: number) => void;
   addLayoverAfterFirstFlight: () => void;
   updateSegmentType: (index: number, segmentType: SegmentType) => void;
-  updateLocation: (index: number, side: 'origin' | 'destination', location: LocationRef) => void;
+  updateLocation: (index: number, side: 'origin' | 'destination', location: LocationRef, explicitTimezone?: string) => void;
   updateField: (index: number, field: keyof JourneySegmentDraft, value: unknown) => void;
 }
 
@@ -200,12 +200,12 @@ export const useSegmentBuilder = (
   );
 
   const updateLocation = useCallback(
-    (index: number, side: 'origin' | 'destination', location: LocationRef) => {
+    (index: number, side: 'origin' | 'destination', location: LocationRef, explicitTimezone?: string) => {
       let next = [...segments];
       const current = next[index];
       const previousDestination = current.destination;
 
-      const matchedTimezone = resolveTimezone(location);
+      const matchedTimezone = explicitTimezone ?? resolveTimezone(location);
 
       next[index] = { ...current, [side]: location };
 
@@ -266,18 +266,19 @@ export const useSegmentBuilder = (
 
       if (current.segment_type === 'LAYOVER') {
         const layoverLocation = location;
+        const layoverTz = matchedTimezone ?? current.origin_timezone;
         if (next[index - 1]?.segment_type === 'FLIGHT') {
           next[index - 1] = {
             ...next[index - 1],
             destination: layoverLocation,
-            destination_timezone: current.origin_timezone,
+            destination_timezone: layoverTz,
           };
         }
         if (next[index + 1]?.segment_type === 'FLIGHT') {
           next[index + 1] = {
             ...next[index + 1],
             origin: layoverLocation,
-            origin_timezone: current.origin_timezone,
+            origin_timezone: layoverTz,
           };
         }
         next[index] = {

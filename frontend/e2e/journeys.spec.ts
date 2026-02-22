@@ -70,15 +70,21 @@ test.describe('Journey Management', () => {
     // Wait for the form to load
     await expect(authenticatedPage.getByRole('heading', { name: 'Add Journey' })).toBeVisible();
 
-    // Build segments using template
-    await authenticatedPage.getByRole('button', { name: 'Simple' }).click();
+    // Step 1: select template and advance to segment editor
+    await authenticatedPage.getByRole('button', { name: /Simple/i }).click();
+    await authenticatedPage.getByRole('button', { name: 'Use template →' }).click();
 
-    // Fill origin and destination on the first segment card
-    await authenticatedPage.getByPlaceholder('Enter origin').first().fill('Paris');
-    await authenticatedPage.getByPlaceholder('Enter destination').first().fill('London');
+    // Step 2: fill origin and destination
+    await expect(authenticatedPage.getByText('Segment 1 of 1')).toBeVisible();
+    await authenticatedPage.getByPlaceholder('Enter origin').fill('Paris');
+    await authenticatedPage.getByPlaceholder('Enter destination').fill('London');
+
+    // Advance to review step
+    await authenticatedPage.getByRole('button', { name: 'Review →' }).click();
+    await expect(authenticatedPage.getByText(/Review your journey/i)).toBeVisible();
 
     // Submit
-    await authenticatedPage.getByRole('button', { name: /Add Journey/i }).click();
+    await authenticatedPage.getByRole('button', { name: 'Save Journey' }).click();
 
     // Verify journey appears
     await expect(authenticatedPage.locator('text=Paris').first()).toBeVisible({ timeout: 10000 });
