@@ -35,7 +35,7 @@ export default defineConfig({
     {
       command: process.env.CI
         ? 'sh -c "cd .. && RATE_LIMIT_ENABLED=false uvicorn app.main:app --host 0.0.0.0 --port 8000"'
-        : 'sh -c "cd .. && RATE_LIMIT_ENABLED=false uvicorn app.main:app --reload --port 8000"',
+        : 'sh -c "cd .. && RATE_LIMIT_ENABLED=false uvicorn app.main:app --reload --reload-dir app --port 8000"',
       url: 'http://localhost:8000/health',
       reuseExistingServer: !process.env.CI,
       timeout: 60000,
