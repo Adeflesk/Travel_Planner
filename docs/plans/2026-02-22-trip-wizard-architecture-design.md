@@ -392,6 +392,196 @@ Backend journey/segment routers, `RoadTripTimeline.tsx`, `TransportOptionCards.t
 
 ---
 
+## Section 7: Exchange Rate Service
+
+### 7a. Overview
+
+The multi-currency policy (Section 5c) currently excludes foreign-currency expenses from the budget total with a note. This section resolves that by fetching daily exchange rates and storing them in the DB, enabling accurate budget totals across currencies.
+
+**API:** [ExchangeRate-API](https://www.exchangerate-api.com/) free tier — 165 currencies, updates daily, 1,500 requests/month. A single daily fetch costs 30 requests/month, leaving headroom for manual refreshes.
+
+**Scheduler:** APScheduler inside FastAPI (`AsyncIOScheduler`). Zero extra infrastructure — runs in the same process, same Fly.io deployment, same log stream. Multi-worker race conditions are benign at this scale (2 workers = 60 requests/month, still well within the free limit).
+
+### 7b. Database schema
+
+New table — one row per currency pair, base always USD:
+
+```sql
+CREATE TABLE exchange_rates (
+    id          INTEGER PRIMARY KEY,
+    base        TEXT NOT NULL DEFAULT 'USD',
+    target      TEXT NOT NULL,             -- e.g. 'GBP', 'EUR', 'AUD'
+    rate        NUMERIC(18, 8) NOT NULL,   -- 1 USD = rate TARGET
+    fetched_at  TIMESTAMP NOT NULL,
+    UNIQUE (base, target)
+);
+```
+
+SQLAlchemy model:
+
+```python
+# app/models/exchange_rate.py
+from sqlalchemy import Column, Integer, String, Numeric, DateTime, UniqueConstraint
+from .base import Base
+
+class ExchangeRate(Base):
+    __tablename__ = "exchange_rates"
+
+    id         = Column(Integer, primary_key=True)
+    base       = Column(String(3), nullable=False, default="USD")
+    target     = Column(String(3), nullable=False)
+    rate       = Column(Numeric(18, 8), nullable=False)
+    fetched_at = Column(DateTime, nullable=False)
+
+    __table_args__ = (UniqueConstraint("base", "target"),)
+```
+
+### 7c. Scheduler setup
+
+```python
+# app/core/scheduler.py
+import os
+import logging
+from datetime import datetime, timezone
+
+import httpx
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from sqlalchemy.dialects.postgresql import insert as pg_insert  # Postgres upsert
+from sqlalchemy import text
+
+logger = logging.getLogger(__name__)
+scheduler = AsyncIOScheduler()
+
+EXCHANGE_API_KEY = os.environ.get("EXCHANGERATE_API_KEY", "")
+EXCHANGE_API_URL = f"https://v6.exchangerate-api.com/v6/{EXCHANGE_API_KEY}/latest/USD"
+
+
+@scheduler.scheduled_job("cron", hour=3, minute=0)  # 3:00 AM UTC daily
+async def refresh_exchange_rates():
+    """Fetch latest USD-based rates and upsert into exchange_rates table."""
+    if not EXCHANGE_API_KEY:
+        logger.warning("EXCHANGERATE_API_KEY not set — skipping rate refresh")
+        return
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            r = await client.get(EXCHANGE_API_URL)
+            r.raise_for_status()
+            rates = r.json().get("conversion_rates", {})
+
+        from database import SessionLocal  # import here to avoid circular deps
+        now = datetime.now(timezone.utc)
+        with SessionLocal() as db:
+            for target, rate in rates.items():
+                db.execute(
+                    text("""
+                        INSERT INTO exchange_rates (base, target, rate, fetched_at)
+                        VALUES ('USD', :target, :rate, :fetched_at)
+                        ON CONFLICT (base, target)
+                        DO UPDATE SET rate = EXCLUDED.rate, fetched_at = EXCLUDED.fetched_at
+                    """),
+                    {"target": target, "rate": rate, "fetched_at": now},
+                )
+            db.commit()
+        logger.info("Exchange rates refreshed: %d currencies", len(rates))
+    except Exception as exc:
+        logger.error("Exchange rate refresh failed: %s", exc)
+```
+
+Start the scheduler in `app/main.py` lifespan:
+
+```python
+# app/main.py
+from contextlib import asynccontextmanager
+from app.core.scheduler import scheduler
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    scheduler.start()
+    yield
+    scheduler.shutdown()
+
+app = FastAPI(lifespan=lifespan)
+```
+
+### 7d. Backend dependency
+
+```bash
+pip install apscheduler httpx
+# add to requirements.txt:
+apscheduler>=3.10
+httpx>=0.27
+```
+
+`httpx` may already be present — check `requirements.txt` before adding.
+
+### 7e. API endpoint — expose rates to frontend
+
+```python
+# app/routers/exchange_rates.py
+@router.get("/exchange-rates")
+async def get_exchange_rates(db: Session = Depends(get_db)):
+    """Return all stored rates as { target: rate } dict, base = USD."""
+    rows = db.query(ExchangeRate).all()
+    return {
+        "base": "USD",
+        "fetched_at": rows[0].fetched_at.isoformat() if rows else None,
+        "rates": {r.target: float(r.rate) for r in rows},
+    }
+```
+
+### 7f. How rates are used in the frontend
+
+A `useExchangeRates()` hook fetches rates once per session and caches them. The expense summary uses it to convert all expenses to `budget_currency`:
+
+```ts
+// frontend/lib/currency-utils.ts
+
+/**
+ * Convert an amount from one currency to another using stored USD-base rates.
+ * All rates are relative to USD: rate = 1 USD → N target.
+ *
+ * To convert GBP → AUD:
+ *   1. GBP → USD: amount / rates['GBP']
+ *   2. USD → AUD: * rates['AUD']
+ */
+export const convertCurrency = (
+  amount: number,
+  from: string,
+  to: string,
+  rates: Record<string, number>  // { USD: 1, GBP: 0.79, AUD: 1.55, ... }
+): number | null => {
+  if (from === to) return amount;
+  const fromRate = from === 'USD' ? 1 : rates[from];
+  const toRate = to === 'USD' ? 1 : rates[to];
+  if (!fromRate || !toRate) return null;  // unknown currency — exclude
+  return (amount / fromRate) * toRate;
+};
+```
+
+Budget summary replaces the "excluded" note with converted totals. If a currency has no stored rate, it remains excluded with a flag icon.
+
+### 7g. Environment variable
+
+Add to `docs/deployment.md` Environment Variables Reference:
+
+| Variable | Required | Description |
+|---|---|---|
+| `EXCHANGERATE_API_KEY` | No | ExchangeRate-API key. If unset, FX conversion disabled and daily refresh skipped. |
+
+Making it optional means local dev and CI work without any API key — rates simply won't refresh.
+
+### 7h. New files for exchange rate feature
+
+| File | Purpose |
+|---|---|
+| `migrations/add_exchange_rates.py` | Creates `exchange_rates` table |
+| `app/models/exchange_rate.py` | SQLAlchemy model |
+| `app/routers/exchange_rates.py` | `GET /exchange-rates` endpoint |
+| `app/core/scheduler.py` | APScheduler setup + daily refresh job |
+| `frontend/lib/currency-utils.ts` | `convertCurrency` helper + `useExchangeRates` hook |
+
+---
+
 ## Verification
 
 1. `npx tsc --noEmit` — zero TypeScript errors after metadata typing
