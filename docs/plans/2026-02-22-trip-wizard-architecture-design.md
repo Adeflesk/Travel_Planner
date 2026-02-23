@@ -29,6 +29,77 @@ Three compounding issues have been identified as the segment wizard and road tri
 
 ---
 
+## Section 0: Libraries
+
+Three libraries are adopted as part of this refactor. Two require installation; one is already present but unused.
+
+### Install
+
+```bash
+cd frontend && npm install zod react-hook-form @hookform/resolvers
+```
+
+### `date-fns` + `date-fns-tz` — already installed
+
+Already in `package.json`. Replace all raw `Date` arithmetic throughout `datetime-utils.ts` and `useSegmentBuilder` with `date-fns` functions. Also available for timezone-aware display via `date-fns-tz`.
+
+```ts
+// frontend/lib/datetime-utils.ts
+import { addHours, parseISO, formatISO } from 'date-fns';
+
+export const DEFAULT_SEGMENT_DURATION_HOURS = 2;
+export const addHoursToISO = (iso: string, hours: number): string =>
+  formatISO(addHours(parseISO(iso), hours));
+export const defaultEndTime = (startIso: string, hours = DEFAULT_SEGMENT_DURATION_HOURS): string =>
+  addHoursToISO(startIso, hours);
+```
+
+### `zod` — new
+
+Used in two places:
+
+1. **Parse `trip.context`** from the API response at the `TripContextProvider` boundary. `safeParse` handles null/partial context from trips created before the wizard — all fields are `.optional()` with defaults.
+2. **Parse `segment.metadata`** as `LegMetadata` or `StopMetadata` at the form boundary — replaces the unsafe `as LegMetadata` cast.
+
+```ts
+// frontend/lib/trip-context.tsx
+export const TripContextSchema = z.object({
+  home_base: z.string().optional(),
+  traveller_count: z.number().default(1),
+  split_costs: z.boolean().default(false),
+  trip_type: z.enum(['single_city','multi_city','road_trip','international']).default('single_city'),
+  vehicle: z.enum(['own_car','rental','none']).default('none'),
+  flight_type: z.enum(['none','return','multi_leg','comparing']).default('none'),
+  accommodation: z.enum(['hotel','rental_property','camping','mix','unknown']).default('unknown'),
+  pacing: z.enum(['relaxed','balanced','packed']).default('balanced'),
+  budget_currency: z.string().default('USD'),
+}).partial();
+
+export type TripContext = z.infer<typeof TripContextSchema>;
+
+// In TripContextProvider:
+const parsed = TripContextSchema.safeParse(trip.context);
+const context = parsed.success ? parsed.data : null;
+```
+
+### `react-hook-form` + `@hookform/resolvers` — new
+
+Used in `TripWizard` and `TripSettings`. Replaces the `useState<WizardData>` approach.
+
+- **Zod resolver** — `TripContextSchema` doubles as form validation rules; one source of truth
+- **`reset(defaultValues)`** — `TripSettings` calls `reset(trip.context)` on open and on cancel, giving clean rollback with one line
+- **Performance** — uncontrolled inputs avoid re-rendering the whole wizard on every keystroke
+
+```ts
+// TripWizard.tsx
+const { register, handleSubmit, watch, formState: { errors } } = useForm<TripContext>({
+  resolver: zodResolver(TripContextSchema),
+  defaultValues: { traveller_count: 1, pacing: 'balanced', budget_currency: 'USD' },
+});
+```
+
+---
+
 ## Section 1: Trip Wizard Questions Flow
 
 Replaces the current minimal name/dates modal with a 5-step wizard.

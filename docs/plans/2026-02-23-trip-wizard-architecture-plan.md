@@ -12,6 +12,76 @@
 
 ---
 
+## Phase 0 — Frontend: Install libraries
+
+### Task 0: Install `zod`, `react-hook-form`, and `@hookform/resolvers`
+
+**Files:**
+- Modify: `frontend/package.json` (via npm install)
+
+**Step 1: Install**
+
+```bash
+cd frontend && npm install zod react-hook-form @hookform/resolvers
+```
+
+**Step 2: Update `datetime-utils.ts` to use `date-fns`**
+
+`date-fns` is already in `package.json` but unused in new code. Replace the raw `Date` arithmetic:
+
+```ts
+// frontend/lib/datetime-utils.ts
+import { addHours, parseISO, formatISO } from 'date-fns';
+
+export const DEFAULT_SEGMENT_DURATION_HOURS = 2;
+
+/** Add `hours` to an ISO 8601 string and return a new ISO 8601 string. */
+export const addHoursToISO = (iso: string, hours: number): string =>
+  formatISO(addHours(parseISO(iso), hours));
+
+/**
+ * Return a default end time: `startIso` + `durationHours` (default 2 h).
+ *
+ * Import pattern:
+ *   import { defaultEndTime } from '@/lib/datetime-utils';
+ *
+ * Usage:
+ *   const end = defaultEndTime(segment.start_datetime);       // start + 2 h
+ *   const end = defaultEndTime(segment.start_datetime, 0.5);  // start + 30 min
+ *   const end = defaultEndTime(segment.start_datetime, 4);    // relaxed pacing
+ */
+export const defaultEndTime = (
+  startIso: string,
+  durationHours: number = DEFAULT_SEGMENT_DURATION_HOURS
+): string => addHoursToISO(startIso, durationHours);
+```
+
+**Step 3: Update `propagateTimeForward` in `useSegmentBuilder.ts` to use `addHoursToISO`**
+
+```ts
+import { addHoursToISO } from '@/lib/datetime-utils';
+
+// In propagateTimeForward:
+const end = addHoursToISO(start, 2);
+```
+
+**Step 4: Type-check**
+
+```bash
+cd frontend && npx tsc --noEmit
+```
+
+Expected: zero errors.
+
+**Step 5: Commit**
+
+```bash
+git add frontend/package.json frontend/package-lock.json frontend/lib/datetime-utils.ts frontend/components/journey-segments/useSegmentBuilder.ts
+git commit -m "feat: install zod + react-hook-form, update datetime-utils to use date-fns"
+```
+
+---
+
 ## Phase 1 — Backend: `trip.context` column
 
 ### Task 1: Migration — add `context` JSON column to `trips`
