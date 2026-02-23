@@ -1592,6 +1592,381 @@ git commit -m "feat: show cost-to-expense promotion banner after journey save"
 
 ---
 
+## Phase 7 — Exchange Rate Service
+
+### Task 17: Backend — `exchange_rates` table migration
+
+**Files:**
+- Create: `migrations/add_exchange_rates.py`
+
+**Step 1: Write the migration script**
+
+```python
+# migrations/add_exchange_rates.py
+"""
+Database migration: Add exchange_rates table
+
+Stores daily USD-base exchange rates fetched from ExchangeRate-API.
+
+Usage:
+    python migrations/add_exchange_rates.py
+"""
+
+import os, sys
+from sqlalchemy import text
+
+def _get_engine():
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if project_root not in sys.path:
+        sys.path.append(project_root)
+    from database import engine
+    return engine
+
+def upgrade():
+    engine = _get_engine()
+    with engine.connect() as conn:
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS exchange_rates (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                base       VARCHAR(3) NOT NULL DEFAULT 'USD',
+                target     VARCHAR(3) NOT NULL,
+                rate       FLOAT      NOT NULL,
+                fetched_at TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(base, target)
+            )
+        """))
+        conn.commit()
+    print("Migration completed: exchange_rates table created.")
+
+if __name__ == "__main__":
+    upgrade()
+```
+
+**Step 2: Run it**
+
+```bash
+source .venv/bin/activate
+python migrations/add_exchange_rates.py
+```
+
+Expected: `Migration completed: exchange_rates table created.`
+
+**Step 3: Commit**
+
+```bash
+git add migrations/add_exchange_rates.py
+git commit -m "feat: add exchange_rates migration"
+```
+
+---
+
+### Task 18: Backend — SQLAlchemy model + Pydantic schema
+
+**Files:**
+- Create: `app/models/exchange_rate.py`
+- Modify: `app/models/__init__.py` (add import)
+
+**Step 1: Write the model**
+
+```python
+# app/models/exchange_rate.py
+from datetime import datetime
+from sqlalchemy import Column, Float, Integer, String, UniqueConstraint, DateTime
+from database import Base
+
+class ExchangeRate(Base):
+    __tablename__ = "exchange_rates"
+
+    id         = Column(Integer, primary_key=True, index=True)
+    base       = Column(String(3), nullable=False, default="USD")
+    target     = Column(String(3), nullable=False)
+    rate       = Column(Float, nullable=False)
+    fetched_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    __table_args__ = (UniqueConstraint("base", "target", name="uq_exchange_rate"),)
+```
+
+**Step 2: Register in `__init__.py`**
+
+In `app/models/__init__.py`, add:
+```python
+from .exchange_rate import ExchangeRate  # noqa: F401
+```
+
+**Step 3: Lint**
+
+```bash
+source .venv/bin/activate
+flake8 app/models/exchange_rate.py --max-line-length=100
+```
+
+**Step 4: Commit**
+
+```bash
+git add app/models/exchange_rate.py app/models/__init__.py
+git commit -m "feat: add ExchangeRate SQLAlchemy model"
+```
+
+---
+
+### Task 19: Backend — APScheduler cron job
+
+**Files:**
+- Create: `app/core/scheduler.py`
+- Modify: `app/main.py` (wire into lifespan)
+
+**Step 1: Install dependencies**
+
+```bash
+source .venv/bin/activate
+pip install apscheduler httpx
+pip freeze | grep -E "apscheduler|httpx" >> requirements.txt
+```
+
+Verify both lines appear at the end of `requirements.txt`.
+
+**Step 2: Write the scheduler**
+
+```python
+# app/core/scheduler.py
+import logging
+import os
+from datetime import datetime
+
+import httpx
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+
+from database import SessionLocal
+
+logger = logging.getLogger(__name__)
+
+scheduler = AsyncIOScheduler()
+
+EXCHANGE_API_KEY = os.getenv("EXCHANGERATE_API_KEY", "")
+EXCHANGE_API_URL = (
+    f"https://v6.exchangerate-api.com/v6/{EXCHANGE_API_KEY}/latest/USD"
+    if EXCHANGE_API_KEY
+    else ""
+)
+
+
+@scheduler.scheduled_job("cron", hour=3, minute=0)
+async def refresh_exchange_rates() -> None:
+    """Fetch USD-base rates from ExchangeRate-API and upsert into DB."""
+    if not EXCHANGE_API_URL:
+        logger.info("EXCHANGERATE_API_KEY not set — skipping exchange rate refresh")
+        return
+
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            r = await client.get(EXCHANGE_API_URL)
+            r.raise_for_status()
+        rates: dict[str, float] = r.json().get("conversion_rates", {})
+    except Exception as exc:
+        logger.error("Exchange rate fetch failed: %s", exc)
+        return
+
+    from app.models.exchange_rate import ExchangeRate  # avoid circular import
+
+    db = SessionLocal()
+    try:
+        now = datetime.utcnow()
+        for target, rate in rates.items():
+            # Use SQLite-compatible upsert; Postgres also supports ON CONFLICT DO UPDATE
+            stmt = (
+                sqlite_insert(ExchangeRate)
+                .values(base="USD", target=target, rate=rate, fetched_at=now)
+                .on_conflict_do_update(
+                    index_elements=["base", "target"],
+                    set_={"rate": rate, "fetched_at": now},
+                )
+            )
+            db.execute(stmt)
+        db.commit()
+        logger.info("Exchange rates updated: %d currencies", len(rates))
+    except Exception as exc:
+        db.rollback()
+        logger.error("Exchange rate DB write failed: %s", exc)
+    finally:
+        db.close()
+```
+
+**Step 3: Wire into `app/main.py` lifespan**
+
+Find the lifespan context manager in `app/main.py` (or `@app.on_event` hooks if lifespan isn't set up yet). Add:
+
+```python
+from app.core.scheduler import scheduler
+
+# Inside lifespan async context manager startup:
+scheduler.start()
+
+# Inside lifespan shutdown:
+scheduler.shutdown()
+```
+
+If using `@asynccontextmanager` lifespan pattern:
+```python
+from contextlib import asynccontextmanager
+from app.core.scheduler import scheduler
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    scheduler.start()
+    yield
+    scheduler.shutdown()
+
+app = FastAPI(lifespan=lifespan)
+```
+
+**Step 4: Test the job runs manually**
+
+In a Python REPL:
+```python
+import asyncio
+from app.core.scheduler import refresh_exchange_rates
+asyncio.run(refresh_exchange_rates())
+```
+
+Without `EXCHANGERATE_API_KEY` set, expect: `INFO — EXCHANGERATE_API_KEY not set — skipping exchange rate refresh`
+
+**Step 5: Commit**
+
+```bash
+git add app/core/scheduler.py app/main.py requirements.txt
+git commit -m "feat: add APScheduler exchange rate cron job"
+```
+
+---
+
+### Task 20: Backend — `GET /exchange-rates` endpoint
+
+**Files:**
+- Create: `app/routers/exchange_rates.py`
+- Modify: `app/main.py` (register router)
+
+**Step 1: Write the router**
+
+```python
+# app/routers/exchange_rates.py
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+from app.core.deps import get_db
+from app.models.exchange_rate import ExchangeRate
+
+router = APIRouter(prefix="/exchange-rates", tags=["exchange-rates"])
+
+
+@router.get("/")
+def list_exchange_rates(base: str = "USD", db: Session = Depends(get_db)):
+    """Return all rates for the given base currency as {target: rate} dict."""
+    rows = db.query(ExchangeRate).filter(ExchangeRate.base == base.upper()).all()
+    return {row.target: row.rate for row in rows}
+```
+
+**Step 2: Register in `app/main.py`**
+
+```python
+from app.routers import exchange_rates
+app.include_router(exchange_rates.router)
+```
+
+**Step 3: Smoke test**
+
+Start the dev server and curl:
+```bash
+curl http://localhost:8000/exchange-rates/
+# Returns {} if table is empty, or {"AUD": 1.55, "EUR": 0.92, ...} after job runs
+```
+
+**Step 4: Commit**
+
+```bash
+git add app/routers/exchange_rates.py app/main.py
+git commit -m "feat: add GET /exchange-rates endpoint"
+```
+
+---
+
+### Task 21: Frontend — `currency-utils.ts` + `useExchangeRates` hook
+
+**Files:**
+- Create: `frontend/lib/currency-utils.ts`
+- Create: `frontend/lib/useExchangeRates.ts`
+
+**Step 1: Write the utility**
+
+```ts
+// frontend/lib/currency-utils.ts
+
+/**
+ * Convert `amount` from one currency to another using USD as the intermediary.
+ * `rates` is a map of { [targetCurrency]: rateFromUSD } (e.g. { AUD: 1.55 }).
+ * Returns null if either rate is missing.
+ */
+export const convertCurrency = (
+  amount: number,
+  from: string,
+  to: string,
+  rates: Record<string, number>
+): number | null => {
+  if (from === to) return amount;
+  const fromRate = from === 'USD' ? 1 : rates[from];
+  const toRate   = to   === 'USD' ? 1 : rates[to];
+  if (!fromRate || !toRate) return null;
+  return (amount / fromRate) * toRate;
+};
+
+/** Format a number as a currency string, e.g. formatCurrency(1234.5, 'AUD') → "A$1,234.50" */
+export const formatCurrency = (amount: number, currency: string): string =>
+  new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
+```
+
+**Step 2: Write the hook**
+
+```ts
+// frontend/lib/useExchangeRates.ts
+'use client';
+
+import { useEffect, useState } from 'react';
+import api from '@/lib/api';
+
+export const useExchangeRates = (base = 'USD') => {
+  const [rates, setRates]     = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState<string | null>(null);
+
+  useEffect(() => {
+    api.get<Record<string, number>>(`/exchange-rates/?base=${base}`)
+      .then((res) => setRates(res.data))
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [base]);
+
+  return { rates, loading, error };
+};
+```
+
+**Step 3: Type-check**
+
+```bash
+cd frontend && npx tsc --noEmit
+```
+
+Expected: no errors.
+
+**Step 4: Commit**
+
+```bash
+git add frontend/lib/currency-utils.ts frontend/lib/useExchangeRates.ts
+git commit -m "feat: add currency-utils and useExchangeRates hook"
+```
+
+---
+
 ## Final verification
 
 ```bash
