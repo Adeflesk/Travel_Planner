@@ -251,6 +251,7 @@ export const SegmentWizard = ({
           destinations={destinations}
           startDate={startDate}
           onBack={() => goToStep('template')}
+          onDone={() => goToStep('review')}
         />
       );
     }

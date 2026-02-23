@@ -189,3 +189,21 @@ def test_share_trip_errors_and_create_and_delete(
     # deleting non-existent share -> 404
     rdel2 = client.delete(f"/trips/{trip['id']}/shares/{99999}")
     assert rdel2.status_code == 404
+
+
+def test_trip_context_roundtrip(client, test_user):
+    """Trip.context is stored and returned correctly."""
+    ctx = {"trip_type": "road_trip", "vehicle": "rental", "traveller_count": 2}
+    resp = client.post(
+        "/trips/",
+        json={
+            "name": "Context Test",
+            "start_date": "2026-06-01",
+            "end_date": "2026-06-10",
+            "context": ctx,
+        },
+    )
+    assert resp.status_code == 201
+    data = resp.json()
+    assert data["context"]["trip_type"] == "road_trip"
+    assert data["context"]["vehicle"] == "rental"
