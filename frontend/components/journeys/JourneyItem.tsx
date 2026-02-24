@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Journey, RouteType } from '@/lib/types';
-import { format } from 'date-fns';
 import { formatDateTimeWithZone, getTimezoneAbbreviation } from '@/lib/timezone-utils';
 import { Trash2, Edit2, ArrowRight, Plane, Train, Bus, Car, Ship, Footprints, Copy, Route, ChevronDown, ChevronUp, FileText, MapPin, Clock, DollarSign } from 'lucide-react';
 import { JourneyStopsList } from '../journey-stops';

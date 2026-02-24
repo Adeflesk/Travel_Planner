@@ -143,7 +143,6 @@ export function useJourneyForm(
       return;
     }
 
-    // eslint-disable-next-line no-console
     console.log('Submitting journey formData:', formData);
 
     if (!formData.transport_mode || formData.transport_mode.trim() === '') {
