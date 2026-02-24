@@ -33,8 +33,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
             setError(null);
             const res = await settingsApi.get();
             setSettings(res.data);
-        } catch (err: any) {
-            setError(err.message || 'Failed to fetch settings');
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to fetch settings');
         } finally {
             setIsLoading(false);
         }
@@ -49,8 +49,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
             setError(null);
             const res = await settingsApi.update(data);
             setSettings(res.data);
-        } catch (err: any) {
-            setError(err.message || 'Failed to update settings');
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to update settings');
             throw err;
         }
     };
