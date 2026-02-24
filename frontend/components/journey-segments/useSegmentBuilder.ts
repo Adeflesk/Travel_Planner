@@ -8,7 +8,6 @@ import {
 } from '@/lib/types';
 import { createSegmentTemplate } from '@/lib/segment-templates';
 import { getLocalTimezone } from '@/lib/timezone-utils';
-import { defaultEndTime } from '@/lib/datetime-utils';
 
 const createEmptyLocation = (): LocationRef => ({
   type: 'custom',
@@ -110,9 +109,6 @@ interface SegmentBuilderActions {
   updateSegmentType: (index: number, segmentType: SegmentType) => void;
   updateLocation: (index: number, side: 'origin' | 'destination', location: LocationRef, explicitTimezone?: string) => void;
   updateField: (index: number, field: keyof JourneySegmentDraft, value: unknown) => void;
-  updateSegmentAt: (index: number, partial: Partial<JourneySegmentDraft>) => void;
-  propagateTimeForward: (segments: JourneySegmentDraft[], targetIdx: number, force: boolean) => JourneySegmentDraft[];
-  propagateMetaForward: (segments: JourneySegmentDraft[], targetIdx: number) => JourneySegmentDraft[];
 }
 
 export const useSegmentBuilder = (
@@ -141,7 +137,7 @@ export const useSegmentBuilder = (
 
       return undefined;
     },
-    [options?.destinations]
+    [options]
   );
   const applyIntent = useCallback(
     (intent: JourneySegmentIntent) => {
@@ -331,69 +327,6 @@ export const useSegmentBuilder = (
     [segments, setSegments]
   );
 
-  const updateSegmentAt = useCallback(
-    (index: number, partial: Partial<JourneySegmentDraft>) => {
-      const next = [...segments];
-      next[index] = { ...next[index], ...partial } as JourneySegmentDraft;
-      setSegments(reindexSegments(next));
-    },
-    [segments, setSegments]
-  );
-
-  const propagateTimeForward = useCallback(
-    (currentSegments: JourneySegmentDraft[], targetIdx: number, force: boolean): JourneySegmentDraft[] => {
-      if (targetIdx <= 0 || targetIdx >= currentSegments.length) return currentSegments;
-      const prev = currentSegments[targetIdx - 1];
-      const target = currentSegments[targetIdx];
-      if (!prev.end_datetime) return currentSegments;
-      if (!force && target.start_datetime) return currentSegments;
-
-      const start = prev.end_datetime;
-      const end = defaultEndTime(start); // Use actual date-fns utility
-
-      return currentSegments.map((seg, i) =>
-        i === targetIdx ? { ...seg, start_datetime: start, end_datetime: end } : seg
-      );
-    },
-    []
-  );
-
-  const propagateMetaForward = useCallback(
-    (currentSegments: JourneySegmentDraft[], targetIdx: number): JourneySegmentDraft[] => {
-      const target = currentSegments[targetIdx];
-      if (target?.segment_type !== 'LEG') return currentSegments;
-      const targetMeta = (target.metadata ?? {}) as Record<string, unknown>;
-      if (targetMeta.mode) return currentSegments;
-
-      const sourceLeg = [...currentSegments.slice(0, targetIdx)]
-        .reverse()
-        .find((s) => s.segment_type === 'LEG' && s.metadata?.mode);
-      if (!sourceLeg) return currentSegments;
-
-      const sourceMeta = sourceLeg.metadata as Record<string, unknown>;
-      const updates: Record<string, unknown> = { mode: sourceMeta.mode };
-      const sourceSelectedIdx = sourceMeta.selected_segment_option as number | undefined;
-
-      if (sourceSelectedIdx !== undefined && sourceSelectedIdx >= 0) {
-        const sourceOpts = (sourceMeta.draft_segment_options ?? []) as Array<{ name: string; provider?: string }>;
-        const sourceOpt = sourceOpts[sourceSelectedIdx];
-        if (sourceOpt) {
-          const targetOpts = (targetMeta.draft_segment_options ?? []) as Array<{ name: string; provider?: string }>;
-          const matchIdx = targetOpts.findIndex((o) => o.name === sourceOpt.name);
-          if (matchIdx >= 0) {
-            updates.selected_segment_option = matchIdx;
-            updates.provider = targetOpts[matchIdx].provider ?? targetOpts[matchIdx].name;
-          }
-        }
-      }
-
-      return currentSegments.map((seg, i) =>
-        i === targetIdx ? { ...seg, metadata: { ...targetMeta, ...updates } } : seg
-      );
-    },
-    []
-  );
-
   return {
     applyIntent,
     addSegment,
@@ -402,8 +335,5 @@ export const useSegmentBuilder = (
     updateSegmentType,
     updateLocation,
     updateField,
-    updateSegmentAt,
-    propagateTimeForward,
-    propagateMetaForward,
   };
 };

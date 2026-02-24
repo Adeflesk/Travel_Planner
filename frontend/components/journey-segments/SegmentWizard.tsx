@@ -1,11 +1,11 @@
 'use client';
+import { useState } from 'react';
 import { Destination, JourneySegmentDraft, JourneySegmentIntent } from '@/lib/types';
 import { getLocalTimezone } from '@/lib/timezone-utils';
 import { SegmentCard } from './SegmentCard';
 import { useSegmentBuilder } from './useSegmentBuilder';
 import { useSegmentWizard, WizardStep } from './useSegmentWizard';
 import { JourneyReview } from './JourneyReview';
-import { RoadTripBuilder } from './RoadTripBuilder';
 
 // ─── Segment type visual config ───────────────────────────────────────────────
 
@@ -153,19 +153,21 @@ export const SegmentWizard = ({
   destinations,
   startDate,
 }: SegmentWizardProps) => {
-  const { step, intent, setIntent, isRoadTrip, currentSegmentIndex, goToStep, goToSegment, nextSegment, prevSegment, isFirstSegment, isLastSegment } =
+  const [selectedIntent, setSelectedIntent] = useState<JourneySegmentIntent | null>(null);
+
+  const { step, currentSegmentIndex, goToStep, goToSegment, nextSegment, prevSegment, isFirstSegment, isLastSegment } =
     useSegmentWizard(segments.length);
 
   const { applyIntent, addSegment, removeSegment, addLayoverAfterFirstFlight, updateSegmentType, updateLocation, updateField } =
     useSegmentBuilder(segments, onChange, { timezone: defaultTimezone, startDate: startDate ?? new Date(), destinations });
 
-  const handleUseTemplate = (chosen: JourneySegmentIntent) => { setIntent(chosen); applyIntent(chosen); goToStep('segments'); };
-  const handleStartBlank  = () => { setIntent('SIMPLE'); applyIntent('SIMPLE'); goToStep('segments'); };
+  const handleUseTemplate = (intent: JourneySegmentIntent) => { applyIntent(intent); goToStep('segments'); };
+  const handleStartBlank  = () => { applyIntent('SIMPLE'); goToStep('segments'); };
 
   const safeIdx      = Math.min(currentSegmentIndex, Math.max(0, segments.length - 1));
   const currentSeg   = segments[safeIdx];
   const currentStyle = currentSeg ? (SEG_STYLE[currentSeg.segment_type] ?? SEG_STYLE.TRANSFER) : SEG_STYLE.TRANSFER;
-  const showAddLayover = intent === 'AIR_TRAVEL' || intent === 'AIR_LAYOVER';
+  const showAddLayover = selectedIntent === 'AIR_TRAVEL' || selectedIntent === 'AIR_LAYOVER';
 
   const containerClass = 'rounded-2xl border border-slate-200 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.06)] overflow-hidden';
   const footerClass    = 'px-5 py-3.5 border-t border-slate-100 bg-slate-50 flex items-center justify-between';
@@ -184,13 +186,12 @@ export const SegmentWizard = ({
 
         <div className="px-5 pb-5 grid grid-cols-1 sm:grid-cols-2 gap-2">
           {INTENT_OPTIONS.map((opt) => {
-            const isSelected = intent === opt.value;
+            const isSelected = selectedIntent === opt.value;
             return (
               <button
                 key={opt.value}
                 type="button"
-                aria-label={opt.label}
-                onClick={() => setIntent(opt.value)}
+                onClick={() => setSelectedIntent(opt.value)}
                 className={`
                   rounded-xl border-2 p-3.5 text-left transition-all group
                   ${isSelected
@@ -229,8 +230,8 @@ export const SegmentWizard = ({
           </button>
           <button
             type="button"
-            onClick={() => intent && handleUseTemplate(intent)}
-            disabled={!intent}
+            onClick={() => selectedIntent && handleUseTemplate(selectedIntent)}
+            disabled={!selectedIntent}
             className="flex items-center gap-1.5 px-4 py-2 bg-sky-500 hover:bg-sky-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg shadow-sm transition-colors"
           >
             Use template <span aria-hidden className="text-sky-200">→</span>
@@ -242,22 +243,6 @@ export const SegmentWizard = ({
 
   // ── Step 2: Segment editor ──────────────────────────────────────────────────
   if (step === 'segments') {
-    // Road trip journeys get the dedicated two-column builder
-    if (isRoadTrip) {
-      return (
-        <RoadTripBuilder
-          segments={segments}
-          onChange={onChange}
-          defaultTimezone={defaultTimezone}
-          destinations={destinations}
-          startDate={startDate}
-          onBack={() => goToStep('template')}
-          onDone={() => goToStep('review')}
-        />
-      );
-    }
-
-    // All other intents use the step-by-step editor (existing code follows)
     return (
       <div className={containerClass}>
         <div className="px-5 pt-5">

@@ -1,15 +1,9 @@
 import { useState } from 'react';
-import type { JourneySegmentIntent } from '@/lib/types';
 
 export type WizardStep = 'template' | 'segments' | 'review';
 
-export const ROAD_TRIP_INTENTS: JourneySegmentIntent[] = ['ROAD_TRIP', 'ROAD_TRIP_WITH_STOPS'];
-
 interface UseSegmentWizardReturn {
   step: WizardStep;
-  intent: JourneySegmentIntent | null;
-  setIntent: (intent: JourneySegmentIntent | null) => void;
-  isRoadTrip: boolean;
   currentSegmentIndex: number;
   goToStep: (step: WizardStep) => void;
   goToSegment: (index: number) => void;
@@ -21,7 +15,6 @@ interface UseSegmentWizardReturn {
 
 export const useSegmentWizard = (segmentCount: number): UseSegmentWizardReturn => {
   const [step, setStep] = useState<WizardStep>('template');
-  const [intent, setIntent] = useState<JourneySegmentIntent | null>(null);
   const [currentSegmentIndex, setCurrentSegmentIndex] = useState(0);
 
   const goToStep = (newStep: WizardStep) => {
@@ -52,9 +45,6 @@ export const useSegmentWizard = (segmentCount: number): UseSegmentWizardReturn =
 
   return {
     step,
-    intent,
-    setIntent,
-    isRoadTrip: intent !== null && ROAD_TRIP_INTENTS.includes(intent),
     currentSegmentIndex,
     goToStep,
     goToSegment,
