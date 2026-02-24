@@ -1,15 +1,6 @@
 import { JourneySegmentDraft } from '@/lib/types';
 import Input from '@/components/ui/Input';
-
-const toDatetimeLocal = (value?: string): string => {
-  if (!value) return '';
-  return value.substring(0, 16);
-};
-
-const fromDatetimeLocal = (value: string): string | undefined => {
-  if (!value) return undefined;
-  return value.length === 16 ? `${value}:00` : value;
-};
+import { toDatetimeLocal, fromDatetimeLocal } from '@/lib/datetime-utils';
 
 interface SegmentTimingEditorProps {
   segment: JourneySegmentDraft;

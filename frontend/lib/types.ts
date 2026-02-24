@@ -1,4 +1,5 @@
-// lib/types.ts
+import { TripContext } from './trip-context';
+
 export interface Trip {
   id: number;
   name: string;
@@ -12,8 +13,12 @@ export interface Trip {
   status: 'planning' | 'booked' | 'ongoing' | 'completed';
   created_at: string;
   updated_at: string;
+  context?: TripContext | null;
   is_owner?: boolean;
   shared_by?: string;
+  journey_count?: number;
+  day_count?: number;
+  total_spent?: number;
 }
 
 export interface DashboardData {
@@ -190,6 +195,10 @@ export interface TripFormData {
   budget_warning_threshold?: number;
   budget_danger_threshold?: number;
   status?: string;
+  context?: TripContext | null;
+  journey_count?: number;
+  day_count?: number;
+  total_spent?: number;
 }
 
 export interface DestinationFormData {
@@ -650,4 +659,63 @@ export interface PracticalityResponse {
   buffer_minutes_per_transition: number;
   transition_count: number;
   segments: SegmentPracticality[];
+}
+
+export interface TripDay {
+  id: number;
+  trip_id: number;
+  date: string;
+  title?: string;
+  location?: string;
+  notes?: string;
+  sort_order: number;
+}
+
+export interface DayActivity {
+  id: number;
+  day_id: number;
+  start_time: string;
+  end_time?: string;
+  title: string;
+  category?: string;
+  location?: string;
+  notes?: string;
+  cost?: number;
+  currency?: string;
+  booked: boolean;
+  sort_order: number;
+}
+
+export interface UserSettings {
+  id: number;
+  user_id: number;
+  default_currency: string;
+  home_base?: string;
+  feature_flags: Record<string, boolean>;
+}
+
+export interface TripDay {
+  id: number;
+  trip_id: number;
+  date: string;
+  title?: string;
+  location?: string;
+  notes?: string;
+  sort_order: number;
+  activities?: DayActivity[];
+}
+
+export interface DayActivity {
+  id: number;
+  day_id: number;
+  start_time: string;
+  end_time?: string;
+  title: string;
+  category?: string;
+  location?: string;
+  notes?: string;
+  cost?: number;
+  currency?: string;
+  booked: boolean;
+  sort_order: number;
 }

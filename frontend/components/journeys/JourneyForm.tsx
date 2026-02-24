@@ -71,12 +71,18 @@ export function JourneyForm({
               <div className="text-red-500 text-xs mt-1">Transport mode is required.</div>
             )}
           </div>
-          <SegmentWizard
-            segments={formData.segments || []}
-            onChange={(segments) => updateField('segments', segments)}
-            defaultTimezone={tripContext?.timezone || formData.origin_timezone || 'UTC'}
-            startDate={tripContext?.startDate ? new Date(tripContext.startDate) : undefined}
-          />
+          {formData.transport_mode ? (
+            <SegmentWizard
+              segments={formData.segments || []}
+              onChange={(segments) => updateField('segments', segments)}
+              defaultTimezone={tripContext?.timezone || formData.origin_timezone || 'UTC'}
+              startDate={tripContext?.startDate ? new Date(tripContext.startDate) : undefined}
+            />
+          ) : (
+            <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">
+              Please select a transport mode above to start building your route.
+            </div>
+          )}
           <div className="mt-4 flex justify-end">
             <button
               type="submit"

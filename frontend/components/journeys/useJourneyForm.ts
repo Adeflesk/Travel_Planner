@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Journey, JourneyFormData, Trip } from '@/lib/types';
+import { Journey, JourneyFormData, Trip, JourneySegmentDraft } from '@/lib/types';
 import { journeyApi, tripApi } from '@/lib/api';
 import { useSuggestions } from '@/lib/hooks/useSuggestions';
 
@@ -33,7 +33,10 @@ const getInitialFormData = (tripId: number): JourneyFormData => ({
   segments: [],
 });
 
-export function useJourneyForm(tripId: number, onSuccess: () => void) {
+export function useJourneyForm(
+  tripId: number,
+  onSuccess: (createdJourney?: Journey, submittedSegments?: JourneySegmentDraft[]) => void
+) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<JourneyFormData>(
     getInitialFormData(tripId)
@@ -151,13 +154,19 @@ export function useJourneyForm(tripId: number, onSuccess: () => void) {
       if (editingId) {
         await journeyApi.update(editingId, formData);
         setEditingId(null);
+        setFormData(getInitialFormData(tripId));
+        setErrors({});
+        setWarnings({});
+        onSuccess(undefined, formData.segments);
       } else {
-        await journeyApi.create(formData);
+        const res = await journeyApi.create(formData);
+        const newJourney = res.data;
+        const submittedSegments = formData.segments;
+        setFormData(getInitialFormData(tripId));
+        setErrors({});
+        setWarnings({});
+        onSuccess(newJourney, submittedSegments);
       }
-      setFormData(getInitialFormData(tripId));
-      setErrors({});
-      setWarnings({});
-      onSuccess();
     } catch (error: unknown) {
       if (error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as { response?: { status?: number; data?: unknown } };
