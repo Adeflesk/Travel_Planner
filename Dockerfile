@@ -2,7 +2,7 @@
 # Multi-stage build for smaller production image
 
 # ============== Build Stage ==============
-FROM python:3.12-slim as builder
+FROM python:3.13-slim as builder
 
 WORKDIR /app
 
@@ -23,7 +23,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir gunicorn
 
 # ============== Production Stage ==============
-FROM python:3.12-slim as production
+FROM python:3.13-slim as production
 
 WORKDIR /app
 

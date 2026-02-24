@@ -158,7 +158,7 @@ export const createSegmentTemplate = (
       ];
 
     /**
-     * ROAD_TRIP_WITH_STOPS — extended road trip: 3 stops, mixed TRANSFER/BUS legs.
+     * ROAD_TRIP_WITH_STOPS — extended road trip: 3 stops, LEG segments connecting each.
      * Ideal for a day tour or regional road trip with more planned structure.
      */
     case 'ROAD_TRIP_WITH_STOPS':

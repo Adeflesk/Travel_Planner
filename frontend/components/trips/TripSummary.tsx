@@ -47,7 +47,7 @@ export function TripSummary({ tripId, budget }: TripSummaryProps) {
   const hasNoCosts = summary.grandTotal === 0;
 
   return (
-    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-5">
+    <div className="bg-linear-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-5">
       <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
         <Wallet className="w-5 h-5 text-blue-600" />
         Trip Budget Summary
@@ -119,9 +119,8 @@ export function TripSummary({ tripId, budget }: TripSummaryProps) {
                 {/* Progress bar */}
                 <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
                   <div
-                    className={`h-2.5 rounded-full transition-all ${
-                      isOverBudget ? 'bg-red-500' : budgetPercent > 80 ? 'bg-amber-500' : 'bg-green-500'
-                    }`}
+                    className={`h-2.5 rounded-full transition-all ${isOverBudget ? 'bg-red-500' : budgetPercent > 80 ? 'bg-amber-500' : 'bg-green-500'
+                      }`}
                     style={{ width: `${Math.min(budgetPercent, 100)}%` }}
                   ></div>
                 </div>

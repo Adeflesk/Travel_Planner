@@ -29,7 +29,7 @@ export const fromDatetimeLocal = (localString?: string): string | undefined => {
   if (!localString) return undefined;
   // Fall back to a simple UTC conversion or system timezone if needed,
   // but for forms, we typically accept the local wall time string and store it as ISO.
-  // We can treat it as local string appending the zero offsets if needed, 
+  // We can treat it as local string appending the zero offsets if needed,
   // or simply parse it as an ISO string in the user's current environment.
   // Standard formatISO(new Date(localString)) handles it relative to browser timezone.
   try {

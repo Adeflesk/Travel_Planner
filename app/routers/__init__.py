@@ -22,6 +22,8 @@ from .journey_segments import router as journey_segments_router
 from .segment_options import router as segment_options_router
 from .dashboard import router as dashboard_router
 from .suggestions import router as suggestions_router
+from .trip_days import router as trip_days_router
+from .settings import router as settings_router
 
 __all__ = [
     "health_router",
@@ -40,4 +42,6 @@ __all__ = [
     "segment_options_router",
     "dashboard_router",
     "suggestions_router",
+    "trip_days_router",
+    "settings_router",
 ]
