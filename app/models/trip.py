@@ -17,6 +17,7 @@ from sqlalchemy import (
     DateTime,
     Numeric,
     ForeignKey,
+    JSON,
 )
 from sqlalchemy.orm import relationship
 
@@ -36,6 +37,7 @@ class Trip(Base):
     budget_warning_threshold = Column(Integer, default=75)
     budget_danger_threshold = Column(Integer, default=90)
     status = Column(String(50), default="planning")
+    context = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(
         DateTime,

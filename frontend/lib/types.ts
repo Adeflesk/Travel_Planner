@@ -669,6 +669,7 @@ export interface TripDay {
   location?: string;
   notes?: string;
   sort_order: number;
+  activities?: DayActivity[];
 }
 
 export interface DayActivity {
@@ -694,28 +695,3 @@ export interface UserSettings {
   feature_flags: Record<string, boolean>;
 }
 
-export interface TripDay {
-  id: number;
-  trip_id: number;
-  date: string;
-  title?: string;
-  location?: string;
-  notes?: string;
-  sort_order: number;
-  activities?: DayActivity[];
-}
-
-export interface DayActivity {
-  id: number;
-  day_id: number;
-  start_time: string;
-  end_time?: string;
-  title: string;
-  category?: string;
-  location?: string;
-  notes?: string;
-  cost?: number;
-  currency?: string;
-  booked: boolean;
-  sort_order: number;
-}

@@ -33,6 +33,12 @@ export default function Navigation() {
               My Trips
             </Link>
             <Link
+              href="/settings"
+              className="text-white hover:text-primary-200 transition-colors font-medium"
+            >
+              Settings
+            </Link>
+            <Link
               href="/help"
               className="text-white hover:text-primary-200 transition-colors font-medium"
             >

@@ -21,7 +21,7 @@ A full-stack travel planning application for organizing trips, destinations, jou
 ## Tech Stack
 
 ### Backend
-- **Python 3.11+** with FastAPI
+- **Python 3.13+** with FastAPI
 - **SQLAlchemy** ORM with SQLite database
 - **Pydantic** for request/response validation
 - **JWT** authentication with refresh tokens
@@ -60,7 +60,7 @@ Travel_Planner/
 
 ### Prerequisites
 
-- Python 3.11 or higher
+- Python 3.13 or higher
 - Node.js 18 or higher
 - npm or yarn
 
