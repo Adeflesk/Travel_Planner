@@ -30,7 +30,9 @@ export function JourneyForm({
         className="bg-gray-50 p-4 rounded-lg mb-4"
         onSubmit={async (e) => {
           await onSubmit(e);
-          router.push && router.push(`/trips/${formData.trip_id}`);
+          if (router.push) {
+            router.push(`/trips/${formData.trip_id}`);
+          }
         }}
       >
         <div className="mb-3 flex items-center justify-between">

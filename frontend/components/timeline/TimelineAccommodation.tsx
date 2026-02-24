@@ -14,12 +14,12 @@ export function TimelineAccommodation({ accommodation }: TimelineAccommodationPr
   return (
     <div className="relative flex items-start gap-4 pb-6">
       {/* Timeline node */}
-      <div className="relative z-10 flex items-center justify-center w-10 h-10 bg-violet-500 rounded-full text-white shadow-md flex-shrink-0 mt-1">
+      <div className="relative z-10 flex items-center justify-center w-10 h-10 bg-violet-500 rounded-full text-white shadow-md shrink-0 mt-1">
         <Bed className="w-4 h-4" />
       </div>
 
       {/* Card */}
-      <div className="flex-1 rounded-xl border border-violet-200 bg-gradient-to-br from-violet-50 to-white shadow-sm overflow-hidden">
+      <div className="flex-1 rounded-xl border border-violet-200 bg-linear-to-br from-violet-50 to-white shadow-sm overflow-hidden">
         <div className="p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
@@ -46,7 +46,7 @@ export function TimelineAccommodation({ accommodation }: TimelineAccommodationPr
               </div>
             </div>
 
-            <div className="text-right flex-shrink-0">
+            <div className="text-right shrink-0">
               <div className="text-2xl font-bold text-violet-700 tabular-nums leading-none">
                 {Number(accommodation.amount).toFixed(0)}
               </div>
@@ -58,7 +58,7 @@ export function TimelineAccommodation({ accommodation }: TimelineAccommodationPr
 
           {checkInDate && (
             <div className="mt-3 pt-3 border-t border-violet-100 flex items-center gap-2 text-sm text-slate-600">
-              <Calendar className="w-3.5 h-3.5 text-violet-400 flex-shrink-0" />
+              <Calendar className="w-3.5 h-3.5 text-violet-400 shrink-0" />
               <span>
                 Check-in:{' '}
                 <span className="font-medium tabular-nums">
@@ -70,7 +70,7 @@ export function TimelineAccommodation({ accommodation }: TimelineAccommodationPr
 
           {accommodation.cancel_by_date && (
             <p className="mt-1.5 text-xs text-amber-600 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
               Free cancellation until{' '}
               {format(new Date(accommodation.cancel_by_date), 'MMM d, yyyy')}
             </p>

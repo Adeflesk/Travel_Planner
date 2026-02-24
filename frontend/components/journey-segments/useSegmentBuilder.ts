@@ -120,26 +120,29 @@ export const useSegmentBuilder = (
   setSegments: (segments: JourneySegmentDraft[]) => void,
   options?: { timezone?: string; startDate?: Date; destinations?: Destination[] }
 ): SegmentBuilderActions => {
-  const resolveTimezone = (location: LocationRef): string | undefined => {
-    if (!options?.destinations?.length) return undefined;
+  const resolveTimezone = useCallback(
+    (location: LocationRef): string | undefined => {
+      if (!options?.destinations?.length) return undefined;
 
-    if (location.destination_id) {
-      return options.destinations.find((dest) => dest.id === location.destination_id)?.timezone;
-    }
+      if (location.destination_id) {
+        return options.destinations.find((dest) => dest.id === location.destination_id)?.timezone;
+      }
 
-    const name = location.name?.trim().toLowerCase();
-    if (!name) return undefined;
-    const matchedTimezone = options.destinations.find(
-      (dest) => dest.name.trim().toLowerCase() === name
-    )?.timezone;
-    if (matchedTimezone) return matchedTimezone;
+      const name = location.name?.trim().toLowerCase();
+      if (!name) return undefined;
+      const matchedTimezone = options.destinations.find(
+        (dest) => dest.name.trim().toLowerCase() === name
+      )?.timezone;
+      if (matchedTimezone) return matchedTimezone;
 
-    if (name.includes('home')) {
-      return getLocalTimezone();
-    }
+      if (name.includes('home')) {
+        return getLocalTimezone();
+      }
 
-    return undefined;
-  };
+      return undefined;
+    },
+    [options]
+  );
   const applyIntent = useCallback(
     (intent: JourneySegmentIntent) => {
       const template = createSegmentTemplate(intent, {

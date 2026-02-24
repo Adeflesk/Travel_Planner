@@ -1,4 +1,5 @@
-// lib/types.ts
+import { TripContext } from './trip-context';
+
 export interface Trip {
   id: number;
   name: string;
@@ -12,8 +13,12 @@ export interface Trip {
   status: 'planning' | 'booked' | 'ongoing' | 'completed';
   created_at: string;
   updated_at: string;
+  context?: TripContext | null;
   is_owner?: boolean;
   shared_by?: string;
+  journey_count?: number;
+  day_count?: number;
+  total_spent?: number;
 }
 
 export interface DashboardData {
@@ -190,6 +195,10 @@ export interface TripFormData {
   budget_warning_threshold?: number;
   budget_danger_threshold?: number;
   status?: string;
+  context?: TripContext | null;
+  journey_count?: number;
+  day_count?: number;
+  total_spent?: number;
 }
 
 export interface DestinationFormData {
@@ -660,6 +669,7 @@ export interface TripDay {
   location?: string;
   notes?: string;
   sort_order: number;
+  activities?: DayActivity[];
 }
 
 export interface DayActivity {
@@ -684,3 +694,4 @@ export interface UserSettings {
   home_base?: string;
   feature_flags: Record<string, boolean>;
 }
+

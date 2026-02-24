@@ -71,7 +71,6 @@ export function AirportAutocomplete({
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setQuery(value || '');
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setHasSelection(!!value);
   }, [value]);
 
