@@ -232,13 +232,17 @@ test.describe('Journey Segment Wizard', () => {
     await expect(authenticatedPage.getByText(/Paris/)).toBeVisible();
     await expect(authenticatedPage.getByText(/Lyon/)).toBeVisible();
 
-    // Edit button should jump back to segment editing
-    await authenticatedPage.getByRole('button', { name: 'Edit' }).first().click();
+    // Edit button should jump back to segment editing.
+    // Scope to main-content to avoid matching the TripOverviewDashboard "Edit trip" button.
+    await authenticatedPage.getByTestId('main-content').getByRole('button', { name: 'Edit' }).first().click();
     await expect(authenticatedPage.getByText('1 / 1')).toBeVisible();
   });
 
   test('should save a complete journey through the wizard', async ({ authenticatedPage }) => {
     await openWizard(authenticatedPage);
+
+    // Transport mode is required to enable "Save Journey". Select it before the wizard.
+    await authenticatedPage.locator('select').first().selectOption('TRANSFER');
 
     // Step 1: select template
     await authenticatedPage.getByText('Simple', { exact: true }).click();

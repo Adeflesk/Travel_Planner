@@ -80,8 +80,8 @@ test.describe('Journey Management', () => {
     await authenticatedPage.getByPlaceholder('Enter origin').fill('Paris');
     await authenticatedPage.getByPlaceholder('Enter destination').fill('London');
 
-    // Advance to review step
-    await authenticatedPage.getByRole('button', { name: 'Review →' }).click();
+    // Advance to review step. Use regex because "→" is aria-hidden (accessible name is "Review").
+    await authenticatedPage.getByRole('button', { name: /^Review/ }).click();
     await expect(authenticatedPage.getByText(/Review your journey/i)).toBeVisible();
 
     // Submit
