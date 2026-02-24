@@ -1,4 +1,3 @@
-// lib/api.ts
 import axios from 'axios';
 import {
   Trip,
@@ -38,8 +37,6 @@ import {
   WeatherForecast,
   PracticalityResponse,
   UserSettings,
-  TripDay,
-  DayActivity,
 } from './types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -100,21 +97,6 @@ export const tripApi = {
     api.get<TripStats>(`/trips/${tripId}/stats/`),
   getBudgetStatus: (tripId: number) =>
     api.get<BudgetStatusResponse>(`/trips/${tripId}/budget-status/`),
-  getDays: (tripId: number) =>
-    api.get<TripDay[]>(`/trip-days/trips/${tripId}/days`),
-};
-
-// Day Builder API
-export const dayApi = {
-  createDay: (data: { trip_id: number; date: string; title?: string; location?: string; notes?: string }) =>
-    api.post<TripDay>('/trip-days/', data),
-  deleteDay: (dayId: number) => api.delete(`/trip-days/${dayId}`),
-  getActivities: (dayId: number) => api.get<DayActivity[]>(`/trip-days/${dayId}/activities`),
-  createActivity: (data: Partial<DayActivity> & { day_id: number }) =>
-    api.post<DayActivity>('/trip-days/activities', data),
-  updateActivity: (activityId: number, data: Partial<DayActivity>) =>
-    api.patch<DayActivity>(`/trip-days/activities/${activityId}`, data),
-  deleteActivity: (activityId: number) => api.delete(`/trip-days/activities/${activityId}`),
 };
 
 export const dashboardApi = {
@@ -341,7 +323,8 @@ export const journeyApi = {
 
   update: (id: number, data: Partial<JourneyFormData>) => {
     // segments are managed via the segment API — strip them from the journey update payload
-    const { segments: _segments, ...updateFields } = data;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { segments: _unused_segments, ...updateFields } = data;
     const cleanedData: Record<string, unknown> = {};
     (Object.keys(updateFields) as Array<keyof typeof updateFields>).forEach((key) => {
       const value = updateFields[key];
@@ -570,10 +553,7 @@ export const journeyDocumentApi = {
 // Settings API
 export const settingsApi = {
   get: () => api.get<UserSettings>('/settings/'),
-  update: (data: Partial<UserSettings>) => {
-    console.log('Sending PATCH /settings/ with:', data);
-    return api.patch<UserSettings>('/settings/', data);
-  },
+  update: (data: Partial<UserSettings>) => api.patch<UserSettings>('/settings/', data),
 };
 
 // Admin API

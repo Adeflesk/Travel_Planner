@@ -25,7 +25,7 @@ export const toDatetimeLocal = (isoString?: string): string => {
   }
 };
 
-export const fromDatetimeLocal = (localString?: string, fallbackTimezone?: string): string | undefined => {
+export const fromDatetimeLocal = (localString?: string): string | undefined => {
   if (!localString) return undefined;
   // Fall back to a simple UTC conversion or system timezone if needed,
   // but for forms, we typically accept the local wall time string and store it as ISO.
