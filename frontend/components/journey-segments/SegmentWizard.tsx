@@ -189,6 +189,7 @@ export const SegmentWizard = ({
               <button
                 key={opt.value}
                 type="button"
+                aria-label={opt.label}
                 onClick={() => setIntent(opt.value)}
                 className={`
                   rounded-xl border-2 p-3.5 text-left transition-all group

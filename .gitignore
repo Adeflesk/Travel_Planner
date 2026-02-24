@@ -113,10 +113,11 @@ playwright/.cache/
 *\ 4.*
 
 # =========================
-# Project-specific temp files
-# =========================
+# project specific temp files
 Plans.txt
 pyvenv.cfg
 updateExpense
 -- SQLite.sql
 .aider*
+*.orig
+.venv312/

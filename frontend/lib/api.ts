@@ -37,6 +37,7 @@ import {
   JourneyTimelineResponse,
   WeatherForecast,
   PracticalityResponse,
+  UserSettings,
 } from './types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -547,6 +548,15 @@ export const journeyDocumentApi = {
   },
   delete: (journeyId: number, documentId: number) =>
     api.delete(`/journeys/${journeyId}/documents/${documentId}`),
+};
+
+// Settings API
+export const settingsApi = {
+  get: () => api.get<UserSettings>('/settings/'),
+  update: (data: Partial<UserSettings>) => {
+    console.log('Sending PATCH /settings/ with:', data);
+    return api.patch<UserSettings>('/settings/', data);
+  },
 };
 
 // Admin API

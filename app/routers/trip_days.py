@@ -1,0 +1,145 @@
+from typing import List
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+
+from database import get_db
+from app import models, schemas
+from app.core.deps import get_current_user
+
+router = APIRouter(prefix="/trip-days", tags=["days"])
+
+
+@router.get("/trips/{trip_id}/days", response_model=List[schemas.TripDayResponse])
+def read_trip_days(
+    trip_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+    days = (
+        db.query(models.TripDay)
+        .filter(models.TripDay.trip_id == trip_id)
+        .order_by(models.TripDay.date)
+        .all()
+    )
+    return days
+
+
+@router.post(
+    "/", response_model=schemas.TripDayResponse, status_code=status.HTTP_201_CREATED
+)
+def create_trip_day(
+    day: schemas.TripDayCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    trip = db.query(models.Trip).filter(models.Trip.id == day.trip_id).first()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    db_day = models.TripDay(**day.model_dump())
+    try:
+        db.add(db_day)
+        db.commit()
+        db.refresh(db_day)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400, detail="A day with this date already exists for this trip"
+        )
+    return db_day
+
+
+@router.delete("/{day_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_trip_day(
+    day_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    db_day = db.query(models.TripDay).filter(models.TripDay.id == day_id).first()
+    if not db_day:
+        raise HTTPException(status_code=404, detail="Trip day not found")
+    db.delete(db_day)
+    db.commit()
+
+
+@router.get("/{day_id}/activities", response_model=List[schemas.DayActivityResponse])
+def read_day_activities(
+    day_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    activities = (
+        db.query(models.DayActivity)
+        .filter(models.DayActivity.day_id == day_id)
+        .order_by(models.DayActivity.start_time)
+        .all()
+    )
+    return activities
+
+
+@router.post(
+    "/activities",
+    response_model=schemas.DayActivityResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_day_activity(
+    activity: schemas.DayActivityCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    db_day = (
+        db.query(models.TripDay).filter(models.TripDay.id == activity.day_id).first()
+    )
+    if not db_day:
+        raise HTTPException(status_code=404, detail="Trip day not found")
+
+    db_activity = models.DayActivity(**activity.model_dump())
+    db.add(db_activity)
+    db.commit()
+    db.refresh(db_activity)
+    return db_activity
+
+
+@router.patch("/activities/{activity_id}", response_model=schemas.DayActivityResponse)
+def update_day_activity(
+    activity_id: int,
+    activity: schemas.DayActivityUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    db_activity = (
+        db.query(models.DayActivity)
+        .filter(models.DayActivity.id == activity_id)
+        .first()
+    )
+    if not db_activity:
+        raise HTTPException(status_code=404, detail="Activity not found")
+
+    update_data = activity.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_activity, key, value)
+
+    db.commit()
+    db.refresh(db_activity)
+    return db_activity
+
+
+@router.delete("/activities/{activity_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_day_activity(
+    activity_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    db_activity = (
+        db.query(models.DayActivity)
+        .filter(models.DayActivity.id == activity_id)
+        .first()
+    )
+    if not db_activity:
+        raise HTTPException(status_code=404, detail="Activity not found")
+    db.delete(db_activity)
+    db.commit()

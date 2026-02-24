@@ -71,6 +71,7 @@ test.describe('Journey Management', () => {
     await expect(authenticatedPage.getByRole('heading', { name: 'Add Journey' })).toBeVisible();
 
     // Step 1: select template and advance to segment editor
+    await authenticatedPage.locator('select').first().selectOption('TRANSFER');
     await authenticatedPage.getByRole('button', { name: /Simple/i }).click();
     await authenticatedPage.getByRole('button', { name: /Use template/i }).click();
 
