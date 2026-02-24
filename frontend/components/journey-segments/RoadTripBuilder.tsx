@@ -2,8 +2,6 @@
 import { useState } from 'react';
 import { Destination, JourneySegmentDraft } from '@/lib/types';
 import { getLocalTimezone } from '@/lib/timezone-utils';
-import { defaultEndTime } from '@/lib/datetime-utils';
-import type { DraftSegmentOption } from '@/lib/segment-templates';
 import { useSegmentBuilder } from './useSegmentBuilder';
 import { RoadTripTimeline } from './RoadTripTimeline';
 import { LegForm } from './LegForm';

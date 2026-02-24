@@ -109,6 +109,8 @@ interface SegmentBuilderActions {
   updateSegmentType: (index: number, segmentType: SegmentType) => void;
   updateLocation: (index: number, side: 'origin' | 'destination', location: LocationRef, explicitTimezone?: string) => void;
   updateField: (index: number, field: keyof JourneySegmentDraft, value: unknown) => void;
+  propagateTimeForward: (segs: JourneySegmentDraft[], targetIdx: number, force: boolean) => JourneySegmentDraft[];
+  propagateMetaForward: (segs: JourneySegmentDraft[], targetIdx: number) => JourneySegmentDraft[];
 }
 
 export const useSegmentBuilder = (
@@ -327,6 +329,47 @@ export const useSegmentBuilder = (
     [segments, setSegments]
   );
 
+  const propagateTimeForward = useCallback(
+    (segs: JourneySegmentDraft[], targetIdx: number, force: boolean): JourneySegmentDraft[] => {
+      if (targetIdx <= 0 || targetIdx >= segs.length) return segs;
+      const prev = segs[targetIdx - 1];
+      const target = segs[targetIdx];
+      if (!prev.end_datetime) return segs;
+      if (!force && target.start_datetime) return segs;
+      const start = prev.end_datetime;
+      // In a real app we might use a utility here, but for now we just match the logic
+      const date = new Date(start);
+      date.setHours(date.getHours() + 1);
+      const end = date.toISOString();
+      return segs.map((seg, i) =>
+        i === targetIdx ? { ...seg, start_datetime: start, end_datetime: end } : seg
+      );
+    },
+    []
+  );
+
+  const propagateMetaForward = useCallback(
+    (segs: JourneySegmentDraft[], targetIdx: number): JourneySegmentDraft[] => {
+      const target = segs[targetIdx];
+      if (target.segment_type !== 'LEG') return segs;
+      const targetMeta = target.metadata ?? {};
+      if (targetMeta.mode) return segs;
+
+      const sourceLeg = [...segs.slice(0, targetIdx)]
+        .reverse()
+        .find((s) => s.segment_type === 'LEG' && s.metadata?.mode);
+      if (!sourceLeg) return segs;
+
+      const sourceMeta = sourceLeg.metadata ?? {};
+      const updates: Record<string, unknown> = { mode: sourceMeta.mode };
+
+      return segs.map((seg, i) =>
+        i === targetIdx ? { ...seg, metadata: { ...targetMeta, ...updates } } : seg
+      );
+    },
+    []
+  );
+
   return {
     applyIntent,
     addSegment,
@@ -335,5 +378,7 @@ export const useSegmentBuilder = (
     updateSegmentType,
     updateLocation,
     updateField,
+    propagateTimeForward,
+    propagateMetaForward,
   };
 };

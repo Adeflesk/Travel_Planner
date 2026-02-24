@@ -6,10 +6,18 @@ import { Button } from '@/components/ui/Button';
 import { useForm } from 'react-hook-form';
 import { useEffect } from 'react';
 
+interface SettingsFormData {
+    default_currency: string;
+    home_base: string;
+    road_trip_builder: boolean;
+    expense_tracking: boolean;
+    packing_list: boolean;
+}
+
 function SettingsContent() {
     const { settings, loading, error, updateSettings } = useSettings();
 
-    const { register, handleSubmit, reset } = useForm({
+    const { register, handleSubmit, reset } = useForm<SettingsFormData>({
         defaultValues: {
             default_currency: 'USD',
             home_base: '',
@@ -31,7 +39,7 @@ function SettingsContent() {
         }
     }, [settings, reset]);
 
-    const onSubmit = async (data: any) => {
+    const onSubmit = async (data: SettingsFormData) => {
         try {
             await updateSettings({
                 default_currency: data.default_currency,
@@ -44,7 +52,7 @@ function SettingsContent() {
                 }
             });
             alert('Settings saved successfully!');
-        } catch (e) {
+        } catch {
             alert('Failed to save settings.');
         }
     };
@@ -83,7 +91,7 @@ function SettingsContent() {
 
                     <section>
                         <h2 className="text-lg font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100">Feature Toggles</h2>
-                        <p className="text-sm text-slate-500 mb-5">Disable features you don't use to simplify your trip planning experience. No data is deleted.</p>
+                        <p className="text-sm text-slate-500 mb-5">Disable features you don&apos;t use to simplify your trip planning experience. No data is deleted.</p>
 
                         <div className="space-y-4">
                             <label className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50 cursor-pointer hover:bg-slate-100/50 transition-colors">
