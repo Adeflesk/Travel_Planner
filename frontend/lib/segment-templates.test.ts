@@ -94,7 +94,7 @@ describe('createSegmentTemplate — ROAD_TRIP', () => {
         const segs = createSegmentTemplate('ROAD_TRIP');
         const legs = segs.filter((s) => s.segment_type === 'LEG');
         legs.forEach((leg) => {
-            const opts = (leg.metadata as any)?.draft_segment_options;
+            const opts = (leg.metadata as Record<string, unknown> | undefined)?.draft_segment_options;
             expect(Array.isArray(opts)).toBe(true);
             expect((opts as unknown[]).length).toBeGreaterThanOrEqual(1);
         });
@@ -104,7 +104,7 @@ describe('createSegmentTemplate — ROAD_TRIP', () => {
         const segs = createSegmentTemplate('ROAD_TRIP');
         const stops = segs.filter((s) => s.segment_type === 'STOP');
         stops.forEach((stop) => {
-            const opts = (stop.metadata as any)?.draft_stop_options;
+            const opts = (stop.metadata as Record<string, unknown> | undefined)?.draft_stop_options;
             expect(Array.isArray(opts)).toBe(true);
             expect((opts as unknown[]).length).toBeGreaterThanOrEqual(1);
         });
@@ -115,7 +115,7 @@ describe('createSegmentTemplate — ROAD_TRIP', () => {
         const segs = createSegmentTemplate('ROAD_TRIP');
         const stops = segs.filter((s) => s.segment_type === 'STOP');
         stops.forEach((stop) => {
-            const opts = (stop.metadata as any)?.draft_stop_options as Array<{ option_type: string }>;
+            const opts = (stop.metadata as Record<string, unknown> | undefined)?.draft_stop_options as Array<{ option_type: string }>;
             opts.forEach((opt) => {
                 expect(validTypes).toContain(opt.option_type);
             });
