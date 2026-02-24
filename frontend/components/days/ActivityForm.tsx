@@ -12,7 +12,7 @@ interface ActivityFormProps {
 }
 
 export const ActivityForm = ({ activity, dayId, onSave, onClose, onDelete }: ActivityFormProps) => {
-    const { register, handleSubmit, formState: { errors } } = useForm<Partial<DayActivity>>({
+    const { register, handleSubmit } = useForm<Partial<DayActivity>>({
         defaultValues: {
             title: activity?.title || '',
             category: activity?.category || 'other',

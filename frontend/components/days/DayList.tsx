@@ -28,9 +28,12 @@ export const DayList = ({ days, tripId, onRefresh }: DayListProps) => {
         try {
             await dayApi.createDay({ trip_id: tripId, date: dateStr });
             onRefresh();
-        } catch (e: any) {
-            console.error(e);
-            alert(e?.response?.data?.detail || 'Failed to add day');
+        } catch (err: unknown) {
+            console.error(err);
+            const message = err instanceof Error && 'response' in err
+                ? (err as { response?: { data?: { detail?: string } } }).response?.data?.detail || err.message
+                : err instanceof Error ? err.message : 'Failed to add day';
+            alert(message);
         } finally {
             setAdding(false);
         }

@@ -18,24 +18,31 @@ export default function DayPage({ params }: { params: Promise<{ id: string; dayI
     const [day, setDay] = useState<TripDay | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const fetchDay = useCallback(() => {
+    const fetchDay = useCallback(async (showLoading = false) => {
         if (!isAuthenticated) return;
-        setLoading(true);
-        tripApi.getDays(tripId)
-            .then(res => {
-                const found = res.data.find((d: TripDay) => d.id === dayId);
-                if (found) {
-                    // Also fetch activities for the day
-                    dayApi.getActivities(dayId)
-                        .then(actRes => setDay({ ...found, activities: actRes.data }))
-                        .catch(() => setDay(found));
-                } else {
-                    setDay(null);
+        if (showLoading) setLoading(true);
+
+        try {
+            const res = await tripApi.getDays(tripId);
+            const found = res.data.find((d: TripDay) => d.id === dayId);
+            if (found) {
+                try {
+                    const actRes = await dayApi.getActivities(dayId);
+                    setDay({ ...found, activities: actRes.data });
+                } catch {
+                    setDay(found);
                 }
-            })
-            .catch(console.error)
-            .finally(() => setLoading(false));
+            } else {
+                setDay(null);
+            }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            if (showLoading) setLoading(false);
+        }
     }, [isAuthenticated, tripId, dayId]);
+
+    const handleRefresh = useCallback(() => fetchDay(true), [fetchDay]);
 
     useEffect(() => {
         if (authLoading) return;
@@ -43,7 +50,12 @@ export default function DayPage({ params }: { params: Promise<{ id: string; dayI
             router.push('/login');
             return;
         }
-        fetchDay();
+
+        const load = async () => {
+            await fetchDay(false);
+            setLoading(false);
+        };
+        load();
     }, [isAuthenticated, authLoading, fetchDay, router]);
 
     if (authLoading || loading) return <p className="p-8 text-center text-slate-500">Loading day...</p>;
@@ -59,7 +71,7 @@ export default function DayPage({ params }: { params: Promise<{ id: string; dayI
                     <span>←</span> Back to trip
                 </button>
             </div>
-            <DayBuilder day={day} tripId={tripId} onRefresh={fetchDay} />
+            <DayBuilder day={day} tripId={tripId} onRefresh={handleRefresh} />
         </div>
     );
 }

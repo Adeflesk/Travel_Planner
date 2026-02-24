@@ -1,5 +1,4 @@
-import { TripDay, DayActivity } from '@/lib/types';
-import { format } from 'date-fns';
+import { DayActivity } from '@/lib/types';
 
 interface ActivityBlockProps {
     activity: DayActivity;

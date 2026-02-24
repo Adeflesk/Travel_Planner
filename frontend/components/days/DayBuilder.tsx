@@ -14,7 +14,7 @@ interface DayBuilderProps {
 
 const HOURS = Array.from({ length: 17 }, (_, i) => i + 7); // 7am to 11pm (23:00)
 
-export const DayBuilder = ({ day, tripId, onRefresh }: DayBuilderProps) => {
+export const DayBuilder = ({ day, onRefresh }: DayBuilderProps) => {
     const [selectedActivity, setSelectedActivity] = useState<Partial<DayActivity> | null>(null);
     const [isFormOpen, setIsFormOpen] = useState(false);
 
@@ -96,7 +96,7 @@ export const DayBuilder = ({ day, tripId, onRefresh }: DayBuilderProps) => {
                     </div>
 
                     {/* Render activities dynamically */}
-                    <div className="relative w-full h-[68rem]"> {/* 17 hours * 4rem */}
+                    <div className="relative w-full h-272"> {/* 17 hours * 4rem */}
                         {scheduled.map(activity => (
                             <ActivityBlock
                                 key={activity.id}
