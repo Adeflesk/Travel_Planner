@@ -12,6 +12,7 @@ import { TripActivityList } from '@/components/trip-activities';
 import { JourneyList } from '@/components/journeys';
 import { TripTimeline } from '@/components/timeline';
 import { PackingList } from '@/components/packing';
+import { DayList } from '@/components/days';
 import { ShareTripModal } from '@/components/sharing';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/lib/auth-context';
@@ -20,6 +21,8 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { TripOverviewDashboard } from '@/components/trips/TripOverviewDashboard';
+import { TripSettings } from '@/components/trips/TripSettings';
+import type { TripContext } from '@/lib/trip-context';
 
 function TripDetailContent() {
   const { isAuthenticated } = useAuth();
@@ -30,17 +33,28 @@ function TripDetailContent() {
   const [trip, setTrip] = useState<Trip | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<
-    'destinations' | 'journeys' | 'timeline' | 'expenses' | 'activities' | 'packing'
-  >('destinations');
+    'destinations' | 'days' | 'journeys' | 'timeline' | 'expenses' | 'activities' | 'packing'
+  >('days');
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [days, setDays] = useState<any[]>([]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    const loadTrip = async () => {
+    const loadData = async () => {
       try {
-        const response = await tripApi.getById(tripId);
-        setTrip(response.data);
+        const [tripRes, daysRes] = await Promise.all([
+          tripApi.getById(tripId),
+          tripApi.getDays(tripId).catch(() => ({ data: [] }))
+        ]);
+        setTrip(tripRes.data);
+        setDays(daysRes.data || []);
+
+        // Default to destinations for non-single-city trips just to preserve mostly old behavior
+        if (tripRes.data?.context?.trip_type !== 'single_city') {
+          setActiveTab('destinations');
+        }
       } catch (error) {
         console.error('Error loading trip:', error);
         alert('Failed to load trip');
@@ -49,8 +63,22 @@ function TripDetailContent() {
       }
     };
 
-    loadTrip();
+    loadData();
   }, [tripId, isAuthenticated]);
+
+  const refreshDays = () => {
+    tripApi.getDays(tripId).then(res => setDays(res.data || [])).catch(() => { });
+  };
+
+  const handleSaveSettings = async (context: TripContext) => {
+    try {
+      const response = await tripApi.update(tripId, { context });
+      setTrip(response.data);
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+      throw error; // Let TripSettings handle the error alert
+    }
+  };
 
   if (loading) {
     return (
@@ -98,19 +126,24 @@ function TripDetailContent() {
             onShare={
               trip.is_owner !== false ? () => setShowShareModal(true) : undefined
             }
+            onSettings={
+              trip.is_owner !== false ? () => setShowSettingsModal(true) : undefined
+            }
           />
 
           {/* Tab navigation */}
           <div className="mt-6" data-testid="main-content">
             <div className="flex flex-wrap gap-2 mb-4">
               {[
-                { id: 'destinations', label: 'Destinations', icon: MapPin },
-                { id: 'journeys', label: 'Journeys', icon: Route },
+                ...(trip.context?.trip_type === 'single_city'
+                  ? [{ id: 'days', label: 'Days', icon: Clock }, { id: 'journeys', label: 'Journeys', icon: Route }]
+                  : [{ id: 'destinations', label: 'Destinations', icon: MapPin }, { id: 'journeys', label: 'Journeys', icon: Route }, { id: 'days', label: 'Days', icon: Clock }]),
                 { id: 'timeline', label: 'Timeline', icon: Clock },
                 { id: 'expenses', label: 'Expenses', icon: Receipt },
                 { id: 'activities', label: 'Activities', icon: Compass },
                 { id: 'packing', label: 'Packing List', icon: Package },
               ].map((tab) => {
+                // Ensure no dupes if we messed up arrays
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
                 return (
@@ -127,6 +160,7 @@ function TripDetailContent() {
             </div>
 
             <Card padding="lg">
+              {activeTab === 'days' && <DayList tripId={tripId} days={days} onRefresh={refreshDays} />}
               {activeTab === 'destinations' && <DestinationList tripId={tripId} />}
               {activeTab === 'journeys' && <JourneyList tripId={tripId} />}
               {activeTab === 'timeline' && <TripTimeline tripId={tripId} />}
@@ -143,6 +177,20 @@ function TripDetailContent() {
             isOpen={showShareModal}
             onClose={() => setShowShareModal(false)}
           />
+
+          {/* Settings Modal */}
+          {showSettingsModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+              <div className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-full overflow-hidden flex flex-col">
+                <TripSettings
+                  tripId={tripId}
+                  context={trip.context ?? null}
+                  onSave={handleSaveSettings}
+                  onClose={() => setShowSettingsModal(false)}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </TripProvider>
