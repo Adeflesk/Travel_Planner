@@ -16,6 +16,10 @@ const eslintConfig = defineConfig([
     ".pytest_cache/**",
     ".vercel/**",
     "next-env.d.ts",
+    "playwright-report/**",
+    "test-results/**",
+    ".pytest_cache/**",
+    ".vercel/**",
   ]),
   // Disable react-hooks rules for e2e tests (Playwright fixtures use 'use' function)
   {
