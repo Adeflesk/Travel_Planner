@@ -72,15 +72,15 @@ test.describe('Journey Management', () => {
 
     // Step 1: select template and advance to segment editor
     await authenticatedPage.getByRole('button', { name: /Simple/i }).click();
-    await authenticatedPage.getByRole('button', { name: 'Use template →' }).click();
+    await authenticatedPage.getByRole('button', { name: 'Use template' }).click();
 
     // Step 2: fill origin and destination
-    await expect(authenticatedPage.getByText('Segment 1 of 1')).toBeVisible();
+    await expect(authenticatedPage.getByText('1 / 1')).toBeVisible();
     await authenticatedPage.getByPlaceholder('Enter origin').fill('Paris');
     await authenticatedPage.getByPlaceholder('Enter destination').fill('London');
 
     // Advance to review step
-    await authenticatedPage.getByRole('button', { name: 'Review →' }).click();
+    await authenticatedPage.getByRole('button', { name: 'Review' }).click();
     await expect(authenticatedPage.getByText(/Review your journey/i)).toBeVisible();
 
     // Submit

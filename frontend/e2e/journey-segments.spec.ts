@@ -26,9 +26,9 @@ test.describe('Journey Segment Wizard', () => {
     // Step 1 — template picker
     await expect(authenticatedPage.getByText('Choose a template')).toBeVisible();
     await expect(authenticatedPage.getByRole('button', { name: /Simple/i })).toBeVisible();
-    await expect(authenticatedPage.getByRole('button', { name: /Air travel$/i })).toBeVisible();
-    await expect(authenticatedPage.getByRole('button', { name: /Road trip$/i })).toBeVisible();
-    await expect(authenticatedPage.getByRole('button', { name: 'Use template →' })).toBeVisible();
+    await expect(authenticatedPage.getByRole('button', { name: /Air travel/i })).toBeVisible();
+    await expect(authenticatedPage.getByRole('button', { name: /Road trip/i })).toBeVisible();
+    await expect(authenticatedPage.getByRole('button', { name: 'Use template' })).toBeVisible();
     await expect(authenticatedPage.getByRole('button', { name: 'Start blank' })).toBeVisible();
   });
 
@@ -39,11 +39,11 @@ test.describe('Journey Segment Wizard', () => {
 
     // Clicking "Simple" shows preview text
     await authenticatedPage.getByRole('button', { name: /Simple/i }).click();
-    await expect(authenticatedPage.getByText('Creates: 1 segment')).toBeVisible();
+    await expect(authenticatedPage.getByText('1 seg', { exact: false })).toBeVisible();
 
     // Clicking "Air travel" shows different preview
-    await authenticatedPage.getByRole('button', { name: /Air travel$/i }).click();
-    await expect(authenticatedPage.getByText(/Creates:.*3 segments/i)).toBeVisible();
+    await authenticatedPage.getByRole('button', { name: /Air travel/i }).click();
+    await expect(authenticatedPage.getByText('3 segs', { exact: false })).toBeVisible();
   });
 
   test('should advance to segment editor after selecting a template', async ({ authenticatedPage }) => {
@@ -52,10 +52,10 @@ test.describe('Journey Segment Wizard', () => {
     await authenticatedPage.getByRole('button', { name: 'Add Journey' }).click();
 
     await authenticatedPage.getByRole('button', { name: /Simple/i }).click();
-    await authenticatedPage.getByRole('button', { name: 'Use template →' }).click();
+    await authenticatedPage.getByRole('button', { name: 'Use template' }).click();
 
     // Step 2 — segment editor
-    await expect(authenticatedPage.getByText('Segment 1 of 1')).toBeVisible();
+    await expect(authenticatedPage.getByText('1 / 1')).toBeVisible();
     // Details always visible in wizard (no "Show details" toggle)
     await expect(authenticatedPage.getByLabel('Start time')).toBeVisible();
     await expect(authenticatedPage.getByLabel('End time')).toBeVisible();
@@ -68,7 +68,7 @@ test.describe('Journey Segment Wizard', () => {
 
     await authenticatedPage.getByRole('button', { name: 'Start blank' }).click();
 
-    await expect(authenticatedPage.getByText('Segment 1 of 1')).toBeVisible();
+    await expect(authenticatedPage.getByText('1 / 1')).toBeVisible();
     await expect(authenticatedPage.getByPlaceholder('Enter origin')).toBeVisible();
   });
 
@@ -78,27 +78,27 @@ test.describe('Journey Segment Wizard', () => {
     await authenticatedPage.getByRole('button', { name: 'Add Journey' }).click();
 
     // Air travel → 3 segments
-    await authenticatedPage.getByRole('button', { name: /Air travel$/i }).click();
-    await authenticatedPage.getByRole('button', { name: 'Use template →' }).click();
-    await expect(authenticatedPage.getByText('Segment 1 of 3')).toBeVisible();
+    await authenticatedPage.getByRole('button', { name: /Air travel/i }).click();
+    await authenticatedPage.getByRole('button', { name: 'Use template' }).click();
+    await expect(authenticatedPage.getByText('1 / 3')).toBeVisible();
 
     // Forward
-    await authenticatedPage.getByRole('button', { name: 'Next →' }).click();
-    await expect(authenticatedPage.getByText('Segment 2 of 3')).toBeVisible();
+    await authenticatedPage.getByRole('button', { name: 'Next' }).click();
+    await expect(authenticatedPage.getByText('2 / 3')).toBeVisible();
 
-    await authenticatedPage.getByRole('button', { name: 'Next →' }).click();
-    await expect(authenticatedPage.getByText('Segment 3 of 3')).toBeVisible();
+    await authenticatedPage.getByRole('button', { name: 'Next' }).click();
+    await expect(authenticatedPage.getByText('3 / 3')).toBeVisible();
 
-    // Last segment shows "Review →"
-    await expect(authenticatedPage.getByRole('button', { name: 'Review →' })).toBeVisible();
+    // Last segment shows "Review"
+    await expect(authenticatedPage.getByRole('button', { name: 'Review' })).toBeVisible();
 
     // Back
-    await authenticatedPage.getByRole('button', { name: '← Previous' }).click();
-    await expect(authenticatedPage.getByText('Segment 2 of 3')).toBeVisible();
+    await authenticatedPage.getByRole('button', { name: 'Previous' }).click();
+    await expect(authenticatedPage.getByText('2 / 3')).toBeVisible();
 
     // Back to template from segment 1
-    await authenticatedPage.getByRole('button', { name: '← Previous' }).click();
-    await authenticatedPage.getByRole('button', { name: '← Template' }).click();
+    await authenticatedPage.getByRole('button', { name: 'Previous' }).click();
+    await authenticatedPage.getByRole('button', { name: 'Template' }).click();
     await expect(authenticatedPage.getByText('Choose a template')).toBeVisible();
   });
 
@@ -108,17 +108,17 @@ test.describe('Journey Segment Wizard', () => {
     await authenticatedPage.getByRole('button', { name: 'Add Journey' }).click();
 
     // Start on step 1
-    await expect(authenticatedPage.getByRole('button', { name: '1. Template' })).toBeVisible();
-    await expect(authenticatedPage.getByRole('button', { name: '2. Segments' })).toBeVisible();
-    await expect(authenticatedPage.getByRole('button', { name: '3. Review' })).toBeVisible();
+    await expect(authenticatedPage.getByRole('button', { name: '1 Template' })).toBeVisible();
+    await expect(authenticatedPage.getByRole('button', { name: '2 Segments' })).toBeVisible();
+    await expect(authenticatedPage.getByRole('button', { name: '3 Review' })).toBeVisible();
 
     // Advance to step 2
     await authenticatedPage.getByRole('button', { name: /Simple/i }).click();
-    await authenticatedPage.getByRole('button', { name: 'Use template →' }).click();
-    await expect(authenticatedPage.getByText('Segment 1 of 1')).toBeVisible();
+    await authenticatedPage.getByRole('button', { name: 'Use template' }).click();
+    await expect(authenticatedPage.getByText('1 / 1')).toBeVisible();
 
     // Use step bar to jump back to template
-    await authenticatedPage.getByRole('button', { name: '1. Template' }).click();
+    await authenticatedPage.getByRole('button', { name: '1 Template' }).click();
     await expect(authenticatedPage.getByText('Choose a template')).toBeVisible();
   });
 
@@ -129,7 +129,7 @@ test.describe('Journey Segment Wizard', () => {
 
     await authenticatedPage.getByRole('button', { name: 'Start blank' }).click();
 
-    await expect(authenticatedPage.getByText('Segment 1 of 1')).toBeVisible();
+    await expect(authenticatedPage.getByText('1 / 1')).toBeVisible();
     await authenticatedPage.getByPlaceholder('Enter origin').fill('My House');
     await authenticatedPage.getByPlaceholder('Enter destination').fill('Bus Station');
 
@@ -143,8 +143,8 @@ test.describe('Journey Segment Wizard', () => {
     await authenticatedPage.getByRole('button', { name: 'Add Journey' }).click();
 
     // Road trip pre-populates TRANSFER segments with Uber/Taxi options
-    await authenticatedPage.getByRole('button', { name: /Road trip$/i }).click();
-    await authenticatedPage.getByRole('button', { name: 'Use template →' }).click();
+    await authenticatedPage.getByRole('button', { name: /Road trip/i }).click();
+    await authenticatedPage.getByRole('button', { name: 'Use template' }).click();
 
     await expect(authenticatedPage.getByText('🚗 Transport options')).toBeVisible();
     await expect(authenticatedPage.getByText('Drive (self)')).toBeVisible();
@@ -159,8 +159,8 @@ test.describe('Journey Segment Wizard', () => {
     await authenticatedPage.getByRole('button', { name: /Journeys/i }).click();
     await authenticatedPage.getByRole('button', { name: 'Add Journey' }).click();
 
-    await authenticatedPage.getByRole('button', { name: /Road trip$/i }).click();
-    await authenticatedPage.getByRole('button', { name: 'Use template →' }).click();
+    await authenticatedPage.getByRole('button', { name: /Road trip/i }).click();
+    await authenticatedPage.getByRole('button', { name: 'Use template' }).click();
 
     await expect(authenticatedPage.getByText('🚗 Transport options')).toBeVisible();
 
@@ -178,7 +178,7 @@ test.describe('Journey Segment Wizard', () => {
     await authenticatedPage.getByRole('button', { name: 'Add Journey' }).click();
 
     await authenticatedPage.getByRole('button', { name: 'Start blank' }).click();
-    await expect(authenticatedPage.getByText('Segment 1 of 1')).toBeVisible();
+    await expect(authenticatedPage.getByText('1 / 1')).toBeVisible();
 
     // Transport options section is visible for TRANSFER segment (default)
     await expect(authenticatedPage.getByText('🚗 Transport options')).toBeVisible();
@@ -200,13 +200,13 @@ test.describe('Journey Segment Wizard', () => {
     await authenticatedPage.getByRole('button', { name: 'Add Journey' }).click();
 
     await authenticatedPage.getByRole('button', { name: /Simple/i }).click();
-    await authenticatedPage.getByRole('button', { name: 'Use template →' }).click();
+    await authenticatedPage.getByRole('button', { name: 'Use template' }).click();
 
     await authenticatedPage.getByPlaceholder('Enter origin').fill('Paris');
     await authenticatedPage.getByPlaceholder('Enter destination').fill('Lyon');
 
     // Advance to review
-    await authenticatedPage.getByRole('button', { name: 'Review →' }).click();
+    await authenticatedPage.getByRole('button', { name: 'Review' }).click();
 
     await expect(authenticatedPage.getByText(/Review your journey/i)).toBeVisible();
     await expect(authenticatedPage.getByText(/Paris/)).toBeVisible();
@@ -214,7 +214,7 @@ test.describe('Journey Segment Wizard', () => {
 
     // Edit button should jump back to segment editing
     await authenticatedPage.getByRole('button', { name: 'Edit' }).first().click();
-    await expect(authenticatedPage.getByText('Segment 1 of 1')).toBeVisible();
+    await expect(authenticatedPage.getByText('1 / 1')).toBeVisible();
   });
 
   test('should save a complete journey through the wizard', async ({ authenticatedPage }) => {
@@ -227,15 +227,15 @@ test.describe('Journey Segment Wizard', () => {
 
     // Step 1: template
     await authenticatedPage.getByRole('button', { name: /Simple/i }).click();
-    await authenticatedPage.getByRole('button', { name: 'Use template →' }).click();
+    await authenticatedPage.getByRole('button', { name: 'Use template' }).click();
 
     // Step 2: fill segment
-    await expect(authenticatedPage.getByText('Segment 1 of 1')).toBeVisible();
+    await expect(authenticatedPage.getByText('1 / 1')).toBeVisible();
     await authenticatedPage.getByPlaceholder('Enter origin').fill('Berlin');
     await authenticatedPage.getByPlaceholder('Enter destination').fill('Munich');
 
-    // Step 3: review (via Review → button)
-    await authenticatedPage.getByRole('button', { name: 'Review →' }).click();
+    // Step 3: review (via Review button)
+    await authenticatedPage.getByRole('button', { name: 'Review' }).click();
     await expect(authenticatedPage.getByText(/Review your journey/i)).toBeVisible();
 
     // Save journey

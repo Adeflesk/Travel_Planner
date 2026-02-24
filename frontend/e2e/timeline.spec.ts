@@ -184,8 +184,8 @@ test.describe('Trip Timeline', () => {
     await authenticatedPage.getByRole('button', { name: /Timeline/i }).click();
 
     // Verify dates are shown
-    await expect(authenticatedPage.getByText('Arrive:')).toBeVisible();
-    await expect(authenticatedPage.getByText('Depart:')).toBeVisible();
+    await expect(authenticatedPage.getByText('Arrive')).toBeVisible();
+    await expect(authenticatedPage.getByText('Depart')).toBeVisible();
   });
 
   test('should display multiple timeline items sorted by date', async ({ authenticatedPage, authApiRequest }) => {
@@ -218,6 +218,7 @@ test.describe('Trip Timeline', () => {
     const berlinPosition = await authenticatedPage.getByText('Berlin').first().boundingBox();
 
     if (praguePosition && berlinPosition) {
+      // Prague (7 days out) should be above Berlin (14 days out)
       expect(praguePosition.y).toBeLessThan(berlinPosition.y);
     }
   });
