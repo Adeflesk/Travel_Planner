@@ -28,12 +28,6 @@ import {
   PackingSummary,
   TripProgress,
   DestinationWithActivities,
-  AdminStats,
-  AdminUserCreate,
-  AdminUserUpdate,
-  User,
-  TripShare,
-  TripShareCreate,
   TimelineItem,
   DestinationAccommodation,
   TripStats,
@@ -345,9 +339,9 @@ export const journeyApi = {
     return journeyRes;
   },
 
-  update: async (id: number, data: Partial<JourneyFormData>) => {
-    // If segments are provided, they are handled separately or ignored in the basic PUT
-    const { segments: _unused_segments, ...updateFields } = data;
+  update: (id: number, data: Partial<JourneyFormData>) => {
+    // segments are managed via the segment API — strip them from the journey update payload
+    const { segments: _segments, ...updateFields } = data;
     const cleanedData: Record<string, unknown> = {};
     (Object.keys(updateFields) as Array<keyof typeof updateFields>).forEach((key) => {
       const value = updateFields[key];
@@ -583,6 +577,15 @@ export const settingsApi = {
 };
 
 // Admin API
+import {
+  AdminStats,
+  AdminUserCreate,
+  AdminUserUpdate,
+  User,
+  TripShare,
+  TripShareCreate,
+} from './types';
+
 export const adminApi = {
   getStats: () => api.get<AdminStats>('/admin/stats/'),
   getUsers: (skip = 0, limit = 100) =>

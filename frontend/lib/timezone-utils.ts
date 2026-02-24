@@ -6,7 +6,7 @@
  */
 
 import { differenceInMinutes } from 'date-fns';
-import { toDate, getTimezoneOffset } from 'date-fns-tz';
+import { toDate, getTimezoneOffset, formatInTimeZone } from 'date-fns-tz';
 
 export interface Airport {
   iata: string;
