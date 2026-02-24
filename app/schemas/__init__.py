@@ -24,3 +24,6 @@ from .dashboard import *  # noqa: F401, F403
 from .journey_timeline import *  # noqa: F401, F403
 from .weather import *  # noqa: F401, F403
 from .practicality import *  # noqa: F401, F403
+from .trip_day import *  # noqa: F401, F403
+from .day_activity import *  # noqa: F401, F403
+from .user_settings import *  # noqa: F401, F403

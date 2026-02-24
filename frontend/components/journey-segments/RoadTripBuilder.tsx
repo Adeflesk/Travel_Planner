@@ -2,6 +2,8 @@
 import { useState } from 'react';
 import { Destination, JourneySegmentDraft } from '@/lib/types';
 import { getLocalTimezone } from '@/lib/timezone-utils';
+import { defaultEndTime } from '@/lib/datetime-utils';
+import type { DraftSegmentOption } from '@/lib/segment-templates';
 import { useSegmentBuilder } from './useSegmentBuilder';
 import { RoadTripTimeline } from './RoadTripTimeline';
 import { LegForm } from './LegForm';
@@ -28,7 +30,7 @@ export const RoadTripBuilder = ({
 }: RoadTripBuilderProps) => {
   const [selectedIdx, setSelectedIdx] = useState(0);
 
-  const { updateLocation, updateField, propagateTimeForward, propagateMetaForward } = useSegmentBuilder(segments, onChange, {
+  const { updateLocation, updateField } = useSegmentBuilder(segments, onChange, {
     timezone: defaultTimezone,
     startDate: startDate ?? new Date(),
     destinations,
@@ -40,21 +42,69 @@ export const RoadTripBuilder = ({
   // Seed targetIdx's start_datetime from the previous segment's end_datetime.
   // force=true (Next →): always overwrite — template defaults shouldn't block chaining.
   // force=false (timeline click): only fill if the target has no start time yet.
+  const propagateTime = (segs: JourneySegmentDraft[], targetIdx: number, force: boolean): JourneySegmentDraft[] => {
+    if (targetIdx <= 0 || targetIdx >= segs.length) return segs;
+    const prev = segs[targetIdx - 1];
+    const target = segs[targetIdx];
+    if (!prev.end_datetime) return segs;
+    if (!force && target.start_datetime) return segs;
+    const start = prev.end_datetime;
+    const end = defaultEndTime(start);
+    return segs.map((seg, i) =>
+      i === targetIdx ? { ...seg, start_datetime: start, end_datetime: end } : seg
+    );
+  };
 
+  // When navigating Next → into a LEG, carry the mode and matching transport card
+  // from the most recent previous LEG that has a mode set — only if the target
+  // doesn't already have a mode (non-destructive for user-set values).
+  const propagateMeta = (segs: JourneySegmentDraft[], targetIdx: number): JourneySegmentDraft[] => {
+    const target = segs[targetIdx];
+    if (target.segment_type !== 'LEG') return segs;
+    const targetMeta = target.metadata ?? {};
+    if (targetMeta.mode) return segs; // already set — don't overwrite
+
+    const sourceLeg = [...segs.slice(0, targetIdx)]
+      .reverse()
+      .find((s) => s.segment_type === 'LEG' && s.metadata?.mode);
+    if (!sourceLeg) return segs;
+
+    const sourceMeta = sourceLeg.metadata ?? {};
+    const updates: Record<string, unknown> = { mode: sourceMeta.mode };
+
+    // Also carry the selected transport card forward by matching on option name
+    const sourceSelectedIdx = sourceMeta.selected_segment_option as number | undefined;
+    if (sourceSelectedIdx !== undefined && sourceSelectedIdx >= 0) {
+      const sourceOpts = (sourceMeta.draft_segment_options ?? []) as DraftSegmentOption[];
+      const sourceOpt = sourceOpts[sourceSelectedIdx];
+      if (sourceOpt) {
+        const targetOpts = (targetMeta.draft_segment_options ?? []) as DraftSegmentOption[];
+        const matchIdx = targetOpts.findIndex((o) => o.name === sourceOpt.name);
+        if (matchIdx >= 0) {
+          updates.selected_segment_option = matchIdx;
+          updates.provider = targetOpts[matchIdx].provider ?? targetOpts[matchIdx].name;
+        }
+      }
+    }
+
+    return segs.map((seg, i) =>
+      i === targetIdx ? { ...seg, metadata: { ...targetMeta, ...updates } } : seg
+    );
+  };
 
   // Next → : always chain from previous end_datetime, and carry transport defaults
   const navigateNext = () => {
     const nextIdx = safeIdx + 1;
     if (nextIdx >= segments.length) return;
-    let updated = propagateTimeForward(segments, nextIdx, true);
-    updated = propagateMetaForward(updated, nextIdx);
+    let updated = propagateTime(segments, nextIdx, true);
+    updated = propagateMeta(updated, nextIdx);
     if (updated !== segments) onChange(updated);
     setSelectedIdx(nextIdx);
   };
 
   // Timeline click or Previous ← : non-destructive (only fills if empty)
   const navigateTo = (idx: number) => {
-    const updated = propagateTimeForward(segments, idx, false);
+    const updated = propagateTime(segments, idx, false);
     if (updated !== segments) onChange(updated);
     setSelectedIdx(idx);
   };

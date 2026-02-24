@@ -1,130 +1,148 @@
 'use client';
 
-import { useSettings } from '@/lib/settings-context';
+import React, { useState } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import { useSettings } from '@/lib/settings-context';
+import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { useForm } from 'react-hook-form';
-import { useEffect } from 'react';
-
-interface SettingsFormData {
-    default_currency: string;
-    home_base: string;
-    road_trip_builder: boolean;
-    expense_tracking: boolean;
-    packing_list: boolean;
-}
 
 function SettingsContent() {
-    const { settings, loading, error, updateSettings } = useSettings();
+    const { settings, isLoading, error, updateSettings, refreshSettings } = useSettings();
+    const [saving, setSaving] = useState(false);
+    const [localSettings, setLocalSettings] = useState(() => ({
+        default_currency: settings?.default_currency || 'USD',
+        home_base: settings?.home_base || '',
+        feature_flags: settings?.feature_flags || {},
+    }));
 
-    const { register, handleSubmit, reset } = useForm<SettingsFormData>({
-        defaultValues: {
-            default_currency: 'USD',
-            home_base: '',
-            road_trip_builder: true,
-            expense_tracking: true,
-            packing_list: true,
-        }
-    });
-
-    useEffect(() => {
+    // Update local state when settings loads
+    React.useEffect(() => {
         if (settings) {
-            reset({
+            setLocalSettings({
                 default_currency: settings.default_currency,
                 home_base: settings.home_base || '',
-                road_trip_builder: settings.feature_flags.road_trip_builder ?? true,
-                expense_tracking: settings.feature_flags.expense_tracking ?? true,
-                packing_list: settings.feature_flags.packing_list ?? true,
+                feature_flags: settings.feature_flags,
             });
         }
-    }, [settings, reset]);
+    }, [settings]);
 
-    const onSubmit = async (data: SettingsFormData) => {
+    const handleSave = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSaving(true);
         try {
-            await updateSettings({
-                default_currency: data.default_currency,
-                home_base: data.home_base,
-                feature_flags: {
-                    ...settings?.feature_flags,
-                    road_trip_builder: data.road_trip_builder,
-                    expense_tracking: data.expense_tracking,
-                    packing_list: data.packing_list,
-                }
-            });
-            alert('Settings saved successfully!');
-        } catch {
-            alert('Failed to save settings.');
+            await updateSettings(localSettings);
+            alert('Settings updated successfully!');
+        } catch (err) {
+            alert('Failed to update settings');
+        } finally {
+            setSaving(false);
         }
     };
 
-    if (loading) return <div className="p-8 text-center bg-slate-50 min-h-screen">Loading settings...</div>;
-    if (error) return <div className="p-8 text-center text-rose-500 bg-slate-50 min-h-screen">{error}</div>;
+    const toggleFeatureFlag = (key: string) => {
+        setLocalSettings(prev => ({
+            ...prev,
+            feature_flags: {
+                ...prev.feature_flags,
+                [key]: !prev.feature_flags[key]
+            }
+        }));
+    };
+
+    if (isLoading) {
+        return (
+            <div className="min-h-[50vh] flex justify-center items-center">
+                <p className="text-slate-500">Loading settings...</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="min-h-[50vh] flex flex-col justify-center items-center gap-4">
+                <p className="text-red-500">{error}</p>
+                <Button onClick={refreshSettings}>Retry</Button>
+            </div>
+        );
+    }
 
     return (
-        <div className="min-h-screen bg-slate-50 p-6">
-            <div className="max-w-2xl mx-auto">
-                <h1 className="text-3xl font-black tracking-tight text-slate-900 mb-8">Settings</h1>
+        <div className="max-w-2xl mx-auto space-y-6">
+            <div className="space-y-1">
+                <h1 className="text-3xl font-display font-semibold text-slate-900">Settings</h1>
+                <p className="text-slate-500">Manage your application preferences and default settings.</p>
+            </div>
 
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+            <Card padding="lg">
+                <form onSubmit={handleSave} className="space-y-6">
+                    <div className="space-y-4">
+                        <h2 className="text-xl font-medium text-slate-800">General</h2>
 
-                    <section>
-                        <h2 className="text-lg font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100">Defaults</h2>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-1">Default Currency</label>
-                                <select {...register('default_currency')} className="w-full sm:w-1/2 p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm">
-                                    <option value="USD">USD ($)</option>
-                                    <option value="EUR">EUR (€)</option>
-                                    <option value="GBP">GBP (£)</option>
-                                    <option value="AUD">AUD (A$)</option>
-                                </select>
-                                <p className="text-xs text-slate-500 mt-1">Used for planning estimates and new expenses.</p>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-1">Home Base</label>
-                                <input {...register('home_base')} className="w-full sm:w-1/2 p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" placeholder="e.g. SFO or London" />
-                                <p className="text-xs text-slate-500 mt-1">Used as a default starting point for returning journeys.</p>
-                            </div>
+                        <div className="grid gap-2">
+                            <label htmlFor="default_currency" className="text-sm font-medium text-slate-700">
+                                Default Currency
+                            </label>
+                            <select
+                                id="default_currency"
+                                className="w-full sm:w-64 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                                value={localSettings.default_currency}
+                                onChange={(e) => setLocalSettings(prev => ({ ...prev, default_currency: e.target.value }))}
+                            >
+                                <option value="USD">USD ($)</option>
+                                <option value="EUR">EUR (€)</option>
+                                <option value="GBP">GBP (£)</option>
+                                <option value="JPY">JPY (¥)</option>
+                                <option value="CAD">CAD ($)</option>
+                                <option value="AUD">AUD ($)</option>
+                            </select>
                         </div>
-                    </section>
 
-                    <section>
-                        <h2 className="text-lg font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100">Feature Toggles</h2>
-                        <p className="text-sm text-slate-500 mb-5">Disable features you don&apos;t use to simplify your trip planning experience. No data is deleted.</p>
-
-                        <div className="space-y-4">
-                            <label className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50 cursor-pointer hover:bg-slate-100/50 transition-colors">
-                                <div>
-                                    <div className="font-semibold text-slate-800 text-sm">Road Trip Builder</div>
-                                    <div className="text-xs text-slate-500 mt-0.5">Advanced segment builder for complex drives with stops.</div>
-                                </div>
-                                <input type="checkbox" {...register('road_trip_builder')} className="w-5 h-5 text-sky-500 rounded border-slate-300" />
+                        <div className="grid gap-2">
+                            <label htmlFor="home_base" className="text-sm font-medium text-slate-700">
+                                Home Base
                             </label>
-
-                            <label className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50 cursor-pointer hover:bg-slate-100/50 transition-colors">
-                                <div>
-                                    <div className="font-semibold text-slate-800 text-sm">Expense Tracking</div>
-                                    <div className="text-xs text-slate-500 mt-0.5">Track paid expenses against your trip budget.</div>
-                                </div>
-                                <input type="checkbox" {...register('expense_tracking')} className="w-5 h-5 text-sky-500 rounded border-slate-300" />
-                            </label>
-
-                            <label className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50 cursor-pointer hover:bg-slate-100/50 transition-colors">
-                                <div>
-                                    <div className="font-semibold text-slate-800 text-sm">Packing List</div>
-                                    <div className="text-xs text-slate-500 mt-0.5">Checklist functionality for tracking luggage.</div>
-                                </div>
-                                <input type="checkbox" {...register('packing_list')} className="w-5 h-5 text-sky-500 rounded border-slate-300" />
-                            </label>
+                            <input
+                                type="text"
+                                id="home_base"
+                                placeholder="e.g. London, UK"
+                                className="w-full sm:w-96 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                                value={localSettings.home_base}
+                                onChange={(e) => setLocalSettings(prev => ({ ...prev, home_base: e.target.value }))}
+                            />
+                            <p className="text-xs text-slate-500">Set your usual starting point for journeys.</p>
                         </div>
-                    </section>
+                    </div>
 
-                    <div className="pt-6 flex justify-end">
-                        <Button variant="primary" type="submit">Save Settings</Button>
+                    <div className="w-full h-px bg-slate-100 border-none" />
+
+                    <div className="space-y-4">
+                        <h2 className="text-xl font-medium text-slate-800">Features</h2>
+                        <p className="text-sm text-slate-500">Toggle experimental or optional features.</p>
+
+                        <div className="space-y-3">
+                            {['road_trip_builder', 'expense_tracking', 'packing_list'].map(flag => (
+                                <label key={flag} className="flex items-center gap-3 p-3 border border-slate-100 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors">
+                                    <input
+                                        type="checkbox"
+                                        className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                                        checked={localSettings.feature_flags[flag] === true}
+                                        onChange={() => toggleFeatureFlag(flag)}
+                                    />
+                                    <span className="text-sm font-medium text-slate-700">
+                                        {flag.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                                    </span>
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="pt-4 flex justify-end">
+                        <Button type="submit" disabled={saving}>
+                            {saving ? 'Saving...' : 'Save Settings'}
+                        </Button>
                     </div>
                 </form>
-            </div>
+            </Card>
         </div>
     );
 }
