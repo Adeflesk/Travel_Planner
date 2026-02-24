@@ -184,8 +184,8 @@ test.describe('Trip Timeline', () => {
     await authenticatedPage.getByRole('button', { name: /Timeline/i }).click();
 
     // Verify dates are shown
-    await expect(authenticatedPage.getByText('Arrive:')).toBeVisible();
-    await expect(authenticatedPage.getByText('Depart:')).toBeVisible();
+    await expect(authenticatedPage.getByText('Arrive', { exact: true })).toBeVisible();
+    await expect(authenticatedPage.getByText('Depart', { exact: true })).toBeVisible();
   });
 
   test('should display multiple timeline items sorted by date', async ({ authenticatedPage, authApiRequest }) => {
@@ -214,12 +214,12 @@ test.describe('Trip Timeline', () => {
     await expect(authenticatedPage.getByText('Prague').first()).toBeVisible();
 
     // Prague should appear before Berlin (earlier date)
-    const praguePosition = await authenticatedPage.getByText('Prague').first().boundingBox();
-    const berlinPosition = await authenticatedPage.getByText('Berlin').first().boundingBox();
+    const headings = await authenticatedPage.locator('h3').allTextContents();
+    const pragueIndex = headings.findIndex(h => h.includes('Prague'));
+    const berlinIndex = headings.findIndex(h => h.includes('Berlin'));
 
-    if (praguePosition && berlinPosition) {
-      expect(praguePosition.y).toBeLessThan(berlinPosition.y);
-    }
+    expect(pragueIndex).toBeLessThan(berlinIndex);
+    expect(pragueIndex).toBeGreaterThan(-1);
   });
 
   test('should display booking reference in journey', async ({ authenticatedPage, authApiRequest }) => {

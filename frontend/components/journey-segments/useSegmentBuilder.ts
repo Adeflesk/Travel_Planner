@@ -8,6 +8,7 @@ import {
 } from '@/lib/types';
 import { createSegmentTemplate } from '@/lib/segment-templates';
 import { getLocalTimezone } from '@/lib/timezone-utils';
+import { addHoursToISO } from '@/lib/datetime-utils';
 
 const createEmptyLocation = (): LocationRef => ({
   type: 'custom',
@@ -109,6 +110,9 @@ interface SegmentBuilderActions {
   updateSegmentType: (index: number, segmentType: SegmentType) => void;
   updateLocation: (index: number, side: 'origin' | 'destination', location: LocationRef, explicitTimezone?: string) => void;
   updateField: (index: number, field: keyof JourneySegmentDraft, value: unknown) => void;
+  updateSegmentAt: (index: number, partial: Partial<JourneySegmentDraft>) => void;
+  propagateTimeForward: (targetIdx: number, force: boolean) => void;
+  propagateMetaForward: (targetIdx: number) => void;
 }
 
 export const useSegmentBuilder = (
@@ -290,7 +294,7 @@ export const useSegmentBuilder = (
 
       setSegments(reindexSegments(next));
     },
-    [options?.destinations, segments, setSegments, resolveTimezone]
+    [segments, setSegments, resolveTimezone]
   );
 
   const updateField = useCallback(
@@ -324,6 +328,65 @@ export const useSegmentBuilder = (
     [segments, setSegments]
   );
 
+  const updateSegmentAt = useCallback(
+    (index: number, partial: Partial<JourneySegmentDraft>) => {
+      const next = [...segments];
+      next[index] = { ...next[index], ...partial } as JourneySegmentDraft;
+      setSegments(reindexSegments(next));
+    },
+    [segments, setSegments]
+  );
+
+  const propagateTimeForward = useCallback(
+    (targetIdx: number, force: boolean) => {
+      if (targetIdx <= 0 || targetIdx >= segments.length) return;
+      const prev = segments[targetIdx - 1];
+      const target = segments[targetIdx];
+      if (!prev.end_datetime) return;
+      if (!force && target.start_datetime) return;
+      const start = prev.end_datetime;
+      const end = new Date(new Date(start).getTime() + 2 * 60 * 60 * 1000).toISOString();
+      const next = segments.map((seg, i) =>
+        i === targetIdx ? { ...seg, start_datetime: start, end_datetime: end } : seg
+      );
+      setSegments(reindexSegments(next));
+    },
+    [segments, setSegments]
+  );
+
+  const propagateMetaForward = useCallback(
+    (targetIdx: number) => {
+      const target = segments[targetIdx];
+      if (target?.segment_type !== 'LEG') return;
+      const targetMeta = (target.metadata ?? {}) as Record<string, unknown>;
+      if (targetMeta.mode) return;
+      const sourceLeg = [...segments.slice(0, targetIdx)]
+        .reverse()
+        .find((s) => s.segment_type === 'LEG' && s.metadata?.mode);
+      if (!sourceLeg) return;
+      const sourceMeta = sourceLeg.metadata as Record<string, unknown>;
+      const updates: Record<string, unknown> = { mode: sourceMeta.mode };
+      const sourceSelectedIdx = sourceMeta.selected_segment_option as number | undefined;
+      if (sourceSelectedIdx !== undefined && sourceSelectedIdx >= 0) {
+        const sourceOpts = (sourceMeta.draft_segment_options ?? []) as Array<{ name: string; provider?: string }>;
+        const sourceOpt = sourceOpts[sourceSelectedIdx];
+        if (sourceOpt) {
+          const targetOpts = (targetMeta.draft_segment_options ?? []) as Array<{ name: string; provider?: string }>;
+          const matchIdx = targetOpts.findIndex((o) => o.name === sourceOpt.name);
+          if (matchIdx >= 0) {
+            updates.selected_segment_option = matchIdx;
+            updates.provider = targetOpts[matchIdx].provider ?? targetOpts[matchIdx].name;
+          }
+        }
+      }
+      const next = segments.map((seg, i) =>
+        i === targetIdx ? { ...seg, metadata: { ...targetMeta, ...updates } } : seg
+      );
+      setSegments(reindexSegments(next));
+    },
+    [segments, setSegments]
+  );
+
   return {
     applyIntent,
     addSegment,
@@ -332,5 +395,8 @@ export const useSegmentBuilder = (
     updateSegmentType,
     updateLocation,
     updateField,
+    updateSegmentAt,
+    propagateTimeForward,
+    propagateMetaForward,
   };
 };

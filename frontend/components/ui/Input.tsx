@@ -1,6 +1,6 @@
 'use client';
 
-import { forwardRef, InputHTMLAttributes, TextareaHTMLAttributes, ReactNode } from 'react';
+import { forwardRef, InputHTMLAttributes, TextareaHTMLAttributes, ReactNode, useId } from 'react';
 
 type InputSize = 'sm' | 'md' | 'lg';
 
@@ -13,9 +13,9 @@ interface BaseInputProps {
   inputSize?: InputSize;
 }
 
-interface InputProps extends BaseInputProps, Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {}
+interface InputProps extends BaseInputProps, Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> { }
 
-interface TextareaProps extends BaseInputProps, Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'size'> {}
+interface TextareaProps extends BaseInputProps, Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'size'> { }
 
 const sizeStyles: Record<InputSize, string> = {
   sm: 'h-8 px-3 text-sm',
@@ -50,10 +50,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     const hasLeftIcon = !!leftIcon;
     const hasRightIcon = !!rightIcon;
 
+    const generatedId = useId();
+    const inputId = props.id || generatedId;
+
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-sm font-medium text-slate-700 mb-1.5">
+          <label htmlFor={inputId} className="block text-sm font-medium text-slate-700 mb-1.5">
             {label}
             {props.required && <span className="text-danger-500 ml-0.5">*</span>}
           </label>
@@ -74,6 +77,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               ${hasRightIcon ? 'pr-10' : ''}
               ${className}
             `}
+            id={inputId}
             {...props}
           />
           {rightIcon && (
@@ -102,10 +106,13 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     },
     ref
   ) => {
+    const generatedId = useId();
+    const inputId = props.id || generatedId;
+
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-sm font-medium text-slate-700 mb-1.5">
+          <label htmlFor={inputId} className="block text-sm font-medium text-slate-700 mb-1.5">
             {label}
             {props.required && <span className="text-danger-500 ml-0.5">*</span>}
           </label>
@@ -118,6 +125,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
             ${error ? errorStyles : ''}
             ${className}
           `}
+          id={inputId}
           {...props}
         />
         {error && <p className="mt-1 text-sm text-danger-600">{error}</p>}

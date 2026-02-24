@@ -64,18 +64,6 @@ const buildStopSegment = (
     draft_stop_options: stopOptions,
   });
 
-/** Build a TRANSFER/BUS/RAIL segment pre-populated with draft transport alternatives. */
-const buildTransferSegment = (
-  order: number,
-  type: Extract<SegmentType, 'TRANSFER' | 'BUS' | 'RAIL'>,
-  originName: string,
-  destinationName: string,
-  segmentOptions: DraftSegmentOption[],
-  options?: TemplateOptions
-): JourneySegmentDraft =>
-  buildSegment(order, type, originName, destinationName, options, {
-    draft_segment_options: segmentOptions,
-  });
 
 export const createSegmentTemplate = (
   intent: JourneySegmentIntent,
@@ -112,15 +100,13 @@ export const createSegmentTemplate = (
      */
     case 'ROAD_TRIP':
       return [
-        buildTransferSegment(
-          0, 'TRANSFER', 'Start', 'Stop 1',
-          [
+        buildSegment(0, 'LEG', 'Start', 'Stop 1', options, {
+          draft_segment_options: [
             { name: 'Drive (self)', provider: 'Self', estimated_duration: 120 },
             { name: 'Uber', provider: 'Uber', estimated_duration: 130, notes: 'Book in advance' },
             { name: 'Taxi', provider: 'Local taxi', estimated_duration: 140 },
           ],
-          options
-        ),
+        }),
         buildStopSegment(
           1, 'Stop 1',
           [
@@ -129,14 +115,12 @@ export const createSegmentTemplate = (
           ],
           options
         ),
-        buildTransferSegment(
-          2, 'TRANSFER', 'Stop 1', 'Stop 2',
-          [
+        buildSegment(2, 'LEG', 'Stop 1', 'Stop 2', options, {
+          draft_segment_options: [
             { name: 'Drive (self)', provider: 'Self', estimated_duration: 90 },
             { name: 'Uber', provider: 'Uber', estimated_duration: 100 },
           ],
-          options
-        ),
+        }),
         buildStopSegment(
           3, 'Stop 2',
           [
@@ -145,32 +129,28 @@ export const createSegmentTemplate = (
           ],
           options
         ),
-        buildTransferSegment(
-          4, 'TRANSFER', 'Stop 2', 'End',
-          [
+        buildSegment(4, 'LEG', 'Stop 2', 'End', options, {
+          draft_segment_options: [
             { name: 'Drive (self)', provider: 'Self', estimated_duration: 90 },
             { name: 'Uber', provider: 'Uber', estimated_duration: 100 },
             { name: 'Taxi', provider: 'Local taxi', estimated_duration: 110 },
           ],
-          options
-        ),
+        }),
       ];
 
     /**
-     * ROAD_TRIP_WITH_STOPS — extended road trip: 3 stops, mixed TRANSFER/BUS legs.
+     * ROAD_TRIP_WITH_STOPS — extended road trip: 3 stops, LEG segments connecting each.
      * Ideal for a day tour or regional road trip with more planned structure.
      */
     case 'ROAD_TRIP_WITH_STOPS':
       return [
-        buildTransferSegment(
-          0, 'TRANSFER', 'Home', 'Stop 1',
-          [
+        buildSegment(0, 'LEG', 'Home', 'Stop 1', options, {
+          draft_segment_options: [
             { name: 'Drive (self)', provider: 'Self', estimated_duration: 60 },
             { name: 'Uber', provider: 'Uber', estimated_duration: 70 },
             { name: 'Taxi', provider: 'Local taxi', estimated_duration: 75 },
           ],
-          options
-        ),
+        }),
         buildStopSegment(
           1, 'Stop 1',
           [
@@ -179,14 +159,12 @@ export const createSegmentTemplate = (
           ],
           options
         ),
-        buildTransferSegment(
-          2, 'TRANSFER', 'Stop 1', 'Stop 2',
-          [
+        buildSegment(2, 'LEG', 'Stop 1', 'Stop 2', options, {
+          draft_segment_options: [
             { name: 'Drive (self)', provider: 'Self', estimated_duration: 45 },
             { name: 'Uber', provider: 'Uber', estimated_duration: 50 },
           ],
-          options
-        ),
+        }),
         buildStopSegment(
           3, 'Stop 2',
           [
@@ -196,14 +174,12 @@ export const createSegmentTemplate = (
           ],
           options
         ),
-        buildTransferSegment(
-          4, 'TRANSFER', 'Stop 2', 'Stop 3',
-          [
+        buildSegment(4, 'LEG', 'Stop 2', 'Stop 3', options, {
+          draft_segment_options: [
             { name: 'Drive (self)', provider: 'Self', estimated_duration: 60 },
             { name: 'Bus', provider: 'Local bus', estimated_duration: 75, notes: 'Check timetable' },
           ],
-          options
-        ),
+        }),
         buildStopSegment(
           5, 'Stop 3',
           [
@@ -212,15 +188,13 @@ export const createSegmentTemplate = (
           ],
           options
         ),
-        buildTransferSegment(
-          6, 'TRANSFER', 'Stop 3', 'Home',
-          [
+        buildSegment(6, 'LEG', 'Stop 3', 'Home', options, {
+          draft_segment_options: [
             { name: 'Drive (self)', provider: 'Self', estimated_duration: 60 },
             { name: 'Uber', provider: 'Uber', estimated_duration: 70 },
             { name: 'Taxi', provider: 'Local taxi', estimated_duration: 75 },
           ],
-          options
-        ),
+        }),
       ];
 
     case 'SIMPLE':
