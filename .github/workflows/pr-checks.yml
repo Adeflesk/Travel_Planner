@@ -135,3 +135,7 @@ jobs:
       working-directory: frontend
       run: npx tsc --noEmit
       continue-on-error: true
+
+    - name: Run unit tests (Vitest)
+      working-directory: frontend
+      run: npm run test:unit

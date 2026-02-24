@@ -694,4 +694,3 @@ export interface UserSettings {
   home_base?: string;
   feature_flags: Record<string, boolean>;
 }
-
