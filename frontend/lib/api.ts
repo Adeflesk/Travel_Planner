@@ -341,7 +341,7 @@ export const journeyApi = {
 
   update: (id: number, data: Partial<JourneyFormData>) => {
     // segments are managed via the segment API — strip them from the journey update payload
-    const { segments: _unused_segments, ...updateFields } = data;
+    const { segments: _segments, ...updateFields } = data;
     const cleanedData: Record<string, unknown> = {};
     (Object.keys(updateFields) as Array<keyof typeof updateFields>).forEach((key) => {
       const value = updateFields[key];
