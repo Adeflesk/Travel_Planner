@@ -5,14 +5,13 @@ export default defineConfig({
     plugins: [tsconfigPaths()],
     test: {
         environment: 'node',
-        globals: true,
-        // Co-located test files alongside lib sources
-        include: ['lib/**/*.test.ts', 'lib/**/*.test.tsx'],
-        coverage: {
-            provider: 'v8',
-            reporter: ['text', 'lcov'],
-            include: ['lib/**/*.ts'],
-            exclude: ['lib/**/*.test.ts', 'lib/types.ts', 'lib/help-content.ts'],
-        },
+        include: ['**/*.test.{ts,tsx}'],
+        exclude: [
+            '**/node_modules/**',
+            '**/e2e/**',
+            '**/dist/**',
+            '**/.next/**',
+            '**/.{idea,git,cache,output,temp}/**',
+        ],
     },
 });
