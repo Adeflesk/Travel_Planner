@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { UserSettings } from '@/lib/types';
 import { settingsApi } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -21,7 +21,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchSettings = async () => {
+    const fetchSettings = useCallback(async () => {
         if (!isAuthenticated) {
             setLoading(false);
             return;
@@ -32,17 +32,18 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
             setError(null);
             const res = await settingsApi.get();
             setSettings(res.data);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Failed to fetch user settings:', err);
-            setError(err?.message || 'Error fetching settings');
+            const message = err instanceof Error ? err.message : 'Error fetching settings';
+            setError(message);
         } finally {
             setLoading(false);
         }
-    };
+    }, [isAuthenticated]);
 
     useEffect(() => {
         fetchSettings();
-    }, [isAuthenticated]);
+    }, [fetchSettings]);
 
     const updateSettings = async (updates: Partial<UserSettings>) => {
         try {

@@ -16,7 +16,6 @@ import {
   Calendar,
   Wallet,
   Plane,
-  Settings,
 } from 'lucide-react';
 import { type LucideIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -30,7 +29,6 @@ interface TripOverviewDashboardProps {
   trip: Trip;
   onEdit?: () => void;
   onShare?: () => void;
-  onSettings?: () => void;
 }
 
 const STATUS_CONFIG = {
@@ -176,7 +174,7 @@ function DestinationRoute({ destinations }: { destinations: Destination[] }) {
         const bg = isFirst ? '#F2994A' : isLast ? '#4ECDC4' : '#334155';
 
         return (
-          <div key={dest.id} className="flex items-center shrink-0">
+          <div key={dest.id} className="flex items-center flex-shrink-0">
             <div className="flex flex-col items-center">
               <div
                 className="w-11 h-11 rounded-full flex items-center justify-center text-white text-xs font-bold shadow"
@@ -237,7 +235,7 @@ function StatChip({
       style={{ background: '#fff', border: '1px solid #E2E8F0' }}
     >
       <div
-        className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+        className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
         style={{ background: iconBg }}
       >
         <Icon className="w-4 h-4" style={{ color: iconColor }} />
@@ -280,7 +278,6 @@ export function TripOverviewDashboard({
   trip,
   onEdit,
   onShare,
-  onSettings,
 }: TripOverviewDashboardProps) {
   const router = useRouter();
   const { stats, loading: statsLoading } = useTripStats(trip.id);
@@ -366,19 +363,6 @@ export function TripOverviewDashboard({
                     Share
                   </button>
                 )}
-                {onSettings && (
-                  <button
-                    onClick={onSettings}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs transition hover:bg-white/10"
-                    style={{
-                      color: 'rgba(255,255,255,0.55)',
-                      border: '1px solid rgba(255,255,255,0.12)',
-                    }}
-                  >
-                    <Settings className="w-3.5 h-3.5" />
-                    Settings
-                  </button>
-                )}
                 {onEdit && (
                   <button
                     onClick={onEdit}
@@ -409,7 +393,7 @@ export function TripOverviewDashboard({
               </span>
 
               <h1
-                className="font-bold text-white leading-tight mb-3 wrap-break-word"
+                className="font-bold text-white leading-tight mb-3 break-words"
                 style={{
                   fontSize: 'clamp(28px, 4vw, 48px)',
                   fontFamily: "'Playfair Display SC', Georgia, serif",
@@ -444,7 +428,7 @@ export function TripOverviewDashboard({
 
             {/* Countdown orb */}
             <div
-              className="shrink-0 flex flex-col items-center justify-center rounded-2xl px-8 py-6 text-center"
+              className="flex-shrink-0 flex flex-col items-center justify-center rounded-2xl px-8 py-6 text-center"
               style={{
                 background: 'rgba(255,255,255,0.04)',
                 border: '1px solid rgba(255,255,255,0.07)',
