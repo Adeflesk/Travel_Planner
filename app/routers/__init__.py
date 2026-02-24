@@ -24,7 +24,6 @@ from .dashboard import router as dashboard_router
 from .suggestions import router as suggestions_router
 from .trip_days import router as trip_days_router
 from .settings import router as settings_router
-from .exchange_rates import router as exchange_rates_router
 
 __all__ = [
     "health_router",
@@ -45,5 +44,4 @@ __all__ = [
     "suggestions_router",
     "trip_days_router",
     "settings_router",
-    "exchange_rates_router",
 ]
