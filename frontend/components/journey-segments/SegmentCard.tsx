@@ -183,11 +183,7 @@ export function SegmentCard({
                   }
                   className="w-full rounded border border-slate-300 px-3 py-2 text-sm"
                   placeholder={
-                    segment[side].type === 'destination'
-                      ? 'Display name (optional)'
-                      : side === 'origin'
-                        ? 'Enter origin'
-                        : 'Enter destination'
+                    side === 'origin' ? 'Enter origin' : 'Enter destination'
                   }
                 />
               </div>
