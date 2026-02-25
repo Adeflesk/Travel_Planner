@@ -3,8 +3,9 @@
 
 import { useState, useEffect } from 'react';
 import { Trip } from '@/lib/types';
+import type { TripContext } from '@/lib/trip-context';
 import { tripApi } from '@/lib/api';
-import { TripCard, TripForm } from '@/components/trips';
+import { TripCard, TripWizard } from '@/components/trips';
 import { Plus, X } from 'lucide-react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/lib/auth-context';
@@ -15,6 +16,7 @@ function TripsContent() {
   const { isAuthenticated } = useAuth();
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
   const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
@@ -34,9 +36,24 @@ function TripsContent() {
     }
   };
 
-  const handleTripCreated = () => {
-    loadTrips();
-    setShowForm(false);
+  const handleCreateTrip = async (data: {
+    name: string;
+    start_date: string;
+    end_date: string;
+    budget?: number;
+    context: TripContext;
+  }) => {
+    setCreating(true);
+    try {
+      await tripApi.create(data);
+      loadTrips();
+      setShowForm(false);
+    } catch (error) {
+      console.error('Error creating trip:', error);
+      alert('Failed to create trip');
+    } finally {
+      setCreating(false);
+    }
   };
 
   const handleTripDeleted = () => {
@@ -68,10 +85,11 @@ function TripsContent() {
         </div>
 
         {showForm && (
-          <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
-            <TripForm
-              onTripCreated={handleTripCreated}
+          <div className="mb-6 p-6 bg-slate-50 rounded-xl border border-slate-200 shadow-sm">
+            <TripWizard
+              onSubmit={handleCreateTrip}
               onCancel={() => setShowForm(false)}
+              loading={creating}
             />
           </div>
         )}

@@ -8,7 +8,6 @@ import {
 } from '@/lib/types';
 import { createSegmentTemplate } from '@/lib/segment-templates';
 import { getLocalTimezone } from '@/lib/timezone-utils';
-import { addHoursToISO } from '@/lib/datetime-utils';
 
 const createEmptyLocation = (): LocationRef => ({
   type: 'custom',

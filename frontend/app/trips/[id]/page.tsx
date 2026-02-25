@@ -15,11 +15,12 @@ import { PackingList } from '@/components/packing';
 import { ShareTripModal } from '@/components/sharing';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/lib/auth-context';
-import { TripProvider } from '@/lib/trip-context';
+import { TripProvider, TripContext } from '@/lib/trip-context';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { TripOverviewDashboard } from '@/components/trips/TripOverviewDashboard';
+import { TripSettings } from '@/components/trips/TripSettings';
 
 function TripDetailContent() {
   const { isAuthenticated } = useAuth();
@@ -33,6 +34,7 @@ function TripDetailContent() {
     'destinations' | 'journeys' | 'timeline' | 'expenses' | 'activities' | 'packing'
   >('destinations');
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -51,6 +53,18 @@ function TripDetailContent() {
 
     loadTrip();
   }, [tripId, isAuthenticated]);
+
+  const handleSaveSettings = async (context: TripContext) => {
+    try {
+      await tripApi.update(tripId, { context });
+      // Reload trip to get updated context
+      const response = await tripApi.getById(tripId);
+      setTrip(response.data);
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      throw error;
+    }
+  };
 
   if (loading) {
     return (
@@ -74,6 +88,7 @@ function TripDetailContent() {
       startDate={trip.start_date}
       endDate={trip.end_date}
       timezone={trip.timezone}
+      tripContext={trip.context} // Trip preferences (pacing, etc.)
     >
       <div className="min-h-screen bg-slate-100">
         <div className="max-w-6xl mx-auto px-6 py-8">
@@ -97,6 +112,9 @@ function TripDetailContent() {
             }
             onShare={
               trip.is_owner !== false ? () => setShowShareModal(true) : undefined
+            }
+            onSettings={
+              trip.is_owner !== false ? () => setShowSettings(true) : undefined
             }
           />
 
@@ -143,6 +161,20 @@ function TripDetailContent() {
             isOpen={showShareModal}
             onClose={() => setShowShareModal(false)}
           />
+
+          {/* Settings / Context Modal */}
+          {showSettings && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
+              <div className="w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-2xl shadow-2xl">
+                <TripSettings
+                  tripId={tripId}
+                  context={trip.context ?? null}
+                  onSave={handleSaveSettings}
+                  onClose={() => setShowSettings(false)}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </TripProvider>

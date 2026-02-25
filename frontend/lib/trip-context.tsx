@@ -19,7 +19,7 @@ interface TripContextValue {
   startDate: string; // ISO date string YYYY-MM-DD
   endDate: string;   // ISO date string YYYY-MM-DD
   timezone?: string;
-  context?: TripContext | null;
+  tripContext?: TripContext | null;
 }
 
 const TripContextCtx = createContext<TripContextValue | null>(null);
@@ -29,7 +29,7 @@ interface TripProviderProps {
   startDate: string;
   endDate: string;
   timezone?: string;
-  context?: TripContext | null;
+  tripContext?: TripContext | null;
   children: ReactNode;
 }
 
@@ -38,11 +38,11 @@ export function TripProvider({
   startDate,
   endDate,
   timezone,
-  context,
+  tripContext,
   children,
 }: TripProviderProps) {
   return (
-    <TripContextCtx.Provider value={{ tripId, startDate, endDate, timezone, context }}>
+    <TripContextCtx.Provider value={{ tripId, startDate, endDate, timezone, tripContext }}>
       {children}
     </TripContextCtx.Provider>
   );

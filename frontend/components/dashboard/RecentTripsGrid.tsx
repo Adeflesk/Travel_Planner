@@ -5,6 +5,7 @@ import { DashboardData } from '@/lib/types';
 import { MapPin } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
 
 interface RecentTripsGridProps {
   trips: DashboardData['recent_trips'];
@@ -30,9 +31,12 @@ export function RecentTripsGrid({ trips }: RecentTripsGridProps) {
           </div>
           <div>
             <p className="font-medium text-slate-800">No trips yet</p>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 mb-3">
               Create your first trip to see it here.
             </p>
+            <Link href="/trips">
+              <Button size="sm" variant="primary">Plan a Trip</Button>
+            </Link>
           </div>
         </div>
       ) : (

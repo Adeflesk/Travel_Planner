@@ -32,7 +32,7 @@ function SettingsContent() {
         try {
             await updateSettings(localSettings);
             alert('Settings updated successfully!');
-        } catch (err) {
+        } catch {
             alert('Failed to update settings');
         } finally {
             setSaving(false);

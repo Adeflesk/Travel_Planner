@@ -72,6 +72,7 @@ def run_migrations(engine: Engine) -> None:
 
     trip_columns = [
         ("timezone", "VARCHAR(50)", "NULL"),
+        ("context", "TEXT", "NULL"),
     ]
 
     destination_columns = [
@@ -124,3 +125,39 @@ def run_migrations(engine: Engine) -> None:
         logger.info(f"Completed {migrations_run} migration(s)")
     else:
         logger.info("No migrations needed")
+
+    # Create/Update trip_summary view
+    create_trip_summary_view(engine)
+
+
+def create_trip_summary_view(engine: Engine) -> None:
+    """Create or update the trip_summary database view."""
+    view_sql = """
+        CREATE VIEW IF NOT EXISTS trip_summary AS
+        SELECT
+            t.id,
+            t.name,
+            t.start_date,
+            t.end_date,
+            t.budget,
+            COUNT(DISTINCT j.id)              AS journey_count,
+            COUNT(DISTINCT td.id)             AS day_count,
+            COALESCE(SUM(e.amount), 0)        AS total_spent,
+            t.budget - COALESCE(SUM(e.amount), 0) AS budget_remaining
+        FROM trips t
+        LEFT JOIN journeys j    ON j.trip_id = t.id
+        LEFT JOIN trip_days td  ON td.trip_id = t.id
+        LEFT JOIN expenses e    ON e.trip_id = t.id
+        GROUP BY t.id;
+    """
+
+    try:
+        with engine.connect() as conn:
+            # We use DROP VIEW IF EXISTS + CREATE VIEW to ensure the view is up to date
+            # if the definition changes in the future.
+            conn.execute(text("DROP VIEW IF EXISTS trip_summary"))
+            conn.execute(text(view_sql))
+            conn.commit()
+        logger.info("Ensured trip_summary view exists")
+    except Exception as e:
+        logger.warning(f"Could not create trip_summary view: {e}")
