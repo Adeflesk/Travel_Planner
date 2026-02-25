@@ -11,6 +11,9 @@ from .auth import router as auth_router
 from .admin import router as admin_router
 from .trips import router as trips_router
 from .destinations import router as destinations_router
+from .trip_days import router as trip_days_router
+from .dashboard import router as dashboard_router
+from .settings import router as settings_router
 from .activities import router as activities_router
 from .expenses import router as expenses_router
 from .packing import router as packing_router
@@ -20,10 +23,7 @@ from .journey_stops import router as journey_stops_router
 from .stop_options import router as stop_options_router
 from .journey_documents import router as journey_documents_router
 from .segment_options import router as segment_options_router
-from .dashboard import router as dashboard_router
 from .suggestions import router as suggestions_router
-from .trip_days import router as trip_days_router
-from .settings import router as settings_router
 
 __all__ = [
     "health_router",

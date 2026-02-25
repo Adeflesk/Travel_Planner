@@ -10,6 +10,8 @@ from .base import Base
 from .user import User, UserRole
 from .trip import Trip
 from .trip_share import TripShare
+from .trip_day import TripDay
+from .user_settings import UserSettings
 from .destination import Destination
 from .activity import Activity
 from .expense import Expense
@@ -20,9 +22,7 @@ from .journey_stop import JourneyStop
 from .stop_option import StopOption
 from .journey_document import JourneyDocument
 from .segment_option import SegmentOption
-from .trip_day import TripDay
 from .day_activity import DayActivity
-from .user_settings import UserSettings
 
 __all__ = [
     "Base",

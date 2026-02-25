@@ -12,7 +12,7 @@ from decimal import Decimal
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import case, func
+from sqlalchemy import case, func, text
 from sqlalchemy.orm import Session
 
 from app import models, schemas
@@ -105,19 +105,51 @@ def get_trips(
         .all()
     )
 
+    # Fetch summary counts for all relevant trip IDs in one query
+    all_trip_ids = [t.id for t in owned_trips] + [t.id for t, _ in shared_trip_data]
+    summary_map: dict[int, dict] = {}
+    if all_trip_ids:
+        # Expand IDs inline (safe — all are ints from the DB)
+        ids_csv = ",".join(str(i) for i in all_trip_ids)
+        rows = db.execute(
+            text(
+                f"SELECT id, journey_count, day_count, total_spent, budget_remaining"
+                f" FROM trip_summary WHERE id IN ({ids_csv})"
+            )
+        ).fetchall()
+        for row in rows:
+            summary_map[row[0]] = {
+                "journey_count": row[1] or 0,
+                "day_count": row[2] or 0,
+                "total_spent": Decimal(str(row[3] or 0)),
+                "budget_remaining": Decimal(str(row[4]))
+                if row[4] is not None
+                else None,
+            }
+
+    def _enrich(
+        trip_dict: dict, is_owner: bool, shared_by: str | None
+    ) -> schemas.TripWithOwnership:
+        summary = summary_map.get(trip_dict["id"], {})
+        return schemas.TripWithOwnership(
+            **trip_dict,
+            is_owner=is_owner,
+            shared_by=shared_by,
+            journey_count=summary.get("journey_count", 0),
+            day_count=summary.get("day_count", 0),
+            total_spent=summary.get("total_spent", Decimal("0")),
+            budget_remaining=summary.get("budget_remaining"),
+        )
+
     # Build result with ownership info
     result = []
     for trip in owned_trips:
         trip_dict = schemas.Trip.model_validate(trip).model_dump()
-        trip_dict["is_owner"] = True
-        trip_dict["shared_by"] = None
-        result.append(schemas.TripWithOwnership(**trip_dict))
+        result.append(_enrich(trip_dict, is_owner=True, shared_by=None))
 
     for trip, owner_email in shared_trip_data:
         trip_dict = schemas.Trip.model_validate(trip).model_dump()
-        trip_dict["is_owner"] = False
-        trip_dict["shared_by"] = owner_email
-        result.append(schemas.TripWithOwnership(**trip_dict))
+        result.append(_enrich(trip_dict, is_owner=False, shared_by=owner_email))
 
     # Sort by created_at desc
     result.sort(key=lambda t: t.created_at, reverse=True)

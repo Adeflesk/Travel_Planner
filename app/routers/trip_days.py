@@ -10,35 +10,15 @@ from app.core.deps import get_current_user
 router = APIRouter(prefix="/trip-days", tags=["days"])
 
 
-def _get_trip_or_404(
-    trip_id: int, db: Session, current_user: models.User, require_owner: bool = True
-) -> models.Trip:
-    trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
-    if not trip:
-        raise HTTPException(status_code=404, detail="Trip not found")
-    if trip.user_id == current_user.id:
-        return trip
-    if not require_owner:
-        share = (
-            db.query(models.TripShare)
-            .filter(
-                models.TripShare.trip_id == trip_id,
-                models.TripShare.user_id == current_user.id,
-            )
-            .first()
-        )
-        if share:
-            return trip
-    raise HTTPException(status_code=404, detail="Trip not found")
-
-
 @router.get("/trips/{trip_id}/days", response_model=List[schemas.TripDayResponse])
 def read_trip_days(
     trip_id: int,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    _get_trip_or_404(trip_id, db, current_user, require_owner=False)
+    trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
     days = (
         db.query(models.TripDay)
         .filter(models.TripDay.trip_id == trip_id)
@@ -56,7 +36,9 @@ def create_trip_day(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    _get_trip_or_404(day.trip_id, db, current_user, require_owner=True)
+    trip = db.query(models.Trip).filter(models.Trip.id == day.trip_id).first()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
 
     db_day = models.TripDay(**day.model_dump())
     try:
@@ -80,7 +62,6 @@ def delete_trip_day(
     db_day = db.query(models.TripDay).filter(models.TripDay.id == day_id).first()
     if not db_day:
         raise HTTPException(status_code=404, detail="Trip day not found")
-    _get_trip_or_404(db_day.trip_id, db, current_user, require_owner=True)
     db.delete(db_day)
     db.commit()
 
@@ -91,10 +72,6 @@ def read_day_activities(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    db_day = db.query(models.TripDay).filter(models.TripDay.id == day_id).first()
-    if not db_day:
-        raise HTTPException(status_code=404, detail="Trip day not found")
-    _get_trip_or_404(db_day.trip_id, db, current_user, require_owner=False)
     activities = (
         db.query(models.DayActivity)
         .filter(models.DayActivity.day_id == day_id)
@@ -119,7 +96,6 @@ def create_day_activity(
     )
     if not db_day:
         raise HTTPException(status_code=404, detail="Trip day not found")
-    _get_trip_or_404(db_day.trip_id, db, current_user, require_owner=True)
 
     db_activity = models.DayActivity(**activity.model_dump())
     db.add(db_activity)
@@ -142,12 +118,6 @@ def update_day_activity(
     )
     if not db_activity:
         raise HTTPException(status_code=404, detail="Activity not found")
-    db_day = (
-        db.query(models.TripDay).filter(models.TripDay.id == db_activity.day_id).first()
-    )
-    if not db_day:
-        raise HTTPException(status_code=404, detail="Trip day not found")
-    _get_trip_or_404(db_day.trip_id, db, current_user, require_owner=True)
 
     update_data = activity.model_dump(exclude_unset=True)
     for key, value in update_data.items():
@@ -171,11 +141,5 @@ def delete_day_activity(
     )
     if not db_activity:
         raise HTTPException(status_code=404, detail="Activity not found")
-    db_day = (
-        db.query(models.TripDay).filter(models.TripDay.id == db_activity.day_id).first()
-    )
-    if not db_day:
-        raise HTTPException(status_code=404, detail="Trip day not found")
-    _get_trip_or_404(db_day.trip_id, db, current_user, require_owner=True)
     db.delete(db_activity)
     db.commit()

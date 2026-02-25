@@ -1,0 +1,7 @@
+[flake8]
+# Use extend-exclude to add to the default ignore list
+extend-exclude = 
+    frontend/node_modules,
+    # You can add other folders here too
+    venv,
+    .git

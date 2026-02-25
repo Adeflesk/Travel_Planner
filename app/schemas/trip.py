@@ -110,10 +110,14 @@ class Trip(TripBase):
 
 
 class TripWithOwnership(Trip):
-    """Trip with ownership information."""
+    """Trip with ownership information and summary counts from trip_summary view."""
 
     is_owner: bool = True
     shared_by: Optional[str] = None
+    journey_count: int = 0
+    day_count: int = 0
+    total_spent: Decimal = Decimal("0")
+    budget_remaining: Optional[Decimal] = None
 
 
 class TripStatsCounts(BaseModel):

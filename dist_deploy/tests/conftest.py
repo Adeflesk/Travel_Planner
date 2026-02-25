@@ -1,0 +1,238 @@
+import os
+import sys
+
+import pytest
+
+# Disable rate limiting for tests
+os.environ["RATE_LIMIT_ENABLED"] = "false"
+
+# Ensure project root is on sys.path for test imports
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from fastapi.testclient import TestClient  # noqa: E402
+from sqlalchemy import create_engine  # noqa: E402
+from sqlalchemy.orm import sessionmaker  # noqa: E402
+
+from app.core.security import create_access_token, get_password_hash  # noqa: E402
+from database import get_db  # noqa: E402
+from main import app  # noqa: E402
+from models import Base, User  # noqa: E402
+
+
+# Shared test DB configuration (matches existing tests)
+SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+)
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def cleanup_test_db():
+    """Clean up test database before and after test session."""
+    # Remove test.db before tests start to ensure clean state
+    import os
+
+    if os.path.exists("./test.db"):
+        os.remove("./test.db")
+    yield
+    # Clean up after all tests complete
+    if os.path.exists("./test.db"):
+        os.remove("./test.db")
+
+
+@pytest.fixture(scope="session")
+def db_engine():
+    return engine
+
+
+@pytest.fixture(scope="session")
+def testing_session_local():
+    return TestingSessionLocal
+
+
+@pytest.fixture(scope="function")
+def base_client(testing_session_local):
+    """TestClient with `get_db` dependency overridden to use testing session."""
+
+    def _override_get_db():
+        try:
+            db = testing_session_local()
+            yield db
+        finally:
+            db.close()
+
+    app.dependency_overrides[get_db] = _override_get_db
+    test_client = TestClient(app)
+    yield test_client
+    test_client.close()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_database(db_engine):
+    """Create database schema once for the entire test session."""
+    Base.metadata.create_all(bind=db_engine)
+    yield
+    Base.metadata.drop_all(bind=db_engine)
+
+
+@pytest.fixture(scope="function")
+def db_setup(db_engine, testing_session_local, setup_database):
+    """
+    Clean database tables before each test for isolation.
+
+    Instead of dropping/recreating tables (which causes connection pool issues),
+    we delete all rows from each table while preserving the schema.
+    """
+    from sqlalchemy import text, inspect
+
+    # Tables in reverse dependency order to avoid foreign key constraints
+    tables_to_clean = [
+        "user_settings",
+        "trip_shares",
+        "packing_items",
+        "expenses",
+        "day_activities",
+        "activities",
+        "segment_options",
+        "stop_options",
+        "journey_stops",
+        "journey_segments",
+        "journey_documents",
+        "journeys",
+        "destinations",
+        "trip_days",
+        "trips",
+        "users",
+    ]
+
+    db = testing_session_local()
+    try:
+        # Check if tables exist before trying to clean them
+        inspector = inspect(db_engine)
+        existing_tables = inspector.get_table_names()
+
+        # Delete all data from tables that exist
+        for table_name in tables_to_clean:
+            if table_name in existing_tables:
+                db.execute(text(f"DELETE FROM {table_name}"))
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        # Log but don't raise - allow tests to proceed
+        import logging
+
+        logging.warning(f"Error cleaning database tables: {e}")
+    finally:
+        db.close()
+
+    yield
+
+
+@pytest.fixture(scope="function")
+def test_db(db_setup):
+    """Compatibility alias for existing tests that expect `test_db`."""
+    yield
+
+
+@pytest.fixture(scope="function")
+def test_user(db_setup, testing_session_local):
+    """Create a test user and return user data with auth token."""
+    db = testing_session_local()
+    try:
+        # Create test user
+        user = User(
+            email="test@example.com",
+            hashed_password=get_password_hash("testpassword123"),
+            full_name="Test User",
+            is_active=True,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+        # Generate access token
+        token = create_access_token(
+            data={
+                "sub": str(user.id),
+                "email": user.email,
+                "role": user.role.value,
+            }
+        )
+
+        yield {
+            "user": user,
+            "token": token,
+            "headers": {"Authorization": f"Bearer {token}"},
+        }
+    finally:
+        db.close()
+
+
+@pytest.fixture(scope="function")
+def client(base_client, test_user):
+    """
+    Authenticated test client.
+
+    Returns a client wrapper that automatically includes auth headers.
+    """
+
+    class AuthenticatedClient:
+        def __init__(self, client, headers):
+            self._client = client
+            self._headers = headers
+
+        def get(self, url, **kwargs):
+            kwargs.setdefault("headers", {}).update(self._headers)
+            return self._client.get(url, **kwargs)
+
+        def post(self, url, **kwargs):
+            kwargs.setdefault("headers", {}).update(self._headers)
+            return self._client.post(url, **kwargs)
+
+        def put(self, url, **kwargs):
+            kwargs.setdefault("headers", {}).update(self._headers)
+            return self._client.put(url, **kwargs)
+
+        def patch(self, url, **kwargs):
+            kwargs.setdefault("headers", {}).update(self._headers)
+            return self._client.patch(url, **kwargs)
+
+        def delete(self, url, **kwargs):
+            kwargs.setdefault("headers", {}).update(self._headers)
+            return self._client.delete(url, **kwargs)
+
+    return AuthenticatedClient(base_client, test_user["headers"])
+
+
+@pytest.fixture(scope="function")
+def unauthenticated_client(base_client):
+    """Return unauthenticated client for testing auth-required endpoints."""
+    return base_client
+
+
+@pytest.fixture(scope="function")
+def db_session(testing_session_local, db_setup):
+    """
+    Provide a database session for tests with automatic cleanup.
+
+    This fixture creates a new session, yields it for test use,
+    and ensures it's properly closed after the test completes.
+    """
+    session = testing_session_local()
+    try:
+        yield session
+    finally:
+        session.close()
+
+
+def pytest_runtest_teardown(item):
+    """
+    Hook that runs after each test to ensure all sessions are closed.
+
+    This helps prevent connection pool exhaustion from tests that create
+    sessions directly without proper cleanup.
+    """
+    from sqlalchemy.orm import close_all_sessions
+
+    close_all_sessions()
