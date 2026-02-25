@@ -1,4 +1,4 @@
-exclude: ^frontend/node_modules/|^\.venv/
+exclude: ^frontend/node_modules/|^\.venv.*/|^\.worktrees/|^\.aider.*|^\.next/|^venv/|^\.pytest_cache/|^test-results/
 repos:
   - repo: https://github.com/psf/black
     rev: 23.12.1

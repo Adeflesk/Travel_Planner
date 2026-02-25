@@ -23,9 +23,6 @@ import {
   PackingItemFormData,
   ActivityFormData,
   JourneyFormData,
-  JourneySegment,
-  SegmentOption,
-  SegmentOptionFormData,
   ExpenseSummary,
   PackingSummary,
   TripProgress,
@@ -161,11 +158,11 @@ export const weatherApi = {
 export const activityApi = {
   getByDestinationId: (destinationId: number) =>
     api.get<Activity[]>(`/destinations/${destinationId}/activities/`),
-  
+
   // NEW: Segment-specific activity methods
   getBySegmentId: (segmentId: number) =>
     api.get<Activity[]>(`/journey-segments/${segmentId}/activities`),
-  
+
   createForSegment: (segmentId: number, data: ActivityFormData) => {
     const cleanedData: Partial<ActivityFormData> = {};
     (Object.keys(data) as Array<keyof ActivityFormData>).forEach((key) => {
@@ -177,7 +174,7 @@ export const activityApi = {
     cleanedData.segment_id = segmentId;
     return api.post<Activity>(`/journey-segments/${segmentId}/activities`, cleanedData);
   },
-  
+
   create: (data: ActivityFormData) => {
     const cleanedData: Partial<ActivityFormData> = {};
     (Object.keys(data) as Array<keyof ActivityFormData>).forEach((key) => {
@@ -208,11 +205,11 @@ export const expenseApi = {
     api.get<Expense[]>(`/trips/${tripId}/expenses/`),
   getSummary: (tripId: number) =>
     api.get<ExpenseSummary>(`/trips/${tripId}/expenses/summary/`),
-  
+
   // NEW: Segment-specific expense methods
   getBySegmentId: (segmentId: number) =>
     api.get<Expense[]>(`/journey-segments/${segmentId}/expenses`),
-  
+
   createForSegment: (segmentId: number, data: ExpenseFormData) => {
     const cleanedData: Partial<ExpenseFormData> = {};
     (Object.keys(data) as Array<keyof ExpenseFormData>).forEach((key) => {
@@ -228,7 +225,7 @@ export const expenseApi = {
     cleanedData.segment_id = segmentId;
     return api.post<Expense>(`/journey-segments/${segmentId}/expenses`, cleanedData);
   },
-  
+
   create: (data: ExpenseFormData) => {
     const cleanedData: Partial<ExpenseFormData> = {};
     (Object.keys(data) as Array<keyof ExpenseFormData>).forEach((key) => {
@@ -451,30 +448,6 @@ export const segmentOptionApi = {
     });
     return api.put<SegmentOption>(`/segment-options/${optionId}`, cleanedData);
   },
-  delete: (optionId: number) => api.delete(`/segment-options/${optionId}`),
-};
-
-// Journey Segment API
-export const journeySegmentApi = {
-  getByJourneyId: (journeyId: number) =>
-    api.get<JourneySegment[]>(`/journeys/${journeyId}/segments`),
-  getById: (segmentId: number) =>
-    api.get<JourneySegment>(`/journey-segments/${segmentId}`),
-  create: (journeyId: number, data: Partial<JourneySegment>) =>
-    api.post<JourneySegment>(`/journeys/${journeyId}/segments`, data),
-  update: (segmentId: number, data: Partial<JourneySegment>) =>
-    api.put<JourneySegment>(`/journey-segments/${segmentId}`, data),
-  delete: (segmentId: number) => api.delete(`/journey-segments/${segmentId}`),
-};
-
-// Segment Option API
-export const segmentOptionApi = {
-  getBySegmentId: (segmentId: number) =>
-    api.get<SegmentOption[]>(`/segment-options/segment/${segmentId}`),
-  create: (data: SegmentOptionFormData) =>
-    api.post<SegmentOption>('/segment-options/', data),
-  update: (optionId: number, data: Partial<SegmentOptionFormData>) =>
-    api.put<SegmentOption>(`/segment-options/${optionId}`, data),
   delete: (optionId: number) => api.delete(`/segment-options/${optionId}`),
 };
 

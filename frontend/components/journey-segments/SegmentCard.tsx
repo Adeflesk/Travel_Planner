@@ -15,6 +15,7 @@ interface SegmentCardProps {
   onUpdateField: (index: number, field: keyof JourneySegmentDraft, value: unknown) => void;
   onRemove: (index: number) => void;
   canRemove: boolean;
+  hideToggle?: boolean;
 }
 
 const segmentTypes: SegmentType[] = [
@@ -39,6 +40,7 @@ export function SegmentCard({
   onUpdateField,
   onRemove,
   canRemove,
+  hideToggle,
 }: SegmentCardProps) {
   const [metadataError, setMetadataError] = useState<string | null>(null);
   const timezones = useMemo(() => getSupportedTimezones(), []);
@@ -98,14 +100,16 @@ export function SegmentCard({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => onToggle(index)}
-          >
-            {isExpanded ? 'Collapse' : 'Expand'}
-          </Button>
+          {!hideToggle && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => onToggle(index)}
+            >
+              {isExpanded ? 'Collapse' : 'Expand'}
+            </Button>
+          )}
           {canRemove && (
             <Button
               type="button"

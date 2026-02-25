@@ -17,7 +17,10 @@ docs/
 node_modules/
 **/node_modules/
 .next/
-**/ .next/
+**/.next/
+**/.DS_Store
+.cache/
+**/.cache/
 *.md
 tests/
 .claude/
