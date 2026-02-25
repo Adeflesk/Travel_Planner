@@ -185,7 +185,9 @@ export function SegmentCard({
                   placeholder={
                     segment[side].type === 'destination'
                       ? 'Display name (optional)'
-                      : 'Location name'
+                      : side === 'origin'
+                        ? 'Enter origin'
+                        : 'Enter destination'
                   }
                 />
               </div>
