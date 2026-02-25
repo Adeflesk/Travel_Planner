@@ -122,3 +122,10 @@ updateExpense
 .aider*
 *.orig
 .venv312/
+
+# Deployment
+dist_deploy/
+tmp_deploy/
+min_deploy/
+test_deploy/
+
