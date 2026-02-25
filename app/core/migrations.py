@@ -79,7 +79,7 @@ def run_migrations(engine: Engine) -> None:
         ("timezone", "VARCHAR(50)", "NULL"),
     ]
 
-    migrations_run = 0
+    migrations_run: int = 0
     for col_name, col_type, default in journey_columns:
         if add_column_if_not_exists(engine, "journeys", col_name, col_type, default):
             migrations_run += 1
