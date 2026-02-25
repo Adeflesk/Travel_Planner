@@ -7,8 +7,8 @@ All endpoints require authentication.
 Author: Travel Planner Team
 """
 
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app import schemas, models
@@ -23,6 +23,9 @@ from app.services.journey_service import (
 )
 from app.services.journey_timeline_service import (
     get_journey_timeline as svc_get_journey_timeline,
+)
+from app.services.practicality_service import (
+    get_journey_practicality as svc_get_journey_practicality,
 )
 
 router = APIRouter()
@@ -152,3 +155,38 @@ def get_journey_timeline(
     if not timeline:
         raise HTTPException(status_code=404, detail="Journey not found")
     return timeline
+
+
+@router.get(
+    "/journeys/{journey_id}/practicality",
+    response_model=schemas.PracticalityResponse,
+    tags=["journeys"],
+)
+def get_journey_practicality(
+    journey_id: int,
+    time_limit_minutes: Optional[int] = Query(
+        default=None, description="Max minutes for the day (default 840 = 14h)"
+    ),
+    buffer_minutes: Optional[int] = Query(
+        default=None, description="Buffer minutes between transitions (default 15)"
+    ),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Get time and budget feasibility assessment for a journey."""
+    journey = svc_get_journey(journey_id, db)
+    if not journey:
+        raise HTTPException(status_code=404, detail="Journey not found")
+
+    check_trip_access(journey.trip_id, db, current_user)
+
+    kwargs = {}
+    if time_limit_minutes is not None:
+        kwargs["time_limit_minutes"] = time_limit_minutes
+    if buffer_minutes is not None:
+        kwargs["buffer_minutes"] = buffer_minutes
+
+    result = svc_get_journey_practicality(journey_id, db, **kwargs)
+    if not result:
+        raise HTTPException(status_code=404, detail="Journey not found")
+    return result

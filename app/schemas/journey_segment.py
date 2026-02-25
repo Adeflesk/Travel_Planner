@@ -3,7 +3,7 @@ app/schemas/journey_segment.py - Journey segment Pydantic schemas
 """
 
 from datetime import datetime
-from typing import Any, Optional
+from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
 
@@ -18,7 +18,7 @@ class JourneySegmentBase(BaseModel):
     end_datetime: Optional[datetime] = None
     origin_timezone: Optional[str] = None
     destination_timezone: Optional[str] = None
-    metadata: Optional[dict[str, Any]] = None
+    metadata: Optional[dict] = None
     order: int = 0
 
 
@@ -36,7 +36,7 @@ class JourneySegmentUpdate(BaseModel):
     end_datetime: Optional[datetime] = None
     origin_timezone: Optional[str] = None
     destination_timezone: Optional[str] = None
-    metadata: Optional[dict[str, Any]] = None
+    metadata: Optional[dict] = None
     order: Optional[int] = None
 
 

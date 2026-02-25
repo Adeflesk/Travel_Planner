@@ -15,7 +15,7 @@ export default function HelpPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="bg-gradient-to-br from-primary-600 to-primary-800 text-white">
+      <div className="bg-linear-to-br from-primary-600 to-primary-800 text-white">
         <div className="max-w-4xl mx-auto px-4 py-16 text-center">
           <h1 className="text-4xl font-bold mb-4">Help Center</h1>
           <p className="text-xl text-primary-100 mb-8">

@@ -1,4 +1,5 @@
-// lib/types.ts
+import { TripContext } from './trip-context';
+
 export interface Trip {
   id: number;
   name: string;
@@ -12,8 +13,12 @@ export interface Trip {
   status: 'planning' | 'booked' | 'ongoing' | 'completed';
   created_at: string;
   updated_at: string;
+  context?: TripContext | null;
   is_owner?: boolean;
   shared_by?: string;
+  journey_count?: number;
+  day_count?: number;
+  total_spent?: number;
 }
 
 export interface DashboardData {
@@ -89,6 +94,8 @@ export interface Expense {
   destination_id?: number | null;
   activity_id?: number | null;
   segment_id?: number | null;
+  segment_option_id?: number;
+  stop_option_id?: number;
   category: string;
   amount: number;
   currency: string;
@@ -129,6 +136,8 @@ export interface Journey {
   notes?: string;
   status: 'planned' | 'booked' | 'completed';
   order: number;
+  origin_timezone?: string;
+  destination_timezone?: string;
   // Route details (for road trips)
   distance_km?: number;
   distance_miles?: number;
@@ -188,6 +197,10 @@ export interface TripFormData {
   budget_warning_threshold?: number;
   budget_danger_threshold?: number;
   status?: string;
+  context?: TripContext | null;
+  journey_count?: number;
+  day_count?: number;
+  total_spent?: number;
 }
 
 export interface DestinationFormData {
@@ -270,9 +283,9 @@ export interface JourneyFormData {
   segments?: JourneySegmentDraft[];
 }
 
-export type JourneySegmentIntent = 'SIMPLE' | 'AIR_TRAVEL' | 'AIR_LAYOVER' | 'MULTI_STOP';
+export type JourneySegmentIntent = 'SIMPLE' | 'AIR_TRAVEL' | 'AIR_LAYOVER' | 'MULTI_STOP' | 'ROAD_TRIP' | 'ROAD_TRIP_WITH_STOPS';
 
-export type SegmentType = 'TRANSFER' | 'BUS' | 'RAIL' | 'FLIGHT' | 'LAYOVER' | 'STOP';
+export type SegmentType = 'TRANSFER' | 'LEG' | 'BUS' | 'RAIL' | 'FLIGHT' | 'LAYOVER' | 'STOP';
 
 export interface JourneySegment {
   id: number;
@@ -376,7 +389,8 @@ export interface JourneyStopFormData {
 
 export interface StopOption {
   id: number;
-  stop_id: number;
+  stop_id?: number;
+  segment_id?: number;
   name: string;
   description?: string;
   option_type: StopOptionType;
@@ -390,7 +404,8 @@ export interface StopOption {
 }
 
 export interface StopOptionFormData {
-  stop_id: number;
+  stop_id?: number;
+  segment_id?: number;
   name: string;
   description?: string;
   option_type?: StopOptionType;
@@ -627,3 +642,60 @@ export interface WeatherForecast {
 }
 
 export type TemperatureUnit = 'F' | 'C';
+
+// Practicality Engine Types
+export interface SegmentPracticality {
+  segment_id: number;
+  segment_type: string;
+  name: string;
+  duration_minutes: number;
+  cost: number;
+  items: string[];
+}
+
+export interface PracticalityResponse {
+  journey_id: number;
+  total_duration_minutes: number;
+  total_cost: number;
+  time_limit_minutes: number;
+  daily_budget: number | null;
+  time_feasible: boolean;
+  budget_feasible: boolean;
+  buffer_minutes_per_transition: number;
+  transition_count: number;
+  segments: SegmentPracticality[];
+}
+
+export interface TripDay {
+  id: number;
+  trip_id: number;
+  date: string;
+  title?: string;
+  location?: string;
+  notes?: string;
+  sort_order: number;
+  activities?: DayActivity[];
+}
+
+export interface DayActivity {
+  id: number;
+  day_id: number;
+  start_time: string;
+  end_time?: string;
+  title: string;
+  category?: string;
+  location?: string;
+  notes?: string;
+  cost?: number;
+  currency?: string;
+  booked: boolean;
+  sort_order: number;
+}
+
+export interface UserSettings {
+  id: number;
+  user_id: number;
+  default_currency: string;
+  home_base?: string;
+  feature_flags: Record<string, boolean>;
+}

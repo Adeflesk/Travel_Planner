@@ -14,7 +14,6 @@ interface JourneyListProps {
 export default function JourneyList({ tripId }: JourneyListProps) {
   const {
     journeys,
-    destinations,
     loading,
     reload,
     deleteJourney,
@@ -26,16 +25,11 @@ export default function JourneyList({ tripId }: JourneyListProps) {
   const {
     formData,
     isEditing,
-    errors,
-    warnings,
     handleSubmit,
     startEdit,
     resetForm,
     updateField,
     duplicateAsReturn,
-    carrierSuggestions,
-    recentCarriers,
-    loadingCarriers,
   } = useJourneyForm(tripId, reload);
 
   const [showForm, setShowForm] = useState(false);
@@ -88,18 +82,12 @@ export default function JourneyList({ tripId }: JourneyListProps) {
           <JourneyForm
             formData={formData}
             isEditing={isEditing}
-            destinations={destinations}
-            errors={errors}
-            warnings={warnings}
             onSubmit={handleSubmit}
             onCancel={() => {
               resetForm();
               setShowForm(false);
             }}
             updateField={updateField}
-            carrierSuggestions={carrierSuggestions}
-            recentCarriers={recentCarriers}
-            loadingCarriers={loadingCarriers}
           />
         </div>
       )}

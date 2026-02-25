@@ -28,5 +28,9 @@ class JourneySegment(Base):
     order = Column("order", Integer, default=0, nullable=False)
 
     journey = relationship("Journey", back_populates="segments")
-    activities = relationship("Activity", back_populates="segment")
-    expenses = relationship("Expense", back_populates="segment")
+    stop_options = relationship(
+        "StopOption", back_populates="segment", cascade="all, delete-orphan"
+    )
+    expenses = relationship(
+        "Expense", back_populates="segment", cascade="all, delete-orphan"
+    )

@@ -70,23 +70,26 @@ test.describe('Journey Management', () => {
     // Wait for the form to load
     await expect(authenticatedPage.getByRole('heading', { name: 'Add Journey' })).toBeVisible();
 
-    // Fill in the journey form - select transport mode
-    await authenticatedPage.locator('select').first().selectOption('flight');
-    await authenticatedPage.getByPlaceholder('e.g., British Airways, Eurostar').fill('British Airways');
+    // Step 1: select template and advance to segment editor
+    await authenticatedPage.locator('select').first().selectOption('TRANSFER');
+    await authenticatedPage.getByRole('button', { name: /Simple/i }).click();
+    await authenticatedPage.getByRole('button', { name: /Use template/i }).click();
 
-    // Select origin and destination
-    await authenticatedPage.locator('select').nth(1).selectOption(originId.toString());
-    await authenticatedPage.locator('select').nth(2).selectOption(destinationId.toString());
+    // Step 2: fill origin and destination
+    await expect(authenticatedPage.getByText('1 / 1')).toBeVisible();
+    await authenticatedPage.getByPlaceholder('Enter origin').fill('Paris');
+    await authenticatedPage.getByPlaceholder('Enter destination').fill('London');
 
-    // Set cost
-    await authenticatedPage.getByPlaceholder('0.00').fill('250');
-    await authenticatedPage.getByPlaceholder('e.g., ABC123').fill('BA123');
+    // Advance to review step. Use regex because "→" is aria-hidden (accessible name is "Review").
+    await authenticatedPage.getByRole('button', { name: /^Review/ }).click();
+    await expect(authenticatedPage.getByText(/Review your journey/i)).toBeVisible();
 
     // Submit
-    await authenticatedPage.getByRole('button', { name: /Add Journey/i }).click();
+    await authenticatedPage.getByRole('button', { name: 'Save Journey' }).click();
 
-    // Verify journey appears - check for carrier in the list
-    await expect(authenticatedPage.getByText('British Airways')).toBeVisible({ timeout: 10000 });
+    // Verify journey appears
+    await expect(authenticatedPage.locator('text=Paris').first()).toBeVisible({ timeout: 10000 });
+    await expect(authenticatedPage.locator('text=London').first()).toBeVisible({ timeout: 10000 });
   });
 
   test('should display journey with transport icon', async ({ authenticatedPage, authApiRequest }) => {
@@ -101,71 +104,99 @@ test.describe('Journey Management', () => {
     expect(response.ok()).toBeTruthy();
 
     await authenticatedPage.goto(`/trips/${tripId}`);
+    await authenticatedPage.setViewportSize({ width: 1280, height: 1600 });
     await authenticatedPage.getByRole('button', { name: /Journeys/i }).click();
 
     // Verify journey details with increased timeout
     await expect(authenticatedPage.getByText('Eurostar')).toBeVisible({ timeout: 15000 });
   });
 
-  test('should edit a journey', async ({ authenticatedPage, authApiRequest }) => {
+  test('should edit a journey segment', async ({ authenticatedPage, authApiRequest }) => {
     // Create journey via API
     const journeyData = generateJourneyData(tripId, {
       origin_id: originId,
       destination_id: destinationId,
-      carrier: 'Air France',
+      transport_mode: 'train',
     });
     const response = await authApiRequest('post', `${API_URL}/journeys/`, journeyData);
     expect(response.ok()).toBeTruthy();
+    const journey = await response.json();
+
+    // Create a segment via API
+    const segmentResponse = await authApiRequest('post', `${API_URL}/journeys/${journey.id}/segments`, {
+      journey_id: journey.id,
+      segment_type: 'TRANSFER',
+      origin_id: originId,
+      origin_name: 'Paris',
+      destination_id: destinationId,
+      destination_name: 'London',
+      order: 0,
+    });
+    expect(segmentResponse.ok()).toBeTruthy();
 
     await authenticatedPage.goto(`/trips/${tripId}`);
+    await authenticatedPage.setViewportSize({ width: 1280, height: 1600 });
     await authenticatedPage.getByRole('button', { name: /Journeys/i }).click();
 
-    // Wait for journey to load with increased timeout
-    await expect(authenticatedPage.getByText('Air France')).toBeVisible({ timeout: 15000 });
+    // Open segments manager
+    await authenticatedPage.getByTitle('Manage segments').click();
+    await expect(authenticatedPage.getByText('Journey segments')).toBeVisible({ timeout: 10000 });
 
-    // Click edit button using a more reliable selector
-    await authenticatedPage.locator('.space-y-3 button').filter({ has: authenticatedPage.locator('svg') }).first().click();
+    // Open edit modal
+    await authenticatedPage.getByRole('button', { name: 'Edit' }).first().click();
+    await expect(authenticatedPage.getByText('Edit segment')).toBeVisible();
 
-    // Verify edit mode
-    await expect(authenticatedPage.getByRole('heading', { name: 'Edit Journey' })).toBeVisible();
+    // Update destination
+    await authenticatedPage.getByPlaceholder('Enter destination').fill('Berlin');
 
-    // Change carrier
-    await authenticatedPage.getByPlaceholder('e.g., British Airways, Eurostar').fill('Lufthansa');
+    // Save
+    await authenticatedPage.getByRole('button', { name: 'Save changes' }).click({ force: true });
 
-    // Save changes
-    await authenticatedPage.getByRole('button', { name: /Update Journey/i }).click();
-
-    // Verify updated journey
-    await expect(authenticatedPage.getByText('Lufthansa')).toBeVisible({ timeout: 10000 });
+    // Verify updated segment in list
+    await expect(authenticatedPage.getByText('Paris -> Berlin')).toBeVisible({ timeout: 10000 });
   });
 
-  test('should cancel editing a journey', async ({ authenticatedPage, authApiRequest }) => {
+  test('should cancel editing a journey segment', async ({ authenticatedPage, authApiRequest }) => {
     // Create journey via API
     const journeyData = generateJourneyData(tripId, {
       origin_id: originId,
       destination_id: destinationId,
-      carrier: 'Swiss Air',
+      transport_mode: 'train',
     });
     const response = await authApiRequest('post', `${API_URL}/journeys/`, journeyData);
     expect(response.ok()).toBeTruthy();
+    const journey = await response.json();
+
+    // Create a segment via API
+    const segmentResponse = await authApiRequest('post', `${API_URL}/journeys/${journey.id}/segments`, {
+      journey_id: journey.id,
+      segment_type: 'TRANSFER',
+      origin_id: originId,
+      origin_name: 'Paris',
+      destination_id: destinationId,
+      destination_name: 'London',
+      order: 0,
+    });
+    expect(segmentResponse.ok()).toBeTruthy();
 
     await authenticatedPage.goto(`/trips/${tripId}`);
     await authenticatedPage.getByRole('button', { name: /Journeys/i }).click();
 
-    // Wait for journey to load with increased timeout
-    await expect(authenticatedPage.getByText('Swiss Air')).toBeVisible({ timeout: 15000 });
+    // Open segments manager
+    await authenticatedPage.getByTitle('Manage segments').click();
+    await expect(authenticatedPage.getByText('Journey segments')).toBeVisible({ timeout: 10000 });
 
-    // Click edit button using a more reliable selector
-    await authenticatedPage.locator('.space-y-3 button').filter({ has: authenticatedPage.locator('svg') }).first().click();
+    // Open edit modal
+    await authenticatedPage.getByRole('button', { name: 'Edit' }).first().click();
+    await expect(authenticatedPage.getByText('Edit segment')).toBeVisible();
 
-    // Verify edit mode
-    await expect(authenticatedPage.getByRole('heading', { name: 'Edit Journey' })).toBeVisible();
+    // Cancel via programmatic click to avoid viewport issues
+    await authenticatedPage
+      .getByRole('button', { name: 'Close' })
+      .evaluate((el) => (el as HTMLElement).click());
 
-    // Click cancel - use form-specific cancel button
-    await authenticatedPage.locator('form').getByRole('button', { name: /Cancel/i }).click();
-
-    // Verify form is hidden (heading should not be visible)
-    await expect(authenticatedPage.getByRole('heading', { name: 'Add Journey' })).not.toBeVisible();
+    // Modal should close
+    await expect(authenticatedPage.getByText('Edit segment')).not.toBeVisible();
   });
 
   test('should delete a journey', async ({ authenticatedPage, authApiRequest }) => {
@@ -233,36 +264,22 @@ test.describe('Journey Management', () => {
     await expect(authenticatedPage.getByText('199.99 USD')).toBeVisible({ timeout: 15000 });
   });
 
-  test('should change journey status', async ({ authenticatedPage, authApiRequest }) => {
+  test('should open journey segments manager from list', async ({ authenticatedPage, authApiRequest }) => {
     // Create journey via API
     const journeyData = generateJourneyData(tripId, {
       origin_id: originId,
       destination_id: destinationId,
-      status: 'planned',
-      carrier: 'TAP',
+      transport_mode: 'bus',
     });
     const response = await authApiRequest('post', `${API_URL}/journeys/`, journeyData);
     expect(response.ok()).toBeTruthy();
+    const journey = await response.json();
 
     await authenticatedPage.goto(`/trips/${tripId}`);
     await authenticatedPage.getByRole('button', { name: /Journeys/i }).click();
 
-    // Wait for journey to load with increased timeout
-    await expect(authenticatedPage.getByText('TAP')).toBeVisible({ timeout: 15000 });
-
-    // Verify initially planned (use specific locator for journey list)
-    await expect(authenticatedPage.locator('.space-y-3').getByText('Planned')).toBeVisible();
-
-    // Edit journey using a more reliable selector
-    await authenticatedPage.locator('.space-y-3 button').filter({ has: authenticatedPage.locator('svg') }).first().click();
-
-    // Change status to booked using the status select in the form
-    await authenticatedPage.locator('form select').last().selectOption('booked');
-
-    // Save
-    await authenticatedPage.getByRole('button', { name: /Update Journey/i }).click();
-
-    // Verify status changed (use specific locator for journey list)
-    await expect(authenticatedPage.locator('.space-y-3').getByText('Booked')).toBeVisible({ timeout: 10000 });
+    await authenticatedPage.getByTitle('Manage segments').click();
+    await expect(authenticatedPage).toHaveURL(`/trips/${tripId}/journeys/${journey.id}`);
+    await expect(authenticatedPage.getByText('Journey segments')).toBeVisible();
   });
 });

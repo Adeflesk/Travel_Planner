@@ -88,15 +88,20 @@ def db_setup(db_engine, testing_session_local, setup_database):
 
     # Tables in reverse dependency order to avoid foreign key constraints
     tables_to_clean = [
+        "user_settings",
         "trip_shares",
         "packing_items",
         "expenses",
+        "day_activities",
         "activities",
+        "segment_options",
         "stop_options",
         "journey_stops",
+        "journey_segments",
         "journey_documents",
         "journeys",
         "destinations",
+        "trip_days",
         "trips",
         "users",
     ]

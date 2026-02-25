@@ -70,6 +70,14 @@ def run_migrations(engine: Engine) -> None:
         ("route_notes", "TEXT", "NULL"),
     ]
 
+    trip_columns = [
+        ("timezone", "VARCHAR(50)", "NULL"),
+    ]
+
+    destination_columns = [
+        ("timezone", "VARCHAR(50)", "NULL"),
+    ]
+
     migrations_run = 0
     for col_name, col_type, default in journey_columns:
         if add_column_if_not_exists(engine, "journeys", col_name, col_type, default):
@@ -84,6 +92,33 @@ def run_migrations(engine: Engine) -> None:
     for col_name, col_type, default in trip_threshold_columns:
         if add_column_if_not_exists(engine, "trips", col_name, col_type, default):
             migrations_run += 1
+
+    # Trip and destination timezone columns (for timezone prefill feature)
+    for col_name, col_type, default in trip_columns:
+        if add_column_if_not_exists(engine, "trips", col_name, col_type, default):
+            migrations_run += 1
+
+    for col_name, col_type, default in destination_columns:
+        if add_column_if_not_exists(
+            engine, "destinations", col_name, col_type, default
+        ):
+            migrations_run += 1
+
+    # Expense link columns (Feature 022)
+    expense_link_columns = [
+        ("segment_option_id", "INTEGER", "NULL"),
+        ("stop_option_id", "INTEGER", "NULL"),
+        ("segment_id", "INTEGER", "NULL"),
+    ]
+    for col_name, col_type, default in expense_link_columns:
+        if add_column_if_not_exists(engine, "expenses", col_name, col_type, default):
+            migrations_run += 1
+
+    # Stop option segment link (Feature 021)
+    if add_column_if_not_exists(
+        engine, "stop_options", "segment_id", "INTEGER", "NULL"
+    ):
+        migrations_run += 1
 
     if migrations_run > 0:
         logger.info(f"Completed {migrations_run} migration(s)")

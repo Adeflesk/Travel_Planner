@@ -49,7 +49,8 @@ class StopOptionBase(BaseModel):
 
 
 class StopOptionCreate(StopOptionBase):
-    stop_id: int
+    stop_id: Optional[int] = None
+    segment_id: Optional[int] = None
 
 
 class StopOptionUpdate(BaseModel):
@@ -81,7 +82,8 @@ class StopOptionUpdate(BaseModel):
 
 class StopOption(StopOptionBase):
     id: int
-    stop_id: int
+    stop_id: Optional[int] = None
+    segment_id: Optional[int] = None
 
     model_config = ConfigDict(from_attributes=True)
 

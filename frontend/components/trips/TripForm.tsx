@@ -1,9 +1,12 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useTripForm } from './useTripForm';
 import { Input, Textarea } from '@/components/ui/Input';
+import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
 import { Button } from '@/components/ui/Button';
 import { DollarSign } from 'lucide-react';
+import { getSupportedTimezones } from '@/lib/timezone-utils';
 
 interface TripFormProps {
   onTripCreated: () => void;
@@ -11,7 +14,8 @@ interface TripFormProps {
 }
 
 export default function TripForm({ onTripCreated, onCancel }: TripFormProps) {
-  const { formData, loading, handleSubmit, handleChange } = useTripForm(onTripCreated);
+  const { formData, loading, handleSubmit, handleChange, updateField } = useTripForm(onTripCreated);
+  const timezones = useMemo(() => getSupportedTimezones(), []);
 
   return (
     <div className="w-full max-w-2xl">
@@ -84,6 +88,22 @@ export default function TripForm({ onTripCreated, onCancel }: TripFormProps) {
             value={formData.end_date}
             onChange={handleChange}
             required
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <AutocompleteInput
+            label="Trip Timezone"
+            name="timezone"
+            value={formData.timezone || ''}
+            onChange={(e) => updateField('timezone', e.target.value)}
+            onSelect={(value) => updateField('timezone', value)}
+            suggestions={timezones}
+            filterMethod="contains"
+            showRecentFirst={false}
+            virtualize
+            placeholder="Search timezones (e.g., America/Denver)"
+            hint="Used for date and time display across the trip."
           />
         </div>
 

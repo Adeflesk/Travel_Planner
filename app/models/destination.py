@@ -28,6 +28,7 @@ class Destination(Base):
     name = Column(String(200), nullable=False)
     country = Column(String(100))
     region = Column(String(100))
+    timezone = Column(String(50), nullable=True)
     arrival_date = Column(Date)
     departure_date = Column(Date)
     notes = Column(Text)

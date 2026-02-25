@@ -7,7 +7,7 @@ Defines Expense-related Pydantic models: `ExpenseBase`, `ExpenseCreate`,
 Author: Travel Planner Team
 """
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel
 from datetime import date as DateType
 from decimal import Decimal
 from typing import Optional
@@ -28,19 +28,9 @@ class ExpenseCreate(ExpenseBase):
     trip_id: int
     destination_id: Optional[int] = None
     activity_id: Optional[int] = None
+    segment_option_id: Optional[int] = None
+    stop_option_id: Optional[int] = None
     segment_id: Optional[int] = None
-
-    @field_validator("destination_id")
-    @classmethod
-    def validate_at_least_one_link(cls, v, info):
-        """Ensure at least one of destination_id, activity_id, or segment_id is provided"""
-        activity_id = info.data.get("activity_id")
-        segment_id = info.data.get("segment_id")
-        if v is None and activity_id is None and segment_id is None:
-            raise ValueError(
-                "At least one of destination_id, activity_id, or segment_id must be provided"
-            )
-        return v
 
 
 class ExpenseUpdate(BaseModel):
@@ -52,6 +42,9 @@ class ExpenseUpdate(BaseModel):
     booked: Optional[bool] = None
     paid: Optional[bool] = None
     cancel_by_date: Optional[DateType] = None
+    segment_option_id: Optional[int] = None
+    stop_option_id: Optional[int] = None
+    segment_id: Optional[int] = None
 
 
 class Expense(ExpenseBase):
@@ -59,6 +52,8 @@ class Expense(ExpenseBase):
     trip_id: int
     destination_id: Optional[int] = None
     activity_id: Optional[int] = None
+    segment_option_id: Optional[int] = None
+    stop_option_id: Optional[int] = None
     segment_id: Optional[int] = None
 
     model_config = {"from_attributes": True}

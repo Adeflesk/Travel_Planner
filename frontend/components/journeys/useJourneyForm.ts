@@ -20,6 +20,8 @@ const getInitialFormData = (tripId: number): JourneyFormData => ({
   destination_id: undefined,
   origin_name: undefined,
   destination_name: undefined,
+  origin_timezone: undefined,
+  destination_timezone: undefined,
   departure_datetime: '',
   arrival_datetime: '',
   carrier: '',
@@ -28,6 +30,7 @@ const getInitialFormData = (tripId: number): JourneyFormData => ({
   currency: 'USD',
   notes: '',
   status: 'planned',
+  segments: [],
 });
 
 export function useJourneyForm(tripId: number, onSuccess: () => void) {
@@ -62,11 +65,8 @@ export function useJourneyForm(tripId: number, onSuccess: () => void) {
   // Context-aware defaults: Set currency to most common from user's history
   useEffect(() => {
     if (!editingId && currencySuggestions.length > 0 && formData.currency === 'USD') {
-      // If the form is new (not editing) and currency is still default USD,
-      // set it to the user's most common currency
       const defaultCurrency = currencySuggestions[0];
       if (defaultCurrency && defaultCurrency !== 'USD') {
-        // This is an initialization effect - sets smart defaults on mount
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setFormData((prev) => ({ ...prev, currency: defaultCurrency }));
       }
@@ -81,14 +81,14 @@ export function useJourneyForm(tripId: number, onSuccess: () => void) {
       const month = String(tripStart.getMonth() + 1).padStart(2, '0');
       const day = String(tripStart.getDate()).padStart(2, '0');
 
-      // Default to trip start date at 9:00 AM for departure
       const defaultDepartureDate = `${year}-${month}-${day}T09:00`;
+      const defaultArrivalDate = `${year}-${month}-${day}T11:00`;
 
-      // This is an initialization effect - sets smart defaults on mount
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData((prev) => ({
         ...prev,
-        departure_datetime: defaultDepartureDate
+        departure_datetime: defaultDepartureDate,
+        arrival_datetime: defaultArrivalDate
       }));
     }
   }, [editingId, trip, formData.departure_datetime, formData.arrival_datetime]);
@@ -98,7 +98,6 @@ export function useJourneyForm(tripId: number, onSuccess: () => void) {
     const newErrors: ValidationErrors = {};
     const newWarnings: ValidationWarnings = {};
 
-    // Check departure is before arrival
     if (formData.departure_datetime && formData.arrival_datetime) {
       const departure = new Date(formData.departure_datetime);
       const arrival = new Date(formData.arrival_datetime);
@@ -107,11 +106,9 @@ export function useJourneyForm(tripId: number, onSuccess: () => void) {
       }
     }
 
-    // Check if journey dates fall within trip dates (warning only)
     if (trip && (formData.departure_datetime || formData.arrival_datetime)) {
       const tripStart = new Date(trip.start_date);
       const tripEnd = new Date(trip.end_date);
-      // Set trip end to end of day for comparison
       tripEnd.setHours(23, 59, 59, 999);
 
       const departure = formData.departure_datetime
@@ -133,15 +130,19 @@ export function useJourneyForm(tripId: number, onSuccess: () => void) {
     setErrors(newErrors);
     setWarnings(newWarnings);
 
-    // Return true if no errors (warnings are allowed)
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate before submitting
     if (!validate()) {
+      return;
+    }
+
+    console.log('Submitting journey formData:', formData);
+
+    if (!formData.transport_mode || formData.transport_mode.trim() === '') {
       return;
     }
 
@@ -156,9 +157,15 @@ export function useJourneyForm(tripId: number, onSuccess: () => void) {
       setErrors({});
       setWarnings({});
       onSuccess();
-    } catch (error) {
-      console.error('Error saving journey:', error);
-      alert('Failed to save journey');
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number; data?: unknown } };
+        console.error('Journey save error - Status:', axiosError.response?.status);
+        console.error('Journey save error - Detail:', JSON.stringify(axiosError.response?.data, null, 2));
+      } else {
+        console.error('Error saving journey:', error);
+      }
+      alert('Failed to save journey. Check browser console for details.');
     }
   };
 
@@ -171,6 +178,8 @@ export function useJourneyForm(tripId: number, onSuccess: () => void) {
       destination_id: journey.destination_id,
       origin_name: journey.origin_name,
       destination_name: journey.destination_name,
+      origin_timezone: journey.origin_timezone,
+      destination_timezone: journey.destination_timezone,
       departure_datetime: journey.departure_datetime || '',
       arrival_datetime: journey.arrival_datetime || '',
       carrier: journey.carrier || '',
@@ -179,6 +188,7 @@ export function useJourneyForm(tripId: number, onSuccess: () => void) {
       currency: journey.currency || 'USD',
       notes: journey.notes || '',
       status: journey.status || 'planned',
+      segments: [],
     });
   };
 
@@ -189,27 +199,26 @@ export function useJourneyForm(tripId: number, onSuccess: () => void) {
     setWarnings({});
   };
 
-  // Duplicate journey as return trip (swap origin/destination)
   const duplicateAsReturn = (journey: Journey) => {
-    setEditingId(null); // Creating new, not editing
+    setEditingId(null);
     setFormData({
       trip_id: tripId,
-      // Swap origin and destination
       origin_id: journey.destination_id,
       destination_id: journey.origin_id,
       origin_name: journey.destination_name,
       destination_name: journey.origin_name,
-      // Keep transport details
+      origin_timezone: journey.destination_timezone,
+      destination_timezone: journey.origin_timezone,
       transport_mode: journey.transport_mode,
       carrier: journey.carrier || '',
       cost: journey.cost,
       currency: journey.currency || 'USD',
       notes: journey.notes || '',
-      // Clear booking-specific fields
       departure_datetime: '',
       arrival_datetime: '',
       booking_reference: '',
       status: 'planned',
+      segments: [],
     });
     setErrors({});
     setWarnings({});
@@ -225,6 +234,7 @@ export function useJourneyForm(tripId: number, onSuccess: () => void) {
   return {
     formData,
     isEditing: editingId !== null,
+    editingId,
     errors,
     warnings,
     handleSubmit,

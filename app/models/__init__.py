@@ -19,6 +19,10 @@ from .journey_segment import JourneySegment
 from .journey_stop import JourneyStop
 from .stop_option import StopOption
 from .journey_document import JourneyDocument
+from .segment_option import SegmentOption
+from .trip_day import TripDay
+from .day_activity import DayActivity
+from .user_settings import UserSettings
 
 __all__ = [
     "Base",
@@ -35,4 +39,8 @@ __all__ = [
     "JourneyStop",
     "StopOption",
     "JourneyDocument",
+    "SegmentOption",
+    "TripDay",
+    "DayActivity",
+    "UserSettings",
 ]

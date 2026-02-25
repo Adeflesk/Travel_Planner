@@ -16,6 +16,7 @@ class DestinationBase(BaseModel):
     name: str
     country: Optional[str] = None
     region: Optional[str] = None
+    timezone: Optional[str] = None
     arrival_date: Optional[DateType] = None
     departure_date: Optional[DateType] = None
     notes: Optional[str] = None
@@ -30,6 +31,7 @@ class DestinationUpdate(BaseModel):
     name: Optional[str] = None
     country: Optional[str] = None
     region: Optional[str] = None
+    timezone: Optional[str] = None
     arrival_date: Optional[DateType] = None
     departure_date: Optional[DateType] = None
     notes: Optional[str] = None

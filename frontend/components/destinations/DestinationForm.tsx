@@ -62,6 +62,18 @@ export function DestinationForm({
           />
         </div>
         <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-gray-700">
+            Timezone <span className="text-gray-400 font-normal">(optional)</span>
+          </label>
+          <input
+            type="text"
+            value={formData.timezone || ''}
+            onChange={(e) => updateField('timezone', e.target.value)}
+            placeholder="e.g., America/Denver"
+            className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-700">Arrival Date</label>
           <input
             type="date"

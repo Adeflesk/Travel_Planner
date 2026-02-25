@@ -25,6 +25,11 @@ from app.models.journey_stop import JourneyStop  # noqa: E402, F401
 from app.models.stop_option import StopOption  # noqa: E402, F401
 from app.models.journey_document import JourneyDocument  # noqa: E402, F401
 from app.models.trip_share import TripShare  # noqa: E402, F401
+from app.models.journey_segment import JourneySegment  # noqa: E402, F401
+from app.models.segment_option import SegmentOption  # noqa: E402, F401
+from app.models.trip_day import TripDay  # noqa: E402, F401
+from app.models.day_activity import DayActivity  # noqa: E402, F401
+from app.models.user_settings import UserSettings  # noqa: E402, F401
 
 print("Creating database tables...")
 Base.metadata.create_all(bind=engine)
