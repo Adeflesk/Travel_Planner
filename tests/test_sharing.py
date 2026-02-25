@@ -37,7 +37,36 @@ def override_get_db():
 @pytest.fixture(autouse=True)
 def setup_database():
     """Create tables before each test and drop after."""
+    from sqlalchemy import text
+
     Base.metadata.create_all(bind=engine)
+
+    # Create trip_summary view for tests
+    with engine.connect() as conn:
+        conn.execute(
+            text(
+                """
+            CREATE VIEW IF NOT EXISTS trip_summary AS
+            SELECT
+                t.id,
+                t.name,
+                t.start_date,
+                t.end_date,
+                t.budget,
+                COUNT(DISTINCT j.id)              AS journey_count,
+                COUNT(DISTINCT td.id)             AS day_count,
+                COALESCE(SUM(e.amount), 0)        AS total_spent,
+                t.budget - COALESCE(SUM(e.amount), 0) AS budget_remaining
+            FROM trips t
+            LEFT JOIN journeys j    ON j.trip_id = t.id
+            LEFT JOIN trip_days td  ON td.trip_id = t.id
+            LEFT JOIN expenses e    ON e.trip_id = t.id
+            GROUP BY t.id;
+        """
+            )
+        )
+        conn.commit()
+
     yield
     Base.metadata.drop_all(bind=engine)
 
