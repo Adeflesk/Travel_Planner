@@ -1,15 +1,16 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { JourneySegment, JourneySegmentDraft, LocationRef, SegmentType, SegmentOption, SegmentOptionFormData } from '@/lib/types';
-import { journeySegmentApi, segmentOptionApi } from '@/lib/api';
+import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { JourneySegment, JourneySegmentDraft, LocationRef, SegmentType, SegmentOption, SegmentOptionFormData, Activity, Expense, ActivityFormData, ExpenseFormData } from '@/lib/types';
+import { journeySegmentApi, segmentOptionApi, activityApi, expenseApi } from '@/lib/api';
 import { SegmentCard } from './SegmentCard';
 import { SegmentOptionsManager } from './SegmentOptionsManager';
 import { Button } from '@/components/ui/Button';
-import { formatDateTimeWithZone, getTimezoneAbbreviation, calculateFlightDuration, formatDuration } from '@/lib/timezone-utils';
+import { X, Plus, AlertCircle } from 'lucide-react';
 
 interface SegmentManagerProps {
   journeyId: number;
+  tripId: number;
 }
 
 const buildLocation = (id?: number, name?: string): LocationRef => {
@@ -46,12 +47,218 @@ const toUpdatePayload = (draft: JourneySegmentDraft, order: number) => ({
   order,
 });
 
-export default function SegmentManager({ journeyId }: SegmentManagerProps) {
+// Activity Form Component
+interface ActivityFormProps {
+  segmentId: number;
+  onAdd: (activity: ActivityFormData) => Promise<void>;
+  onCancel: () => void;
+}
+
+function ActivityForm({ segmentId, onAdd, onCancel }: ActivityFormProps) {
+  const [formData, setFormData] = useState<Partial<ActivityFormData>>({
+    name: '',
+    segment_id: segmentId,
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!formData.name?.trim()) {
+      setError('Activity name is required');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await onAdd(formData as ActivityFormData);
+      setFormData({ name: '', segment_id: segmentId });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add activity');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="mb-3 rounded-md bg-slate-50 p-3 space-y-2">
+      <input
+        type="text"
+        placeholder="Activity name"
+        value={formData.name || ''}
+        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+        className="w-full rounded border border-slate-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        disabled={isLoading}
+      />
+      <input
+        type="number"
+        placeholder="Duration (minutes)"
+        value={formData.duration ?? ''}
+        onChange={(e) =>
+          setFormData({ ...formData, duration: e.target.value ? parseInt(e.target.value) : undefined })
+        }
+        className="w-full rounded border border-slate-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        disabled={isLoading}
+      />
+      <input
+        type="number"
+        placeholder="Cost ($)"
+        value={formData.cost ?? ''}
+        onChange={(e) =>
+          setFormData({ ...formData, cost: e.target.value ? parseFloat(e.target.value) : undefined })
+        }
+        step="0.01"
+        className="w-full rounded border border-slate-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        disabled={isLoading}
+      />
+      {error && (
+        <div className="flex gap-2 rounded bg-red-50 p-2 text-xs text-red-700">
+          <AlertCircle className="h-4 w-4 flex-shrink-0" />
+          {error}
+        </div>
+      )}
+      <div className="flex gap-2">
+        <Button type="submit" size="sm" disabled={isLoading}>
+          {isLoading ? 'Adding...' : 'Add Activity'}
+        </Button>
+        <Button type="button" variant="secondary" size="sm" onClick={onCancel} disabled={isLoading}>
+          Cancel
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+// Expense Form Component
+interface ExpenseFormProps {
+  segmentId: number;
+  tripId: number;
+  onAdd: (expense: ExpenseFormData) => Promise<void>;
+  onCancel: () => void;
+}
+
+function ExpenseForm({ segmentId, tripId, onAdd, onCancel }: ExpenseFormProps) {
+  const initialDate = new Date().toISOString().slice(0, 10);
+  const [formData, setFormData] = useState<Partial<ExpenseFormData>>({
+    category: 'Food',
+    amount: undefined,
+    segment_id: segmentId,
+    trip_id: tripId,
+    date: initialDate,
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (formData.amount === undefined) {
+      setError('Amount is required');
+      return;
+    }
+
+    if (!formData.category) {
+      setError('Category is required');
+      return;
+    }
+
+    if (!formData.date) {
+      setError('Date is required');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await onAdd(formData as ExpenseFormData);
+      setFormData({
+        category: 'Food',
+        amount: undefined,
+        segment_id: segmentId,
+        trip_id: tripId,
+        date: initialDate,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add expense');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="mb-3 rounded-md bg-slate-50 p-3 space-y-2">
+      <select
+        value={formData.category || 'Food'}
+        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+        className="w-full rounded border border-slate-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        disabled={isLoading}
+      >
+        <option>Food</option>
+        <option>Transportation</option>
+        <option>Accommodation</option>
+        <option>Activity</option>
+        <option>Shopping</option>
+        <option>Other</option>
+      </select>
+      <input
+        type="date"
+        value={formData.date || ''}
+        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+        className="w-full rounded border border-slate-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        disabled={isLoading}
+      />
+      <input
+        type="number"
+        placeholder="Amount ($)"
+        value={formData.amount ?? ''}
+        onChange={(e) =>
+          setFormData({ ...formData, amount: e.target.value ? parseFloat(e.target.value) : undefined })
+        }
+        step="0.01"
+        className="w-full rounded border border-slate-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        disabled={isLoading}
+      />
+      <input
+        type="text"
+        placeholder="Description"
+        value={formData.description || ''}
+        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+        className="w-full rounded border border-slate-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        disabled={isLoading}
+      />
+      {error && (
+        <div className="flex gap-2 rounded bg-red-50 p-2 text-xs text-red-700">
+          <AlertCircle className="h-4 w-4 flex-shrink-0" />
+          {error}
+        </div>
+      )}
+      <div className="flex gap-2">
+        <Button type="submit" size="sm" disabled={isLoading}>
+          {isLoading ? 'Adding...' : 'Add Expense'}
+        </Button>
+        <Button type="button" variant="secondary" size="sm" onClick={onCancel} disabled={isLoading}>
+          Cancel
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+export default function SegmentManager({ journeyId, tripId }: SegmentManagerProps) {
   const [segments, setSegments] = useState<JourneySegment[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingSegment, setEditingSegment] = useState<JourneySegment | null>(null);
   const [editingDraft, setEditingDraft] = useState<JourneySegmentDraft | null>(null);
   const [segmentOptions, setSegmentOptions] = useState<SegmentOption[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [showActivityForm, setShowActivityForm] = useState(false);
+  const [showExpenseForm, setShowExpenseForm] = useState(false);
+  const [segmentActivityCounts, setSegmentActivityCounts] = useState<Record<number, number>>({});
+  const [segmentExpenseCounts, setSegmentExpenseCounts] = useState<Record<number, number>>({});
+  const [segmentExpenseTotals, setSegmentExpenseTotals] = useState<Record<number, number>>({});
 
   const sortedSegments = useMemo(
     () => [...segments].sort((a, b) => a.order - b.order),
@@ -73,6 +280,54 @@ export default function SegmentManager({ journeyId }: SegmentManagerProps) {
     loadSegments();
   }, [loadSegments]);
 
+  const loadSegmentStats = useCallback(async (segmentList: JourneySegment[]) => {
+    if (segmentList.length === 0) {
+      setSegmentActivityCounts({});
+      setSegmentExpenseCounts({});
+      setSegmentExpenseTotals({});
+      return;
+    }
+
+    const activityCounts: Record<number, number> = {};
+    const expenseCounts: Record<number, number> = {};
+    const expenseTotals: Record<number, number> = {};
+
+    await Promise.all(
+      segmentList.map(async (segment) => {
+        if (segment.segment_type === 'STOP') {
+          try {
+            const activitiesResponse = await activityApi.getBySegmentId(segment.id);
+            activityCounts[segment.id] = activitiesResponse.data.length;
+          } catch (error) {
+            console.error('Error loading segment activity count:', error);
+            activityCounts[segment.id] = 0;
+          }
+        }
+
+        try {
+          const expensesResponse = await expenseApi.getBySegmentId(segment.id);
+          expenseCounts[segment.id] = expensesResponse.data.length;
+          expenseTotals[segment.id] = expensesResponse.data.reduce(
+            (sum, expense) => sum + expense.amount,
+            0
+          );
+        } catch (error) {
+          console.error('Error loading segment expense totals:', error);
+          expenseCounts[segment.id] = 0;
+          expenseTotals[segment.id] = 0;
+        }
+      })
+    );
+
+    setSegmentActivityCounts(activityCounts);
+    setSegmentExpenseCounts(expenseCounts);
+    setSegmentExpenseTotals(expenseTotals);
+  }, []);
+
+  useEffect(() => {
+    loadSegmentStats(segments);
+  }, [segments, loadSegmentStats]);
+
   const loadSegmentOptions = useCallback(async (segmentId: number) => {
     try {
       const response = await segmentOptionApi.getBySegmentId(segmentId);
@@ -80,6 +335,51 @@ export default function SegmentManager({ journeyId }: SegmentManagerProps) {
     } catch (error) {
       console.error('Error loading segment options:', error);
       setSegmentOptions([]);
+    }
+  }, []);
+
+  const loadSegmentActivities = useCallback(async (segmentId: number) => {
+    try {
+      const response = await activityApi.getBySegmentId(segmentId);
+      setActivities(response.data);
+      setSegmentActivityCounts((prev) => ({
+        ...prev,
+        [segmentId]: response.data.length,
+      }));
+    } catch (error) {
+      console.error('Error loading segment activities:', error);
+      setActivities([]);
+      setSegmentActivityCounts((prev) => ({
+        ...prev,
+        [segmentId]: 0,
+      }));
+    }
+  }, []);
+
+  const loadSegmentExpenses = useCallback(async (segmentId: number) => {
+    try {
+      const response = await expenseApi.getBySegmentId(segmentId);
+      setExpenses(response.data);
+      const total = response.data.reduce((sum, expense) => sum + expense.amount, 0);
+      setSegmentExpenseCounts((prev) => ({
+        ...prev,
+        [segmentId]: response.data.length,
+      }));
+      setSegmentExpenseTotals((prev) => ({
+        ...prev,
+        [segmentId]: total,
+      }));
+    } catch (error) {
+      console.error('Error loading segment expenses:', error);
+      setExpenses([]);
+      setSegmentExpenseCounts((prev) => ({
+        ...prev,
+        [segmentId]: 0,
+      }));
+      setSegmentExpenseTotals((prev) => ({
+        ...prev,
+        [segmentId]: 0,
+      }));
     }
   }, []);
 
@@ -92,12 +392,28 @@ export default function SegmentManager({ journeyId }: SegmentManagerProps) {
     } else {
       setSegmentOptions([]);
     }
+    
+    // Load activities and expenses for STOP segments
+    if (segment.segment_type === 'STOP') {
+      loadSegmentActivities(segment.id);
+      loadSegmentExpenses(segment.id);
+    } else {
+      setActivities([]);
+      setExpenses([]);
+    }
+    
+    setShowActivityForm(false);
+    setShowExpenseForm(false);
   };
 
   const closeEditor = () => {
     setEditingSegment(null);
     setEditingDraft(null);
     setSegmentOptions([]);
+    setActivities([]);
+    setExpenses([]);
+    setShowActivityForm(false);
+    setShowExpenseForm(false);
   };
 
   const handleSave = async () => {
@@ -187,6 +503,83 @@ export default function SegmentManager({ journeyId }: SegmentManagerProps) {
     }
   };
 
+  const handleAddActivity = async (activityData: ActivityFormData) => {
+    if (!editingSegment) return;
+    try {
+      const response = await activityApi.createForSegment(editingSegment.id, activityData);
+      setActivities((prev) => [...prev, response.data]);
+      setSegmentActivityCounts((prev) => ({
+        ...prev,
+        [editingSegment.id]: (prev[editingSegment.id] ?? 0) + 1,
+      }));
+      setShowActivityForm(false);
+    } catch (error) {
+      console.error('Error creating activity:', error);
+      throw error;
+    }
+  };
+
+  const handleDeleteActivity = async (activityId: number) => {
+    try {
+      await activityApi.delete(activityId);
+      setActivities((prev) => prev.filter((a) => a.id !== activityId));
+      if (editingSegment) {
+        setSegmentActivityCounts((prev) => ({
+          ...prev,
+          [editingSegment.id]: Math.max(0, (prev[editingSegment.id] ?? 0) - 1),
+        }));
+      }
+    } catch (error) {
+      console.error('Error deleting activity:', error);
+      throw error;
+    }
+  };
+
+  const handleAddExpense = async (expenseData: ExpenseFormData) => {
+    if (!editingSegment) return;
+    try {
+      const response = await expenseApi.createForSegment(editingSegment.id, expenseData);
+      setExpenses((prev) => [...prev, response.data]);
+      setSegmentExpenseCounts((prev) => ({
+        ...prev,
+        [editingSegment.id]: (prev[editingSegment.id] ?? 0) + 1,
+      }));
+      setSegmentExpenseTotals((prev) => ({
+        ...prev,
+        [editingSegment.id]: (prev[editingSegment.id] ?? 0) + response.data.amount,
+      }));
+      setShowExpenseForm(false);
+    } catch (error) {
+      console.error('Error creating expense:', error);
+      throw error;
+    }
+  };
+
+  const handleDeleteExpense = async (expenseId: number) => {
+    try {
+      const expenseToRemove = expenses.find((expense) => expense.id === expenseId);
+      const amountToRemove = expenseToRemove?.amount ?? 0;
+      await expenseApi.delete(expenseId);
+      setExpenses((prev) => prev.filter((e) => e.id !== expenseId));
+      if (editingSegment) {
+        setSegmentExpenseCounts((prev) => ({
+          ...prev,
+          [editingSegment.id]: Math.max(0, (prev[editingSegment.id] ?? 0) - 1),
+        }));
+        setSegmentExpenseTotals((prev) => ({
+          ...prev,
+          [editingSegment.id]: Math.max(
+            0,
+            (prev[editingSegment.id] ?? 0) - amountToRemove
+          ),
+        }));
+      }
+    } catch (error) {
+      console.error('Error deleting expense:', error);
+      throw error;
+    }
+  };
+
   if (loading) {
     return <p className="text-sm text-slate-500">Loading segments...</p>;
   }
@@ -202,77 +595,46 @@ export default function SegmentManager({ journeyId }: SegmentManagerProps) {
   return (
     <>
       <div className="space-y-3">
-        {sortedSegments.map((segment) => (
-          <div
-            key={segment.id}
-            className="rounded-lg border border-slate-200 bg-white p-4"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="text-sm font-semibold text-slate-900">
-                  {segment.segment_type}
-                </div>
-                <div className="text-sm text-slate-600">
-                  {(segment.origin_name || 'Origin') + ' -> ' + (segment.destination_name || 'Destination')}
-                </div>
-                {(() => {
-                  const meta = segment.metadata;
-                  if (!meta || Number(meta.cost) <= 0) return null;
-                  return (
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs font-medium text-slate-700">
-                        {Number(meta.cost).toFixed(2)}{' '}
-                        {String(meta.currency ?? 'USD')}
-                      </span>
-                      {Boolean(meta.booked) && (
-                        <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
-                          Booked
-                        </span>
-                      )}
-                      {Boolean(meta.paid) && (
-                        <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
-                          Paid
-                        </span>
+        {sortedSegments.map((segment) => {
+          const activityCount = segmentActivityCounts[segment.id] ?? 0;
+          const expenseCount = segmentExpenseCounts[segment.id] ?? 0;
+          const expenseTotal = segmentExpenseTotals[segment.id] ?? 0;
+
+          return (
+            <div
+              key={segment.id}
+              className="rounded-lg border border-slate-200 bg-white p-4"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-sm font-semibold text-slate-900">
+                    {segment.segment_type}
+                  </div>
+                  <div className="text-sm text-slate-600">
+                    {(segment.origin_name || 'Origin') + ' -> ' + (segment.destination_name || 'Destination')}
+                  </div>
+                  <div className="text-xs text-slate-500 mt-1">
+                    {segment.start_datetime || 'Start TBD'}
+                    {' · '}
+                    {segment.end_datetime || 'End TBD'}
+                  </div>
+                  {segment.segment_type === 'STOP' && (
+                    <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-500">
+                      <span>{activityCount} activities</span>
+                      <span>{expenseCount} expenses</span>
+                      {expenseCount > 0 && (
+                        <span>Total: ${expenseTotal.toFixed(2)}</span>
                       )}
                     </div>
-                  );
-                })()}
-                <div className="text-xs text-slate-500 mt-1">
-                  {(() => {
-                    const depTz = segment.origin_timezone || undefined;
-                    const arrTz = segment.destination_timezone || undefined;
-                    const dep = segment.start_datetime;
-                    const arr = segment.end_datetime;
-
-                    const depStr = dep && depTz
-                      ? `${formatDateTimeWithZone(dep, depTz, { timeStyle: 'short' })} ${getTimezoneAbbreviation(dep, depTz)}`
-                      : dep ? new Date(dep).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Start TBD';
-
-                    const arrStr = arr && arrTz
-                      ? `${formatDateTimeWithZone(arr, arrTz, { timeStyle: 'short' })} ${getTimezoneAbbreviation(arr, arrTz)}`
-                      : arr ? new Date(arr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'End TBD';
-
-                    const durationMins = dep && arr
-                      ? calculateFlightDuration(dep, arr, depTz, arrTz)
-                      : null;
-
-                    return (
-                      <>
-                        {depStr} · {arrStr}
-                        {durationMins != null && durationMins > 0 && (
-                          <span className="ml-1 text-slate-400">({formatDuration(durationMins)})</span>
-                        )}
-                      </>
-                    );
-                  })()}
+                  )}
                 </div>
+                <Button type="button" variant="secondary" size="sm" onClick={() => openEditor(segment)}>
+                  Edit
+                </Button>
               </div>
-              <Button type="button" variant="secondary" size="sm" onClick={() => openEditor(segment)}>
-                Edit
-              </Button>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {editingSegment && editingDraft && (
@@ -317,6 +679,127 @@ export default function SegmentManager({ journeyId }: SegmentManagerProps) {
                     onDeleteOption={handleDeleteSegmentOption}
                   />
                 </div>
+              )}
+
+              {/* Activities and Expenses for STOP segments */}
+              {editingSegment.segment_type === 'STOP' && (
+                <>
+                  {/* Activities Section */}
+                  <div className="mt-4 pt-4 border-t border-slate-200">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-semibold text-slate-900">Activities</h3>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => setShowActivityForm(!showActivityForm)}
+                        className="gap-1"
+                      >
+                        <Plus className="h-4 w-4" />
+                        {showActivityForm ? 'Cancel' : 'Add Activity'}
+                      </Button>
+                    </div>
+
+                    {showActivityForm && (
+                      <ActivityForm
+                        segmentId={editingSegment.id}
+                        onAdd={handleAddActivity}
+                        onCancel={() => setShowActivityForm(false)}
+                      />
+                    )}
+
+                    {activities.length === 0 ? (
+                      <p className="text-xs text-slate-500">No activities yet</p>
+                    ) : (
+                      <ul className="space-y-2">
+                        {activities.map((activity) => (
+                          <li
+                            key={activity.id}
+                            className="flex items-start gap-3 rounded-md bg-slate-50 p-2"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-medium text-slate-900">
+                                {activity.name}
+                              </div>
+                              {activity.duration && (
+                                <div className="text-xs text-slate-500">
+                                  Duration: {activity.duration} min
+                                </div>
+                              )}
+                              {activity.cost && (
+                                <div className="text-xs text-slate-500">
+                                  Cost: ${activity.cost}
+                                </div>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteActivity(activity.id)}
+                              className="flex-shrink-0 text-slate-400 hover:text-slate-600"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+
+                  {/* Expenses Section */}
+                  <div className="mt-4 pt-4 border-t border-slate-200">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-semibold text-slate-900">Expenses</h3>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => setShowExpenseForm(!showExpenseForm)}
+                        className="gap-1"
+                      >
+                        <Plus className="h-4 w-4" />
+                        {showExpenseForm ? 'Cancel' : 'Add Expense'}
+                      </Button>
+                    </div>
+
+                    {showExpenseForm && (
+                      <ExpenseForm
+                        segmentId={editingSegment.id}
+                        tripId={tripId}
+                        onAdd={handleAddExpense}
+                        onCancel={() => setShowExpenseForm(false)}
+                      />
+                    )}
+
+                    {expenses.length === 0 ? (
+                      <p className="text-xs text-slate-500">No expenses yet</p>
+                    ) : (
+                      <ul className="space-y-2">
+                        {expenses.map((expense) => (
+                          <li
+                            key={expense.id}
+                            className="flex items-start gap-3 rounded-md bg-slate-50 p-2"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-medium text-slate-900">
+                                {expense.description || expense.category}
+                              </div>
+                              <div className="text-xs text-slate-500">
+                                ${expense.amount.toFixed(2)} {expense.currency}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteExpense(expense.id)}
+                              className="flex-shrink-0 text-slate-400 hover:text-slate-600"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </>
               )}
             </div>
             <div className="flex justify-end gap-3 border-t border-slate-200 bg-slate-50 px-4 py-3 flex-shrink-0">

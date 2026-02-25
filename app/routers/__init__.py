@@ -15,10 +15,10 @@ from .activities import router as activities_router
 from .expenses import router as expenses_router
 from .packing import router as packing_router
 from .journeys import router as journeys_router
+from .journey_segments import router as journey_segments_router
 from .journey_stops import router as journey_stops_router
 from .stop_options import router as stop_options_router
 from .journey_documents import router as journey_documents_router
-from .journey_segments import router as journey_segments_router
 from .segment_options import router as segment_options_router
 from .dashboard import router as dashboard_router
 from .suggestions import router as suggestions_router
@@ -35,10 +35,10 @@ __all__ = [
     "expenses_router",
     "packing_router",
     "journeys_router",
+    "journey_segments_router",
     "journey_stops_router",
     "stop_options_router",
     "journey_documents_router",
-    "journey_segments_router",
     "segment_options_router",
     "dashboard_router",
     "suggestions_router",

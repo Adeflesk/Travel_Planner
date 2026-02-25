@@ -1,20 +1,22 @@
 // app/trips/[id]/edit/page.tsx
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { TripFormData } from '@/lib/types';
 import { tripApi } from '@/lib/api';
-import { getLocalTimezone } from '@/lib/timezone-utils';
+import { getLocalTimezone, getSupportedTimezones } from '@/lib/timezone-utils';
 import { ArrowLeft } from 'lucide-react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/lib/auth-context';
+import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
 
 function EditTripContent() {
   const { isAuthenticated } = useAuth();
   const params = useParams();
   const router = useRouter();
   const tripId = parseInt(params.id as string);
+  const timezones = useMemo(() => getSupportedTimezones(), []);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -219,19 +221,19 @@ function EditTripContent() {
                 className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Timezone
-              </label>
-              <input
-                type="text"
-                name="timezone"
-                value={formData.timezone || ''}
-                onChange={handleChange}
-                className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
-                placeholder="e.g., America/Denver"
-              />
-            </div>
+            <AutocompleteInput
+              label="Trip Timezone"
+              name="timezone"
+              value={formData.timezone || ''}
+              onChange={(e) => setFormData({...formData, timezone: e.target.value})}
+              onSelect={(value) => setFormData({...formData, timezone: value})}
+              suggestions={timezones}
+              filterMethod="contains"
+              showRecentFirst={false}
+              virtualize
+              placeholder="Search timezones (e.g., America/Denver)"
+              hint="Used for date and time display across the trip."
+            />
           </div>
 
           <div>

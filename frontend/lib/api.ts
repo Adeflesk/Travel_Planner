@@ -12,6 +12,9 @@ import {
   StopOption,
   StopOptionFormData,
   StopOptionStatus,
+  JourneySegment,
+  SegmentOption,
+  SegmentOptionFormData,
   JourneyDocument,
   JourneyDocumentFormData,
   TripFormData,
@@ -20,9 +23,6 @@ import {
   PackingItemFormData,
   ActivityFormData,
   JourneyFormData,
-  JourneySegment,
-  SegmentOption,
-  SegmentOptionFormData,
   ExpenseSummary,
   PackingSummary,
   TripProgress,
@@ -158,11 +158,28 @@ export const weatherApi = {
 export const activityApi = {
   getByDestinationId: (destinationId: number) =>
     api.get<Activity[]>(`/destinations/${destinationId}/activities/`),
+
+  // NEW: Segment-specific activity methods
+  getBySegmentId: (segmentId: number) =>
+    api.get<Activity[]>(`/journey-segments/${segmentId}/activities`),
+
+  createForSegment: (segmentId: number, data: ActivityFormData) => {
+    const cleanedData: Partial<ActivityFormData> = {};
+    (Object.keys(data) as Array<keyof ActivityFormData>).forEach((key) => {
+      const value = data[key];
+      if (value !== '' && value !== undefined && value !== null) {
+        cleanedData[key] = value as never;
+      }
+    });
+    cleanedData.segment_id = segmentId;
+    return api.post<Activity>(`/journey-segments/${segmentId}/activities`, cleanedData);
+  },
+
   create: (data: ActivityFormData) => {
     const cleanedData: Partial<ActivityFormData> = {};
     (Object.keys(data) as Array<keyof ActivityFormData>).forEach((key) => {
       const value = data[key];
-      if (value !== '' && value !== undefined) {
+      if (value !== '' && value !== undefined && value !== null) {
         cleanedData[key] = value as never;
       }
     });
@@ -172,8 +189,8 @@ export const activityApi = {
     const cleanedData: Partial<ActivityFormData> = {};
     (Object.keys(data) as Array<keyof ActivityFormData>).forEach((key) => {
       const value = data[key];
-      if (key === 'destination_id') return; // Don't update destination_id
-      if (value !== '' && value !== undefined) {
+      if (key === 'destination_id' || key === 'segment_id') return; // Don't update these
+      if (value !== '' && value !== undefined && value !== null) {
         cleanedData[key] = value as never;
       }
     });
@@ -188,11 +205,32 @@ export const expenseApi = {
     api.get<Expense[]>(`/trips/${tripId}/expenses/`),
   getSummary: (tripId: number) =>
     api.get<ExpenseSummary>(`/trips/${tripId}/expenses/summary/`),
+
+  // NEW: Segment-specific expense methods
+  getBySegmentId: (segmentId: number) =>
+    api.get<Expense[]>(`/journey-segments/${segmentId}/expenses`),
+
+  createForSegment: (segmentId: number, data: ExpenseFormData) => {
+    const cleanedData: Partial<ExpenseFormData> = {};
+    (Object.keys(data) as Array<keyof ExpenseFormData>).forEach((key) => {
+      const value = data[key];
+      if (value !== '' && value !== undefined && value !== null) {
+        if (key === 'amount' && typeof value === 'string') {
+          cleanedData[key] = parseFloat(value) as never;
+        } else {
+          cleanedData[key] = value as never;
+        }
+      }
+    });
+    cleanedData.segment_id = segmentId;
+    return api.post<Expense>(`/journey-segments/${segmentId}/expenses`, cleanedData);
+  },
+
   create: (data: ExpenseFormData) => {
     const cleanedData: Partial<ExpenseFormData> = {};
     (Object.keys(data) as Array<keyof ExpenseFormData>).forEach((key) => {
       const value = data[key];
-      if (value !== '' && value !== undefined) {
+      if (value !== '' && value !== undefined && value !== null) {
         // Ensure amount is a number
         if (key === 'amount' && typeof value === 'string') {
           cleanedData[key] = parseFloat(value) as never;
@@ -208,10 +246,10 @@ export const expenseApi = {
     const cleanedData: Partial<ExpenseFormData> = {};
     (Object.keys(data) as Array<keyof ExpenseFormData>).forEach((key) => {
       const value = data[key];
-      // Skip trip_id and date - they shouldn't be updated
-      if (key === 'trip_id' || key === 'date') return;
+      // Skip trip_id, date, and link fields - they shouldn't be updated
+      if (key === 'trip_id' || key === 'date' || key === 'destination_id' || key === 'segment_id' || key === 'activity_id') return;
 
-      if (value !== '' && value !== undefined) {
+      if (value !== '' && value !== undefined && value !== null) {
         // Ensure amount is a number
         if (key === 'amount' && typeof value === 'string') {
           cleanedData[key] = parseFloat(value) as never;
@@ -228,7 +266,7 @@ export const expenseApi = {
     const cleanedData: Partial<ExpenseFormData> = {};
     (Object.keys(data) as Array<keyof ExpenseFormData>).forEach((key) => {
       const value = data[key];
-      if (value !== '' && value !== undefined) {
+      if (value !== '' && value !== undefined && value !== null) {
         if (key === 'amount' && typeof value === 'string') {
           cleanedData[key] = parseFloat(value) as never;
         } else {

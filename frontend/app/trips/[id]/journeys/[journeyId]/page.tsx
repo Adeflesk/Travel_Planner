@@ -74,7 +74,7 @@ function JourneySegmentsContent() {
           </p>
         </div>
 
-        <SegmentManager journeyId={journeyId} />
+        <SegmentManager journeyId={journeyId} tripId={tripId} />
       </div>
     </div>
   );

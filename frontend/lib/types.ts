@@ -72,7 +72,8 @@ export interface Destination {
 
 export interface Activity {
   id: number;
-  destination_id: number;
+  destination_id?: number | null;
+  segment_id?: number | null;
   name: string;
   description?: string;
   activity_type?: string;
@@ -90,8 +91,9 @@ export interface Activity {
 export interface Expense {
   id: number;
   trip_id: number;
-  destination_id?: number;
-  activity_id?: number;
+  destination_id?: number | null;
+  activity_id?: number | null;
+  segment_id?: number | null;
   segment_option_id?: number;
   stop_option_id?: number;
   category: string;
@@ -213,7 +215,9 @@ export interface DestinationFormData {
 
 export interface ExpenseFormData {
   trip_id: number;
-  destination_id?: number;
+  destination_id?: number | null;
+  activity_id?: number | null;
+  segment_id?: number | null;
   category: string;
   amount: number;
   description?: string;
@@ -232,7 +236,8 @@ export interface PackingItemFormData {
 }
 
 export interface ActivityFormData {
-  destination_id: number;
+  destination_id?: number | null;
+  segment_id?: number | null;
   name: string;
   description?: string;
   activity_type?: string;

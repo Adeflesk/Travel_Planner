@@ -7,6 +7,8 @@ import { destinationApi } from '@/lib/api';
 
 const createInitialFormData = (
   tripId: number,
+  startDate?: string,
+  endDate?: string,
   defaultTimezone?: string
 ): DestinationFormData => ({
   trip_id: tripId,
@@ -14,23 +16,25 @@ const createInitialFormData = (
   country: '',
   region: '',
   timezone: defaultTimezone || getLocalTimezone(),
-  arrival_date: '',
-  departure_date: '',
+  arrival_date: startDate || '',
+  departure_date: endDate || '',
 });
 
 export function useDestinationForm(
   tripId: number,
   onSuccess: () => void,
+  startDate?: string,
+  endDate?: string,
   defaultTimezone?: string
 ) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<DestinationFormData>(
-    createInitialFormData(tripId, defaultTimezone)
+    createInitialFormData(tripId, startDate, endDate, defaultTimezone)
   );
 
   const resetForm = () => {
     setEditingId(null);
-    setFormData(createInitialFormData(tripId, defaultTimezone));
+    setFormData(createInitialFormData(tripId, startDate, endDate, defaultTimezone));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

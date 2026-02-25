@@ -31,6 +31,9 @@ class JourneySegment(Base):
     stop_options = relationship(
         "StopOption", back_populates="segment", cascade="all, delete-orphan"
     )
+    activities = relationship(
+        "Activity", back_populates="segment", cascade="all, delete-orphan"
+    )
     expenses = relationship(
         "Expense", back_populates="segment", cascade="all, delete-orphan"
     )

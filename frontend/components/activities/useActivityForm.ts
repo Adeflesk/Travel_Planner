@@ -4,25 +4,29 @@ import { useState } from 'react';
 import { Activity, ActivityFormData } from '@/lib/types';
 import { activityApi } from '@/lib/api';
 
-const createInitialFormData = (destinationId: number): ActivityFormData => ({
+const createInitialFormData = (destinationId: number, defaultDate?: string): ActivityFormData => ({
   destination_id: destinationId,
   name: '',
   description: '',
   activity_type: '',
-  scheduled_date: '',
+  scheduled_date: defaultDate || '',
   is_todo: false,
   is_completed: false,
 });
 
-export function useActivityForm(destinationId: number, onSuccess: () => void) {
+export function useActivityForm(
+  destinationId: number,
+  onSuccess: () => void,
+  defaultDate?: string
+) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<ActivityFormData>(
-    createInitialFormData(destinationId)
+    createInitialFormData(destinationId, defaultDate)
   );
 
   const resetForm = () => {
     setEditingId(null);
-    setFormData(createInitialFormData(destinationId));
+    setFormData(createInitialFormData(destinationId, defaultDate));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

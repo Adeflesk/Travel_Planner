@@ -43,7 +43,7 @@ from app.routers import (  # noqa: E402
     trip_days_router,
     settings_router,
 )
-import models  # noqa: E402
+from app import models  # noqa: E402
 from database import engine  # noqa: E402
 
 # Ensure tables exist (kept for compatibility)

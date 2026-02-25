@@ -29,7 +29,13 @@ export default function DestinationList({ tripId }: DestinationListProps) {
     startEdit,
     resetForm,
     updateField,
-  } = useDestinationForm(tripId, reload, tripContext?.timezone);
+  } = useDestinationForm(
+    tripId,
+    reload,
+    tripContext?.startDate,
+    tripContext?.endDate,
+    tripContext?.timezone
+  );
 
   const handleDelete = async (id: number) => {
     if (confirm('Delete this destination?')) {

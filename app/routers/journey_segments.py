@@ -157,3 +157,123 @@ def delete_journey_segment(
         return None
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
+
+
+@router.get(
+    "/journey-segments/{segment_id}/activities",
+    response_model=List[schemas.Activity],
+    tags=["journey_segments"],
+)
+def get_segment_activities(
+    segment_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Get all activities for a journey segment"""
+    segment = svc_get_segment(segment_id, db)
+    if not segment:
+        raise HTTPException(status_code=404, detail="Journey segment not found")
+
+    journey = _get_journey_or_404(segment.journey_id, db)
+    _check_trip_access(journey.trip_id, db, current_user)
+
+    activities = (
+        db.query(models.Activity).filter(models.Activity.segment_id == segment_id).all()
+    )
+    return activities
+
+
+@router.post(
+    "/journey-segments/{segment_id}/activities",
+    response_model=schemas.Activity,
+    status_code=201,
+    tags=["journey_segments"],
+)
+def create_segment_activity(
+    segment_id: int,
+    activity: schemas.ActivityCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Create an activity for a journey segment"""
+    segment = svc_get_segment(segment_id, db)
+    if not segment:
+        raise HTTPException(status_code=404, detail="Journey segment not found")
+
+    journey = _get_journey_or_404(segment.journey_id, db)
+    _check_trip_access(journey.trip_id, db, current_user, require_owner=True)
+
+    # Set segment_id if not already provided
+    if activity.segment_id is None:
+        activity.segment_id = segment_id
+    elif activity.segment_id != segment_id:
+        raise HTTPException(status_code=400, detail="Segment ID mismatch")
+
+    # Create the activity
+    db_activity = models.Activity(**activity.model_dump())
+    db.add(db_activity)
+    db.commit()
+    db.refresh(db_activity)
+    return db_activity
+
+
+@router.get(
+    "/journey-segments/{segment_id}/expenses",
+    response_model=List[schemas.Expense],
+    tags=["journey_segments"],
+)
+def get_segment_expenses(
+    segment_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Get all expenses for a journey segment"""
+    segment = svc_get_segment(segment_id, db)
+    if not segment:
+        raise HTTPException(status_code=404, detail="Journey segment not found")
+
+    journey = _get_journey_or_404(segment.journey_id, db)
+    _check_trip_access(journey.trip_id, db, current_user)
+
+    expenses = (
+        db.query(models.Expense).filter(models.Expense.segment_id == segment_id).all()
+    )
+    return expenses
+
+
+@router.post(
+    "/journey-segments/{segment_id}/expenses",
+    response_model=schemas.Expense,
+    status_code=201,
+    tags=["journey_segments"],
+)
+def create_segment_expense(
+    segment_id: int,
+    expense: schemas.ExpenseCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Create an expense for a journey segment"""
+    segment = svc_get_segment(segment_id, db)
+    if not segment:
+        raise HTTPException(status_code=404, detail="Journey segment not found")
+
+    journey = _get_journey_or_404(segment.journey_id, db)
+    trip = _check_trip_access(journey.trip_id, db, current_user, require_owner=True)
+
+    # Set segment_id if not already provided
+    if expense.segment_id is None:
+        expense.segment_id = segment_id
+    elif expense.segment_id != segment_id:
+        raise HTTPException(status_code=400, detail="Segment ID mismatch")
+
+    # Ensure trip_id matches the journey's trip
+    if expense.trip_id != trip.id:
+        raise HTTPException(status_code=400, detail="Trip ID mismatch")
+
+    # Create the expense
+    db_expense = models.Expense(**expense.model_dump())
+    db.add(db_expense)
+    db.commit()
+    db.refresh(db_expense)
+    return db_expense

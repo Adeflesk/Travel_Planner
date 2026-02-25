@@ -16,13 +16,13 @@ export const SEG_STYLE: Record<string, {
   icon: string;
   label: string;
 }> = {
-  FLIGHT:   { dot: 'bg-sky-500',      badge: 'bg-sky-50 text-sky-700 border-sky-200',      border: 'border-l-sky-400',     icon: '✈️', label: 'Flight'   },
-  TRANSFER: { dot: 'bg-amber-400',    badge: 'bg-amber-50 text-amber-700 border-amber-200', border: 'border-l-amber-400',   icon: '🚗', label: 'Transfer' },
-  LEG:      { dot: 'bg-teal-500',     badge: 'bg-teal-50 text-teal-700 border-teal-200',     border: 'border-l-teal-400',    icon: '🛣️', label: 'Leg'     },
-  BUS:      { dot: 'bg-emerald-500',  badge: 'bg-emerald-50 text-emerald-700 border-emerald-200', border: 'border-l-emerald-400', icon: '🚌', label: 'Bus'  },
-  RAIL:     { dot: 'bg-violet-500',   badge: 'bg-violet-50 text-violet-700 border-violet-200', border: 'border-l-violet-400',  icon: '🚆', label: 'Rail'  },
-  LAYOVER:  { dot: 'bg-slate-400',    badge: 'bg-slate-100 text-slate-600 border-slate-200',  border: 'border-l-slate-300',   icon: '⏸️', label: 'Layover' },
-  STOP:     { dot: 'bg-rose-500',     badge: 'bg-rose-50 text-rose-700 border-rose-200',     border: 'border-l-rose-400',    icon: '📍', label: 'Stop'   },
+  FLIGHT: { dot: 'bg-sky-500', badge: 'bg-sky-50 text-sky-700 border-sky-200', border: 'border-l-sky-400', icon: '✈️', label: 'Flight' },
+  TRANSFER: { dot: 'bg-amber-400', badge: 'bg-amber-50 text-amber-700 border-amber-200', border: 'border-l-amber-400', icon: '🚗', label: 'Transfer' },
+  LEG: { dot: 'bg-teal-500', badge: 'bg-teal-50 text-teal-700 border-teal-200', border: 'border-l-teal-400', icon: '🛣️', label: 'Leg' },
+  BUS: { dot: 'bg-emerald-500', badge: 'bg-emerald-50 text-emerald-700 border-emerald-200', border: 'border-l-emerald-400', icon: '🚌', label: 'Bus' },
+  RAIL: { dot: 'bg-violet-500', badge: 'bg-violet-50 text-violet-700 border-violet-200', border: 'border-l-violet-400', icon: '🚆', label: 'Rail' },
+  LAYOVER: { dot: 'bg-slate-400', badge: 'bg-slate-100 text-slate-600 border-slate-200', border: 'border-l-slate-300', icon: '⏸️', label: 'Layover' },
+  STOP: { dot: 'bg-rose-500', badge: 'bg-rose-50 text-rose-700 border-rose-200', border: 'border-l-rose-400', icon: '📍', label: 'Stop' },
 };
 
 // ─── Template definitions ─────────────────────────────────────────────────────
@@ -34,13 +34,13 @@ const INTENT_OPTIONS: Array<{
   icon: string;
   chain: string[];
 }> = [
-  { value: 'SIMPLE',              label: 'Simple',              icon: '→',   chain: ['TRANSFER'],                                                              helper: 'One segment, origin to destination.' },
-  { value: 'AIR_TRAVEL',          label: 'Air travel',          icon: '✈️',  chain: ['TRANSFER', 'FLIGHT', 'TRANSFER'],                                       helper: 'Transfer to airport, flight, transfer to hotel.' },
-  { value: 'AIR_LAYOVER',         label: 'Air travel + layover',icon: '🔄',  chain: ['TRANSFER', 'FLIGHT', 'LAYOVER', 'FLIGHT', 'TRANSFER'],                  helper: 'Two flights with a connecting layover.' },
-  { value: 'MULTI_STOP',          label: 'Multi-stop',          icon: '📍',  chain: ['LEG', 'STOP', 'LEG'],                                                   helper: 'Leg, a stop, then onward leg.' },
-  { value: 'ROAD_TRIP',           label: 'Road trip',           icon: '🚗',  chain: ['LEG', 'STOP', 'LEG', 'STOP', 'LEG'],                                    helper: 'Drive with stops and transport alternatives.' },
-  { value: 'ROAD_TRIP_WITH_STOPS',label: 'Extended road trip',  icon: '🗺️', chain: ['LEG', 'STOP', 'LEG', 'STOP', 'LEG', 'STOP', 'LEG'],                    helper: '3 stops with meals and activity ideas pre-filled.' },
-];
+    { value: 'SIMPLE', label: 'Simple', icon: '→', chain: ['TRANSFER'], helper: 'One segment, origin to destination.' },
+    { value: 'AIR_TRAVEL', label: 'Air travel', icon: '✈️', chain: ['TRANSFER', 'FLIGHT', 'TRANSFER'], helper: 'Transfer to airport, flight, transfer to hotel.' },
+    { value: 'AIR_LAYOVER', label: 'Air travel + layover', icon: '🔄', chain: ['TRANSFER', 'FLIGHT', 'LAYOVER', 'FLIGHT', 'TRANSFER'], helper: 'Two flights with a connecting layover.' },
+    { value: 'MULTI_STOP', label: 'Multi-stop', icon: '📍', chain: ['LEG', 'STOP', 'LEG'], helper: 'Leg, a stop, then onward leg.' },
+    { value: 'ROAD_TRIP', label: 'Road trip', icon: '🚗', chain: ['LEG', 'STOP', 'LEG', 'STOP', 'LEG'], helper: 'Drive with stops and transport alternatives.' },
+    { value: 'ROAD_TRIP_WITH_STOPS', label: 'Extended road trip', icon: '🗺️', chain: ['LEG', 'STOP', 'LEG', 'STOP', 'LEG', 'STOP', 'LEG'], helper: '3 stops with meals and activity ideas pre-filled.' },
+  ];
 
 // ─── Route chain preview ──────────────────────────────────────────────────────
 
@@ -160,15 +160,15 @@ export const SegmentWizard = ({
     useSegmentBuilder(segments, onChange, { timezone: defaultTimezone, startDate: startDate ?? new Date(), destinations });
 
   const handleUseTemplate = (chosen: JourneySegmentIntent) => { setIntent(chosen); applyIntent(chosen); goToStep('segments'); };
-  const handleStartBlank  = () => { setIntent('SIMPLE'); applyIntent('SIMPLE'); goToStep('segments'); };
+  const handleStartBlank = () => { setIntent('SIMPLE'); applyIntent('SIMPLE'); goToStep('segments'); };
 
-  const safeIdx      = Math.min(currentSegmentIndex, Math.max(0, segments.length - 1));
-  const currentSeg   = segments[safeIdx];
+  const safeIdx = Math.min(currentSegmentIndex, Math.max(0, segments.length - 1));
+  const currentSeg = segments[safeIdx];
   const currentStyle = currentSeg ? (SEG_STYLE[currentSeg.segment_type] ?? SEG_STYLE.TRANSFER) : SEG_STYLE.TRANSFER;
   const showAddLayover = intent === 'AIR_TRAVEL' || intent === 'AIR_LAYOVER';
 
   const containerClass = 'rounded-2xl border border-slate-200 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.06)] overflow-hidden';
-  const footerClass    = 'px-5 py-3.5 border-t border-slate-100 bg-slate-50 flex items-center justify-between';
+  const footerClass = 'px-5 py-3.5 border-t border-slate-100 bg-slate-50 flex items-center justify-between';
 
   // ── Step 1: Template picker ─────────────────────────────────────────────────
   if (step === 'template') {
@@ -287,9 +287,9 @@ export const SegmentWizard = ({
               segment={currentSeg}
               index={safeIdx}
               isExpanded={true}
-              onToggle={() => {}}
+              onToggle={() => { }}
               onUpdateType={updateSegmentType}
-              onUpdateLocation={(idx, side, name, timezone) => updateLocation(idx, side, { type: 'custom', name }, timezone)}
+              onUpdateLocation={(idx: number, side: 'origin' | 'destination', name: string) => updateLocation(idx, side, { type: 'custom', name })}
               onUpdateField={updateField}
               onRemove={removeSegment}
               canRemove={false}

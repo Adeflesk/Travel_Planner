@@ -87,7 +87,10 @@ export function DestinationItem({
       {/* Expandable Activities Section */}
       {isExpanded && (
         <div className="mt-4 pt-4 border-t border-gray-200">
-          <ActivityList destinationId={destination.id} />
+          <ActivityList 
+            destinationId={destination.id} 
+            destinationArrivalDate={destination.arrival_date}
+          />
         </div>
       )}
     </div>
