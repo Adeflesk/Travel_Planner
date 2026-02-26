@@ -38,6 +38,8 @@ function TripsContent() {
 
   const handleCreateTrip = async (data: {
     name: string;
+    description?: string;
+    timezone?: string;
     start_date: string;
     end_date: string;
     budget?: number;
@@ -46,6 +48,7 @@ function TripsContent() {
     setCreating(true);
     try {
       await tripApi.create(data);
+      alert('Trip created successfully!');
       loadTrips();
       setShowForm(false);
     } catch (error) {

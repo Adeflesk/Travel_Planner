@@ -39,22 +39,34 @@ test.describe('Trip Management', () => {
     // Click "New Trip" button
     await authenticatedPage.getByRole('button', { name: /New Trip/i }).click();
 
-    // Fill in the form
+    // Step 1: Basics
     const tripData = generateTripData();
-    await authenticatedPage.getByPlaceholder('e.g., Summer Europe Adventure').fill(tripData.name);
-    await authenticatedPage.getByPlaceholder('e.g., 5000').fill(tripData.budget.toString());
-    await authenticatedPage.locator('input[name="start_date"]').fill(tripData.start_date);
-    await authenticatedPage.locator('input[name="end_date"]').fill(tripData.end_date);
-    await authenticatedPage.getByPlaceholder('Describe your trip...').fill(tripData.description);
+    await authenticatedPage.getByLabel('Trip name').fill(tripData.name);
+    await authenticatedPage.getByLabel('Start date').fill(tripData.start_date);
+    await authenticatedPage.getByLabel('End date').fill(tripData.end_date);
+    await authenticatedPage.getByLabel('Description (optional)').fill(tripData.description);
+    await authenticatedPage.getByRole('button', { name: /Next Step/i }).click();
+
+    // Step 2: Travellers
+    await authenticatedPage.getByRole('button', { name: /Next Step/i }).click();
+
+    // Step 3: Transport
+    await authenticatedPage.getByRole('button', { name: /Next Step/i }).click();
+
+    // Step 4: Stay & Pace
+    await authenticatedPage.getByRole('button', { name: /Next Step/i }).click();
+
+    // Step 5: Budget
+    await authenticatedPage.getByLabel('Total budget').fill(tripData.budget.toString());
 
     // Handle the alert
     authenticatedPage.on('dialog', (dialog) => dialog.accept());
 
     // Submit the form
-    await authenticatedPage.getByRole('button', { name: /Create Trip/i }).click();
+    await authenticatedPage.getByRole('button', { name: /Plan My Trip/i }).click();
 
     // Wait for the trip to appear in the list
-    await expect(authenticatedPage.getByText(tripData.name)).toBeVisible({ timeout: 10000 });
+    await expect(authenticatedPage.getByText(tripData.name)).toBeVisible({ timeout: 15000 });
   });
 
   test('should display trip details in the card', async ({ authenticatedPage, authApiRequest }) => {
@@ -135,21 +147,34 @@ test.describe('Trip Management', () => {
   test('should cancel trip creation form', async ({ authenticatedPage }) => {
     // Open form
     await authenticatedPage.getByRole('button', { name: /New Trip/i }).click();
-    await expect(authenticatedPage.getByText('Create New Trip')).toBeVisible();
+    await expect(authenticatedPage.getByText('Step 1 of 5')).toBeVisible();
+    await expect(authenticatedPage.getByText('The Basics')).toBeVisible();
 
-    // Cancel form - use form-specific cancel button
-    await authenticatedPage.locator('form').getByRole('button', { name: /Cancel/i }).click();
-    await expect(authenticatedPage.getByText('Create New Trip')).not.toBeVisible();
+    // Cancel form - use the last Cancel button which should be in the wizard footer
+    await authenticatedPage.getByRole('button', { name: /Cancel/i }).last().click();
+    await expect(authenticatedPage.getByText('The Basics')).not.toBeVisible();
   });
 
   test('should validate required fields', async ({ authenticatedPage }) => {
     await authenticatedPage.getByRole('button', { name: /New Trip/i }).click();
 
-    // Try to submit without filling required fields
-    await authenticatedPage.getByRole('button', { name: /Create Trip/i }).click();
+    // The Next Step button should be disabled initially
+    const nextBtn = authenticatedPage.getByRole('button', { name: /Next Step/i });
+    await expect(nextBtn).toBeDisabled();
 
-    // Form should still be visible (not submitted due to HTML5 validation)
-    await expect(authenticatedPage.getByText('Create New Trip')).toBeVisible();
+    // Fill only name
+    await authenticatedPage.getByLabel('Trip name').fill('Incomplete Trip');
+    await expect(nextBtn).toBeDisabled();
+
+    // Fill only dates
+    await authenticatedPage.getByLabel('Trip name').clear();
+    await authenticatedPage.getByLabel('Start date').fill('2026-01-01');
+    await authenticatedPage.getByLabel('End date').fill('2026-01-10');
+    await expect(nextBtn).toBeDisabled();
+
+    // Fill all required fields
+    await authenticatedPage.getByLabel('Trip name').fill('Complete Trip');
+    await expect(nextBtn).toBeEnabled();
   });
 
   test('should display multiple trips', async ({ authenticatedPage, authApiRequest }) => {

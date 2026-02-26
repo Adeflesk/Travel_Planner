@@ -25,6 +25,7 @@ import { type Trip, type Destination, type PackingSummary } from '@/lib/types';
 import { destinationApi, packingApi } from '@/lib/api';
 import { useTripStats } from '@/components/trips/useTripStats';
 import { useBudget } from '@/components/budget';
+import { useTripContext } from '@/lib/trip-context';
 
 interface TripOverviewDashboardProps {
   trip: Trip;
@@ -67,10 +68,10 @@ const BUDGET_STATUS_COLORS: Record<string, string> = {
   over: '#EF4444',
 };
 
-function fmtCurrency(n: number) {
+function fmtCurrency(n: number, currency: string = 'USD') {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'USD',
+    currency: currency,
     maximumFractionDigits: 0,
   }).format(n);
 }
@@ -81,11 +82,13 @@ function BudgetGauge({
   status,
   total,
   spent,
+  currency,
 }: {
   percentage: number;
   status: string;
   total: number | null;
   spent: number;
+  currency: string;
 }) {
   // Arc: counterclockwise semicircle, center (100, 88), radius 72
   // from (28, 88) → top → (172, 88)
@@ -149,9 +152,9 @@ function BudgetGauge({
       </div>
 
       <p className="text-sm font-semibold text-slate-700 mt-1 text-center">
-        {fmtCurrency(spent)}
+        {fmtCurrency(spent, currency)}
         {total != null && (
-          <span className="font-normal text-slate-400"> of {fmtCurrency(total)}</span>
+          <span className="font-normal text-slate-400"> of {fmtCurrency(total, currency)}</span>
         )}
       </p>
     </div>
@@ -285,6 +288,8 @@ export function TripOverviewDashboard({
   const router = useRouter();
   const { stats, loading: statsLoading } = useTripStats(trip.id);
   const { budget, loading: budgetLoading } = useBudget(trip.id);
+  const tripCtx = useTripContext();
+  const currency = tripCtx?.tripContext?.budget_currency || 'USD';
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [packing, setPacking] = useState<PackingSummary | null>(null);
 
@@ -549,6 +554,7 @@ export function TripOverviewDashboard({
                   status={budget.status}
                   total={budget.total_budget}
                   spent={budget.total_spent}
+                  currency={currency}
                 />
                 {budget.by_category.length > 0 && (
                   <div className="mt-4 space-y-2">
