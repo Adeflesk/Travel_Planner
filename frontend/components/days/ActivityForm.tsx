@@ -12,6 +12,7 @@ interface ActivityFormProps {
 }
 
 export const ActivityForm = ({ activity, dayId, onSave, onClose, onDelete }: ActivityFormProps) => {
+    console.log('Rendering ActivityForm for dayId:', dayId);
     const { register, handleSubmit } = useForm<Partial<DayActivity>>({
         defaultValues: {
             title: activity?.title || '',
@@ -54,14 +55,14 @@ export const ActivityForm = ({ activity, dayId, onSave, onClose, onDelete }: Act
 
                 <form onSubmit={handleSubmit(onSubmit)} className="p-6 overflow-y-auto space-y-5">
                     <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-1">Title *</label>
-                        <input {...register('title', { required: true })} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" placeholder="e.g. Louvre Museum" />
+                        <label htmlFor="activity-title" className="block text-sm font-semibold text-slate-700 mb-1">Title *</label>
+                        <input id="activity-title" {...register('title', { required: true })} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" placeholder="e.g. Louvre Museum" />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">Category</label>
-                            <select {...register('category')} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                            <label htmlFor="activity-category" className="block text-sm font-semibold text-slate-700 mb-1">Category</label>
+                            <select id="activity-category" {...register('category')} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm">
                                 <option value="museum">Museum</option>
                                 <option value="restaurant">Restaurant</option>
                                 <option value="bar">Bar</option>
@@ -72,35 +73,35 @@ export const ActivityForm = ({ activity, dayId, onSave, onClose, onDelete }: Act
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">Cost (estimate)</label>
-                            <input type="number" step="0.01" {...register('cost', { valueAsNumber: true })} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" placeholder="40.00" />
+                            <label htmlFor="activity-cost" className="block text-sm font-semibold text-slate-700 mb-1">Cost (estimate)</label>
+                            <input id="activity-cost" type="number" step="0.01" {...register('cost', { valueAsNumber: true })} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" placeholder="40.00" />
                         </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">Start Time *</label>
-                            <input type="time" {...register('start_time', { required: true })} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
+                            <label htmlFor="activity-start-time" className="block text-sm font-semibold text-slate-700 mb-1">Start Time *</label>
+                            <input id="activity-start-time" type="time" {...register('start_time', { required: true })} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
                         </div>
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">End Time</label>
-                            <input type="time" {...register('end_time')} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
+                            <label htmlFor="activity-end-time" className="block text-sm font-semibold text-slate-700 mb-1">End Time</label>
+                            <input id="activity-end-time" type="time" {...register('end_time')} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-1">Location</label>
-                        <input {...register('location')} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" placeholder="Address or area" />
+                        <label htmlFor="activity-location" className="block text-sm font-semibold text-slate-700 mb-1">Location</label>
+                        <input id="activity-location" {...register('location')} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" placeholder="Address or area" />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-1">Notes</label>
-                        <textarea {...register('notes')} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm h-24" placeholder="Confirmation numbers, what to see..." />
+                        <label htmlFor="activity-notes" className="block text-sm font-semibold text-slate-700 mb-1">Notes</label>
+                        <textarea id="activity-notes" {...register('notes')} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm h-24" placeholder="Confirmation numbers, what to see..." />
                     </div>
 
                     <div className="flex items-center justify-between bg-slate-50 p-4 border border-slate-100 rounded-xl">
-                        <label className="text-sm font-semibold text-slate-700 cursor-pointer">Already booked / reserved?</label>
-                        <input type="checkbox" {...register('booked')} className="w-5 h-5 text-sky-500 rounded border-slate-300" />
+                        <label htmlFor="activity-booked" className="text-sm font-semibold text-slate-700 cursor-pointer">Already booked / reserved?</label>
+                        <input id="activity-booked" type="checkbox" {...register('booked')} className="w-5 h-5 text-sky-500 rounded border-slate-300" />
                     </div>
 
                     <div className="flex items-center justify-between pt-4 border-t border-slate-100">

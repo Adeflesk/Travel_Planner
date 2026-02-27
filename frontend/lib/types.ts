@@ -675,6 +675,7 @@ export interface TripDay {
   notes?: string;
   sort_order: number;
   activities?: DayActivity[];
+  journeys?: Journey[];
 }
 
 export interface DayActivity {
@@ -690,6 +691,19 @@ export interface DayActivity {
   currency?: string;
   booked: boolean;
   sort_order: number;
+}
+
+export interface DayActivityCreate extends Partial<DayActivity> {
+  day_id: number;
+  title: string;
+}
+
+export interface TripDayCreate {
+  trip_id: number;
+  date: string;
+  title?: string;
+  location?: string;
+  notes?: string;
 }
 
 export interface UserSettings {

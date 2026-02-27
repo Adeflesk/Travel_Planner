@@ -1,4 +1,5 @@
 from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import relationship
 from .base import Base
 
 
@@ -19,3 +20,5 @@ class DayActivity(Base):
     currency = Column(String(3))
     booked = Column(Boolean, nullable=False, default=False)
     sort_order = Column(Integer, nullable=False, default=0)
+
+    day = relationship("TripDay", back_populates="activities")

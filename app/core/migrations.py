@@ -10,8 +10,8 @@ Author: Travel Planner Team
 import logging
 from typing import Optional, Set
 
-from sqlalchemy import text, inspect
-from sqlalchemy.engine import Engine
+from sqlalchemy import text, inspect  # type: ignore
+from sqlalchemy.engine import Engine  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +68,7 @@ def run_migrations(engine: Engine) -> None:
         ("has_tolls", "BOOLEAN", "0"),
         ("toll_cost", "NUMERIC(10, 2)", "NULL"),
         ("route_notes", "TEXT", "NULL"),
+        ("day_id", "INTEGER", "NULL"),
     ]
 
     trip_columns = [
@@ -79,10 +80,10 @@ def run_migrations(engine: Engine) -> None:
         ("timezone", "VARCHAR(50)", "NULL"),
     ]
 
-    migrations_run: int = 0
+    applied_migrations: list[str] = []
     for col_name, col_type, default in journey_columns:
         if add_column_if_not_exists(engine, "journeys", col_name, col_type, default):
-            migrations_run += 1
+            applied_migrations.append(f"journeys.{col_name}")
 
     # Trip budget threshold columns (Feature 018)
     trip_threshold_columns = [
@@ -92,18 +93,18 @@ def run_migrations(engine: Engine) -> None:
 
     for col_name, col_type, default in trip_threshold_columns:
         if add_column_if_not_exists(engine, "trips", col_name, col_type, default):
-            migrations_run += 1
+            applied_migrations.append(f"trips.{col_name}")
 
     # Trip and destination timezone columns (for timezone prefill feature)
     for col_name, col_type, default in trip_columns:
         if add_column_if_not_exists(engine, "trips", col_name, col_type, default):
-            migrations_run += 1
+            applied_migrations.append(f"trips.{col_name}")
 
     for col_name, col_type, default in destination_columns:
         if add_column_if_not_exists(
             engine, "destinations", col_name, col_type, default
         ):
-            migrations_run += 1
+            applied_migrations.append(f"destinations.{col_name}")
 
     # Expense link columns (Feature 022)
     expense_link_columns = [
@@ -113,16 +114,19 @@ def run_migrations(engine: Engine) -> None:
     ]
     for col_name, col_type, default in expense_link_columns:
         if add_column_if_not_exists(engine, "expenses", col_name, col_type, default):
-            migrations_run += 1
+            applied_migrations.append(f"expenses.{col_name}")
 
     # Stop option segment link (Feature 021)
     if add_column_if_not_exists(
         engine, "stop_options", "segment_id", "INTEGER", "NULL"
     ):
-        migrations_run += 1
+        applied_migrations.append("stop_options.segment_id")
 
+    migrations_run = len(applied_migrations)
     if migrations_run > 0:
-        logger.info(f"Completed {migrations_run} migration(s)")
+        logger.info(
+            f"Completed {migrations_run} migration(s): {', '.join(applied_migrations)}"
+        )
     else:
         logger.info("No migrations needed")
 
@@ -133,7 +137,7 @@ def run_migrations(engine: Engine) -> None:
 def create_trip_summary_view(engine: Engine) -> None:
     """Create or update the trip_summary database view."""
     view_sql = """
-        CREATE VIEW IF NOT EXISTS trip_summary AS
+        CREATE VIEW trip_summary AS
         SELECT
             t.id,
             t.name,
@@ -152,12 +156,11 @@ def create_trip_summary_view(engine: Engine) -> None:
     """
 
     try:
-        with engine.connect() as conn:
+        with engine.begin() as conn:
             # We use DROP VIEW IF EXISTS + CREATE VIEW to ensure the view is up to date
             # if the definition changes in the future.
             conn.execute(text("DROP VIEW IF EXISTS trip_summary"))
             conn.execute(text(view_sql))
-            conn.commit()
         logger.info("Ensured trip_summary view exists")
     except Exception as e:
-        logger.warning(f"Could not create trip_summary view: {e}")
+        logger.error(f"Failed to create trip_summary view: {type(e).__name__}: {e}")

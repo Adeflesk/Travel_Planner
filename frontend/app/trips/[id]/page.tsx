@@ -3,15 +3,16 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Trip } from '@/lib/types';
+import { Trip, TripDay } from '@/lib/types';
 import { tripApi } from '@/lib/api';
-import { MapPin, Receipt, Package, Compass, Route, Clock, Users } from 'lucide-react';
+import { MapPin, Receipt, Package, Compass, Route, Clock, Users, Calendar } from 'lucide-react';
 import { DestinationList } from '@/components/destinations';
 import { ExpenseList } from '@/components/expenses';
 import { TripActivityList } from '@/components/trip-activities';
 import { JourneyList } from '@/components/journeys';
 import { TripTimeline } from '@/components/timeline';
 import { PackingList } from '@/components/packing';
+import { DayList } from '@/components/days';
 import { ShareTripModal } from '@/components/sharing';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/lib/auth-context';
@@ -31,10 +32,13 @@ function TripDetailContent() {
   const [trip, setTrip] = useState<Trip | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<
-    'destinations' | 'journeys' | 'timeline' | 'expenses' | 'activities' | 'packing'
-  >('destinations');
+    'days' | 'destinations' | 'journeys' | 'timeline' | 'expenses' | 'activities' | 'packing'
+  >('days');
   const [showShareModal, setShowShareModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [days, setDays] = useState<TripDay[]>([]);
+  const [daysLoading, setDaysLoading] = useState(true);
+  const [defaultTabSet, setDefaultTabSet] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -43,6 +47,16 @@ function TripDetailContent() {
       try {
         const response = await tripApi.getById(tripId);
         setTrip(response.data);
+
+        // Set default tab based on trip type once
+        if (!defaultTabSet) {
+          if (response.data.context?.trip_type === 'single_city') {
+            setActiveTab('days');
+          } else {
+            setActiveTab('destinations');
+          }
+          setDefaultTabSet(true);
+        }
       } catch (error) {
         console.error('Error loading trip:', error);
         alert('Failed to load trip');
@@ -51,8 +65,30 @@ function TripDetailContent() {
       }
     };
 
+    const loadDays = async () => {
+      try {
+        setDaysLoading(true);
+        const response = await tripApi.getDays(tripId);
+        setDays(response.data);
+      } catch (error) {
+        console.error('Error loading days:', error);
+      } finally {
+        setDaysLoading(false);
+      }
+    };
+
     loadTrip();
-  }, [tripId, isAuthenticated]);
+    loadDays();
+  }, [tripId, isAuthenticated, defaultTabSet]);
+
+  const handleRefreshDays = async () => {
+    try {
+      const response = await tripApi.getDays(tripId);
+      setDays(response.data);
+    } catch (error) {
+      console.error('Error refreshing days:', error);
+    }
+  };
 
   const handleSaveSettings = async (context: TripContext) => {
     try {
@@ -122,6 +158,7 @@ function TripDetailContent() {
           <div className="mt-6" data-testid="main-content">
             <div className="flex flex-wrap gap-2 mb-4">
               {[
+                { id: 'days', label: 'Itinerary', icon: Calendar },
                 { id: 'destinations', label: 'Destinations', icon: MapPin },
                 { id: 'journeys', label: 'Journeys', icon: Route },
                 { id: 'timeline', label: 'Timeline', icon: Clock },
@@ -145,6 +182,14 @@ function TripDetailContent() {
             </div>
 
             <Card padding="lg">
+              {activeTab === 'days' && (
+                <DayList
+                  days={days}
+                  tripId={tripId}
+                  tripStartDate={trip.start_date}
+                  onRefresh={handleRefreshDays}
+                />
+              )}
               {activeTab === 'destinations' && <DestinationList tripId={tripId} />}
               {activeTab === 'journeys' && <JourneyList tripId={tripId} />}
               {activeTab === 'timeline' && <TripTimeline tripId={tripId} />}

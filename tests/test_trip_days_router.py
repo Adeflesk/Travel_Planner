@@ -118,3 +118,48 @@ def test_trip_day_activities(client, test_user):
     # Delete Day
     resp = client.delete(f"/trip-days/{day_id}")
     assert resp.status_code == 204
+
+
+def test_update_trip_day(client, test_user):
+    # Setup trip and day
+    resp = client.post(
+        "/trips/",
+        json={
+            "name": "Update Trip",
+            "start_date": "2030-01-01",
+            "end_date": "2030-01-10",
+            "status": "planning",
+        },
+    )
+    trip_id = resp.json()["id"]
+    resp = client.post(
+        "/trip-days/",
+        json={"trip_id": trip_id, "date": "2030-01-02", "title": "Old Title"},
+    )
+    day_id = resp.json()["id"]
+
+    # Update day details
+    update_payload = {
+        "date": "2030-01-03",
+        "title": "New Title",
+        "location": "New Location",
+        "notes": "New Notes",
+    }
+    resp = client.patch(f"/trip-days/{day_id}", json=update_payload)
+    if resp.status_code != 200:
+        print(f"Error Response: {resp.json()}")
+    assert resp.status_code == 200
+    updated = resp.json()
+    assert updated["date"] == "2030-01-03"
+    assert updated["title"] == "New Title"
+    assert updated["location"] == "New Location"
+    assert updated["notes"] == "New Notes"
+
+    # Test duplicate date update
+    client.post(
+        "/trip-days/",
+        json={"trip_id": trip_id, "date": "2030-01-04", "title": "Another Day"},
+    )
+    resp = client.patch(f"/trip-days/{day_id}", json={"date": "2030-01-04"})
+    assert resp.status_code == 400
+    assert "already exists" in resp.json()["detail"]

@@ -11,6 +11,7 @@ from datetime import datetime, date as DateType
 from decimal import Decimal
 from typing import Literal, Optional, Any
 
+import json
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 
@@ -29,6 +30,19 @@ class TripBase(BaseModel):
     budget_danger_threshold: Optional[int] = 90
     status: TripStatus = "planning"
     context: Optional[dict[str, Any]] = None
+
+    @field_validator("context", mode="before")
+    @classmethod
+    def parse_context(cls, v: Any) -> Optional[dict[str, Any]]:
+        """Parse context if it's a JSON string (common with SQLite)."""
+        if isinstance(v, str) and v.strip():
+            try:
+                return json.loads(v)
+            except json.JSONDecodeError:
+                return None
+        if isinstance(v, dict):
+            return v
+        return None
 
     @model_validator(mode="after")
     def validate_dates(self) -> "TripBase":
@@ -76,6 +90,19 @@ class TripUpdate(BaseModel):
     budget_danger_threshold: Optional[int] = None
     status: Optional[TripStatus] = None
     context: Optional[dict[str, Any]] = None
+
+    @field_validator("context", mode="before")
+    @classmethod
+    def parse_context(cls, v: Any) -> Optional[dict[str, Any]]:
+        """Parse context if it's a JSON string (common with SQLite)."""
+        if isinstance(v, str) and v.strip():
+            try:
+                return json.loads(v)
+            except json.JSONDecodeError:
+                return None
+        if isinstance(v, dict):
+            return v
+        return None
 
     @field_validator("budget")
     @classmethod
