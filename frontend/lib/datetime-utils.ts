@@ -40,3 +40,12 @@ export const fromDatetimeLocal = (localString?: string): string | undefined => {
     return undefined;
   }
 };
+
+/**
+ * Splits "2024-03-01" into components and creates a local Date to avoid timezone shifts.
+ * This ensures the date displayed matches the string regardless of browser timezone.
+ */
+export const parseSafeDate = (dateStr: string): Date => {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};

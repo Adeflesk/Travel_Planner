@@ -66,6 +66,32 @@ def delete_trip_day(
     db.commit()
 
 
+@router.patch("/{day_id}", response_model=schemas.TripDayResponse)
+def update_trip_day(
+    day_id: int,
+    day_update: schemas.TripDayUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    db_day = db.query(models.TripDay).filter(models.TripDay.id == day_id).first()
+    if not db_day:
+        raise HTTPException(status_code=404, detail="Trip day not found")
+
+    update_data = day_update.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_day, key, value)
+
+    try:
+        db.commit()
+        db.refresh(db_day)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400, detail="A day with this date already exists for this trip"
+        )
+    return db_day
+
+
 @router.get("/{day_id}/activities", response_model=List[schemas.DayActivityResponse])
 def read_day_activities(
     day_id: int,

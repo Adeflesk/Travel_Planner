@@ -14,6 +14,10 @@ from typing import Generator
 # Database URL from environment or default to SQLite
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./travel_planner.db")
 
+# Fix for SQLAlchemy 1.4+ compatibility with Heroku/Fly.io
+if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
 # Create engine with appropriate settings
 if DATABASE_URL.startswith("sqlite"):
     engine = create_engine(

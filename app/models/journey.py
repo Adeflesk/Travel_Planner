@@ -41,6 +41,7 @@ class Journey(Base):
     notes = Column(Text)
     status = Column(String(50), default="planned")
     order = Column(Integer, default=0)
+    day_id = Column(Integer, ForeignKey("trip_days.id"), nullable=True)
 
     # Route details (primarily for road trips)
     distance_km = Column(Numeric(10, 2), nullable=True)
@@ -67,3 +68,4 @@ class Journey(Base):
     segments = relationship(
         "JourneySegment", back_populates="journey", cascade="all, delete-orphan"
     )
+    day = relationship("TripDay", back_populates="journeys")

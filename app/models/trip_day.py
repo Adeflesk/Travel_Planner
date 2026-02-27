@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, Text, Date, ForeignKey, UniqueConstraint
+from sqlalchemy.orm import relationship
 from .base import Base
 
 
@@ -16,3 +17,9 @@ class TripDay(Base):
     sort_order = Column(Integer, nullable=False, default=0)
 
     __table_args__ = (UniqueConstraint("trip_id", "date", name="uq_trip_day"),)
+
+    trip = relationship("Trip", back_populates="days")
+    activities = relationship(
+        "DayActivity", back_populates="day", cascade="all, delete-orphan"
+    )
+    journeys = relationship("Journey", back_populates="day")

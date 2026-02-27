@@ -36,6 +36,7 @@ class JourneyBase(BaseModel):
     has_tolls: bool = False
     toll_cost: Optional[Decimal] = None
     route_notes: Optional[str] = None
+    day_id: Optional[int] = None
 
 
 class JourneyCreate(JourneyBase):
@@ -48,15 +49,18 @@ class JourneyCreate(JourneyBase):
 
     @model_validator(mode="after")
     def validate_departure_before_arrival(self):
-        if self.departure_datetime and self.arrival_datetime:
+        dep = self.departure_datetime
+        arr = self.arrival_datetime
+        if isinstance(dep, datetime) and isinstance(arr, datetime):
 
-            def to_utc_naive(value: datetime) -> datetime:
-                if value.tzinfo is None or value.tzinfo.utcoffset(value) is None:
-                    return value.replace(tzinfo=None)
-                return value.astimezone(timezone.utc).replace(tzinfo=None)
+            def to_utc_naive(dt: datetime) -> datetime:
+                tz = dt.tzinfo
+                if tz is not None and tz.utcoffset(dt) is not None:
+                    return dt.astimezone(timezone.utc).replace(tzinfo=None)
+                return dt.replace(tzinfo=None)
 
-            departure = to_utc_naive(self.departure_datetime)
-            arrival = to_utc_naive(self.arrival_datetime)
+            departure = to_utc_naive(dep)
+            arrival = to_utc_naive(arr)
 
             if departure >= arrival:
                 raise ValueError("Departure datetime must be before arrival datetime")
@@ -86,18 +90,22 @@ class JourneyUpdate(BaseModel):
     has_tolls: Optional[bool] = None
     toll_cost: Optional[Decimal] = None
     route_notes: Optional[str] = None
+    day_id: Optional[int] = None
 
     @model_validator(mode="after")
     def validate_departure_before_arrival(self):
-        if self.departure_datetime and self.arrival_datetime:
+        dep = self.departure_datetime
+        arr = self.arrival_datetime
+        if isinstance(dep, datetime) and isinstance(arr, datetime):
 
-            def to_utc_naive(value: datetime) -> datetime:
-                if value.tzinfo is None or value.tzinfo.utcoffset(value) is None:
-                    return value.replace(tzinfo=None)
-                return value.astimezone(timezone.utc).replace(tzinfo=None)
+            def to_utc_naive(dt: datetime) -> datetime:
+                tz = dt.tzinfo
+                if tz is not None and tz.utcoffset(dt) is not None:
+                    return dt.astimezone(timezone.utc).replace(tzinfo=None)
+                return dt.replace(tzinfo=None)
 
-            departure = to_utc_naive(self.departure_datetime)
-            arrival = to_utc_naive(self.arrival_datetime)
+            departure = to_utc_naive(dep)
+            arrival = to_utc_naive(arr)
 
             if departure >= arrival:
                 raise ValueError("Departure datetime must be before arrival datetime")

@@ -46,11 +46,19 @@ from app.routers import (  # noqa: E402
 from app import models  # noqa: E402
 from database import engine  # noqa: E402
 
-# Ensure tables exist (kept for compatibility)
-models.Base.metadata.create_all(bind=engine)
+# Database initialization wrapped in try-except to prevent startup failure
+try:
+    # Ensure tables exist (kept for compatibility)
+    models.Base.metadata.create_all(bind=engine)
 
-# Run migrations to add any missing columns to existing databases
-run_migrations(engine)
+    # Run migrations to add any missing columns to existing databases
+    run_migrations(engine)
+except Exception as e:
+    import logging
+
+    logging.error(f"Error during database initialization: {e}")
+    # We don't re-raise here to allow the app to start and serve health checks
+    # if it's a transient database issue.
 
 
 def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
@@ -68,17 +76,25 @@ def get_cors_origins() -> list[str]:
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "https://travel-planner-one-weld.vercel.app",
+        "https://travel-planner-one.vercel.app",
     ]
 
     # Add production frontend URL if configured
     frontend_url = os.getenv("FRONTEND_URL")
     if frontend_url:
-        origins.append(frontend_url)
+        # Avoid duplicates and handle comma-separated values
+        for url in frontend_url.split(","):
+            url = url.strip()
+            if url and url not in origins:
+                origins.append(url)
 
     # Add additional origins from comma-separated env var
     extra_origins = os.getenv("CORS_ORIGINS", "")
     if extra_origins:
-        origins.extend([o.strip() for o in extra_origins.split(",") if o.strip()])
+        for o in extra_origins.split(","):
+            o = o.strip()
+            if o and o not in origins:
+                origins.append(o)
 
     return origins
 
@@ -98,6 +114,7 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=get_cors_origins(),
+        allow_origin_regex=r"https://.*\.vercel\.app",  # Support Vercel previews
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

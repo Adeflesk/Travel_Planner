@@ -39,6 +39,8 @@ import {
   UserSettings,
   TripDay,
   DayActivity,
+  DayActivityCreate,
+  TripDayCreate,
 } from './types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -109,14 +111,34 @@ export const dashboardApi = {
 
 // Day Builder API
 export const dayApi = {
-  createDay: (data: { trip_id: number; date: string; title?: string; location?: string; notes?: string }) =>
+  createDay: (data: TripDayCreate) =>
     api.post<TripDay>('/trip-days/', data),
+  updateDay: (dayId: number, data: Partial<Omit<TripDayCreate, 'trip_id'>>) =>
+    api.patch<TripDay>(`/trip-days/${dayId}`, data),
   deleteDay: (dayId: number) => api.delete(`/trip-days/${dayId}`),
   getActivities: (dayId: number) => api.get<DayActivity[]>(`/trip-days/${dayId}/activities`),
-  createActivity: (data: Partial<DayActivity> & { day_id: number }) =>
-    api.post<DayActivity>(`/trip-days/${data.day_id}/activities`, data),
-  updateActivity: (id: number, data: Partial<DayActivity>) =>
-    api.put<DayActivity>(`/trip-days/activities/${id}`, data),
+  createActivity: (data: DayActivityCreate) => {
+    const cleanedData: Record<string, unknown> = {};
+    (Object.keys(data) as Array<keyof typeof data>).forEach((key) => {
+      const value = data[key as keyof typeof data];
+      if (value !== '' && value !== undefined && value !== null && !Number.isNaN(value)) {
+        cleanedData[key] = value;
+      }
+    });
+    console.log('Creating day activity with payload:', cleanedData);
+    return api.post<DayActivity>('/trip-days/activities', cleanedData);
+  },
+  updateActivity: (id: number, data: Partial<DayActivity>) => {
+    const cleanedData: Record<string, unknown> = {};
+    (Object.keys(data) as Array<keyof typeof data>).forEach((key) => {
+      const value = data[key as keyof typeof data];
+      if (key === 'day_id' || key === 'id') return;
+      if (value !== '' && value !== undefined && value !== null && !Number.isNaN(value)) {
+        cleanedData[key] = value;
+      }
+    });
+    return api.patch<DayActivity>(`/trip-days/activities/${id}`, cleanedData);
+  },
   deleteActivity: (id: number) => api.delete(`/trip-days/activities/${id}`),
 };
 
