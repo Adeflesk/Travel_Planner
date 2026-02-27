@@ -48,7 +48,7 @@ export default function RootLayout({
               </div>
             </header>
             <main className="flex min-h-full flex-col bg-white">
-              <div className="flex-grow container mx-auto px-4 py-8">
+              <div className="grow container mx-auto px-4 py-8">
                 {children}
               </div>
             </main>
