@@ -75,7 +75,7 @@ export function TransportForm({
       ? { lat: initialData.origin_latitude, lng: initialData.origin_longitude! }
       : null
   );
-  const [destCoords] = useState<{ lat: number; lng: number } | null>(
+  const [destCoords, setDestCoords] = useState<{ lat: number; lng: number } | null>(
     initialData?.destination_latitude != null
       ? { lat: initialData.destination_latitude, lng: initialData.destination_longitude! }
       : null
@@ -177,12 +177,21 @@ export function TransportForm({
                 placeholder="e.g. Sydney (SYD)"
               />
               {prefilledOrigin && origin === prefilledOrigin && (
-                <p className="text-xs text-sky-600 mt-1">&#x1F4CD; Auto-filled from linked destination</p>
+                <p className="text-xs text-sky-600 mt-1">Auto-filled from linked destination</p>
               )}
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">To *</label>
-              <input className={inputCls} value={destination} onChange={e => setDestination(e.target.value)} required placeholder="e.g. London (LHR)" />
+              <input
+                className={inputCls}
+                value={destination}
+                onChange={e => {
+                  setDestination(e.target.value);
+                  setDestCoords(null);
+                }}
+                required
+                placeholder="e.g. London (LHR)"
+              />
             </div>
           </div>
 

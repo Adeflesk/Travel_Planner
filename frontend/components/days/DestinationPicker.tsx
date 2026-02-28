@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { MapPin, ChevronDown, Check, Plus, X } from 'lucide-react';
+import { MapPin, ChevronDown, Check, Plus, X, AlertCircle } from 'lucide-react';
 import { TripDay, Destination } from '@/lib/types';
 import { destinationApi, dayApi } from '@/lib/api';
 import { geocodeAddress } from '@/lib/geocode-utils';
@@ -16,6 +16,7 @@ export const DestinationPicker = ({ day, tripId, onDestinationChanged }: Destina
     const [destinations, setDestinations] = useState<Destination[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [newName, setNewName] = useState('');
     const [newCountry, setNewCountry] = useState('');
@@ -42,10 +43,16 @@ export const DestinationPicker = ({ day, tripId, onDestinationChanged }: Destina
         return () => document.removeEventListener('mousedown', handler);
     }, [isOpen]);
 
+    const openPopover = () => {
+        setError(null);
+        setIsOpen(v => !v);
+    };
+
     const currentDestination = destinations.find(d => d.id === day.destination_id);
 
     const linkDestination = async (dest: Destination) => {
         setIsSaving(true);
+        setError(null);
         try {
             await dayApi.updateDay(day.id, {
                 destination_id: dest.id,
@@ -55,6 +62,7 @@ export const DestinationPicker = ({ day, tripId, onDestinationChanged }: Destina
             onDestinationChanged();
         } catch (e) {
             console.error('Failed to link destination', e);
+            setError('Failed to link destination. Please try again.');
         } finally {
             setIsSaving(false);
         }
@@ -62,15 +70,15 @@ export const DestinationPicker = ({ day, tripId, onDestinationChanged }: Destina
 
     const unlinkDestination = async () => {
         setIsSaving(true);
+        setError(null);
         try {
-            await dayApi.updateDay(day.id, {
-                destination_id: null,
-                location: '',
-            });
+            // Only clear destination_id — leave location as the user may have set it independently
+            await dayApi.updateDay(day.id, { destination_id: null });
             setIsOpen(false);
             onDestinationChanged();
         } catch (e) {
             console.error('Failed to unlink destination', e);
+            setError('Failed to unlink destination. Please try again.');
         } finally {
             setIsSaving(false);
         }
@@ -79,6 +87,7 @@ export const DestinationPicker = ({ day, tripId, onDestinationChanged }: Destina
     const handleCreate = async () => {
         if (!newName.trim()) return;
         setIsCreating(true);
+        setError(null);
         try {
             const res = await destinationApi.create({
                 trip_id: tripId,
@@ -92,6 +101,9 @@ export const DestinationPicker = ({ day, tripId, onDestinationChanged }: Destina
                 destination_id: dest.id,
                 location: dest.name,
             });
+
+            // Optimistic update of the local list so reopening the popover shows the new entry
+            setDestinations(prev => [...prev, dest]);
 
             // Background geocode
             const address = [newName.trim(), newCountry.trim()].filter(Boolean).join(', ');
@@ -111,6 +123,7 @@ export const DestinationPicker = ({ day, tripId, onDestinationChanged }: Destina
             onDestinationChanged();
         } catch (e) {
             console.error('Failed to create destination', e);
+            setError('Failed to create destination. Please try again.');
         } finally {
             setIsCreating(false);
         }
@@ -120,7 +133,7 @@ export const DestinationPicker = ({ day, tripId, onDestinationChanged }: Destina
         <div className="relative" ref={popoverRef}>
             {/* Badge / trigger */}
             <button
-                onClick={() => setIsOpen(v => !v)}
+                onClick={openPopover}
                 disabled={isSaving}
                 className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-1 rounded-full transition-colors disabled:opacity-60"
             >
@@ -135,6 +148,14 @@ export const DestinationPicker = ({ day, tripId, onDestinationChanged }: Destina
             {/* Popover */}
             {isOpen && (
                 <div className="absolute top-full left-0 mt-1.5 w-64 bg-white rounded-xl shadow-lg border border-slate-200 z-30 overflow-hidden">
+                    {/* Error message */}
+                    {error && (
+                        <div className="flex items-center gap-2 px-4 py-2.5 bg-red-50 border-b border-red-100 text-sm text-red-700">
+                            <AlertCircle className="w-4 h-4 shrink-0" />
+                            <span>{error}</span>
+                        </div>
+                    )}
+
                     {/* Destination list */}
                     <div className="py-1 max-h-48 overflow-y-auto">
                         {destinations.length === 0 && (
