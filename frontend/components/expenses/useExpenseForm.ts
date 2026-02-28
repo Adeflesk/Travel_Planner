@@ -4,22 +4,25 @@ import { useState } from 'react';
 import { Expense, ExpenseFormData, BudgetImpact } from '@/lib/types';
 import { expenseApi } from '@/lib/api';
 
-const getInitialFormData = (tripId: number): ExpenseFormData => ({
+import { useTripCurrency } from '@/lib/trip-context';
+
+const getInitialFormData = (tripId: number, currency: string): ExpenseFormData => ({
   trip_id: tripId,
   category: '',
   amount: 0,
   description: '',
   date: new Date().toISOString().split('T')[0],
-  currency: 'USD',
+  currency,
   booked: false,
   paid: false,
   cancel_by_date: '',
 });
 
 export function useExpenseForm(tripId: number, onSuccess: () => void) {
+  const tripCurrency = useTripCurrency();
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<ExpenseFormData>(
-    getInitialFormData(tripId)
+    getInitialFormData(tripId, tripCurrency)
   );
   const [budgetImpact, setBudgetImpact] = useState<BudgetImpact | null>(null);
 
@@ -38,7 +41,7 @@ export function useExpenseForm(tripId: number, onSuccess: () => void) {
         }
         await expenseApi.create(formData);
       }
-      setFormData(getInitialFormData(tripId));
+      setFormData(getInitialFormData(tripId, tripCurrency));
       onSuccess();
     } catch (error) {
       console.error('Error saving expense:', error);
@@ -50,7 +53,7 @@ export function useExpenseForm(tripId: number, onSuccess: () => void) {
     try {
       await expenseApi.create(formData);
       setBudgetImpact(null);
-      setFormData(getInitialFormData(tripId));
+      setFormData(getInitialFormData(tripId, tripCurrency));
       onSuccess();
     } catch (error) {
       console.error('Error saving expense:', error);
@@ -79,7 +82,7 @@ export function useExpenseForm(tripId: number, onSuccess: () => void) {
 
   const resetForm = () => {
     setEditingId(null);
-    setFormData(getInitialFormData(tripId));
+    setFormData(getInitialFormData(tripId, tripCurrency));
   };
 
   const updateField = <K extends keyof ExpenseFormData>(

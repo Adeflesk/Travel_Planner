@@ -6,11 +6,13 @@ import { Button } from '@/components/ui/Button';
 interface TripSettingsProps {
     tripId: number;
     context: TripContext | null;
-    onSave: (context: TripContext) => Promise<void>;
+    defaultCurrency?: string;
+    onSave: (context: TripContext, defaultCurrency: string) => Promise<void>;
     onClose: () => void;
 }
 
-export const TripSettings = ({ context, onSave, onClose }: TripSettingsProps) => {
+export const TripSettings = ({ context, defaultCurrency, onSave, onClose }: TripSettingsProps) => {
+    const [currency, setCurrency] = useState(defaultCurrency || context?.budget_currency || 'USD');
     const [data, setData] = useState<TripContext>({
         home_base: context?.home_base || '',
         traveller_count: context?.traveller_count || 1,
@@ -29,7 +31,7 @@ export const TripSettings = ({ context, onSave, onClose }: TripSettingsProps) =>
     const handleSubmit = async () => {
         setLoading(true);
         try {
-            await onSave(data);
+            await onSave(data, currency);
             onClose();
         } catch (e) {
             console.error(e);
@@ -116,6 +118,15 @@ export const TripSettings = ({ context, onSave, onClose }: TripSettingsProps) =>
                                 {{ relaxed: 'Relaxed — few stops, long stays', balanced: 'Balanced', packed: 'Packed — many stops, short stays' }[p]}
                             </label>
                         ))}
+                    </div>
+                </div>
+
+                {/* Financials */}
+                <div className="space-y-4">
+                    <h4 className="font-medium text-slate-900 border-b pb-2">Financials</h4>
+                    <div className="flex flex-col gap-1">
+                        <label className="text-sm font-medium text-slate-700">Default Currency</label>
+                        <input type="text" value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} maxLength={3} className="border border-slate-300 rounded-md px-3 py-2 text-sm w-24 uppercase" placeholder="USD" />
                     </div>
                 </div>
             </div>

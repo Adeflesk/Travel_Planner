@@ -62,6 +62,7 @@ def run_migrations(engine: Engine) -> None:
     trip_columns = [
         ("timezone", "VARCHAR(50)", "NULL"),
         ("context", "TEXT", "NULL"),
+        ("default_currency", "VARCHAR(10)", "NULL"),
     ]
 
     destination_columns = [

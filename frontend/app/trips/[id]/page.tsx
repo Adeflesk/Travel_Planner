@@ -85,9 +85,9 @@ function TripDetailContent() {
     }
   };
 
-  const handleSaveSettings = async (context: TripContext) => {
+  const handleSaveSettings = async (context: TripContext, defaultCurrency: string) => {
     try {
-      await tripApi.update(tripId, { context });
+      await tripApi.update(tripId, { context, default_currency: defaultCurrency });
       // Reload trip to get updated context
       const response = await tripApi.getById(tripId);
       setTrip(response.data);
@@ -120,6 +120,7 @@ function TripDetailContent() {
       endDate={trip.end_date}
       timezone={trip.timezone}
       tripContext={trip.context} // Trip preferences (pacing, etc.)
+      defaultCurrency={trip.default_currency}
     >
       <div className="min-h-screen bg-slate-100">
         <div className="max-w-6xl mx-auto px-6 py-8">
@@ -207,6 +208,7 @@ function TripDetailContent() {
                 <TripSettings
                   tripId={tripId}
                   context={trip.context ?? null}
+                  defaultCurrency={trip.default_currency}
                   onSave={handleSaveSettings}
                   onClose={() => setShowSettings(false)}
                 />

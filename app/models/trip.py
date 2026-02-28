@@ -38,6 +38,7 @@ class Trip(Base):
     budget_danger_threshold = Column(Integer, default=90)
     status = Column(String(50), default="planning")
     context = Column(JSON, nullable=True)
+    default_currency = Column(String(10), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(
         DateTime,

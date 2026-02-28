@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { TripTransport, TripTransportCreate, TripTransportUpdate, TransportType, TripDay } from '@/lib/types';
+import { useTripCurrency } from '@/lib/trip-context';
 import { TRANSPORT_CONFIG } from '@/lib/transport-config';
 
 interface TransportFormProps {
@@ -53,7 +54,8 @@ export function TransportForm({
   const [carrier, setCarrier] = useState(initialData?.carrier ?? '');
   const [reference, setReference] = useState(initialData?.reference ?? '');
   const [cost, setCost] = useState(initialData?.cost?.toString() ?? '');
-  const [currency, setCurrency] = useState(initialData?.currency ?? 'USD');
+  const tripCurrency = useTripCurrency();
+  const [currency, setCurrency] = useState(initialData?.currency ?? tripCurrency);
   const [booked, setBooked] = useState(initialData?.booked ?? false);
   const [overnight, setOvernight] = useState(initialData?.overnight ?? false);
   const [notes, setNotes] = useState(initialData?.notes ?? '');
@@ -128,11 +130,10 @@ export function TransportForm({
                   key={t.value}
                   type="button"
                   onClick={() => setType(t.value)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border transition-colors ${
-                    type === t.value
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border transition-colors ${type === t.value
                       ? 'bg-sky-600 text-white border-sky-600'
                       : 'bg-white text-slate-700 border-slate-200 hover:border-sky-300'
-                  }`}
+                    }`}
                 >
                   <span>{t.icon}</span> {t.label}
                 </button>

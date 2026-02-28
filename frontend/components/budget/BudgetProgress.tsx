@@ -11,6 +11,7 @@ interface BudgetProgressProps {
   bookedAmount?: number;
   estimatedAmount?: number;
   showDetails?: boolean;
+  currency?: string;
 }
 
 const statusColors: Record<BudgetStatus, string> = {
@@ -43,11 +44,12 @@ export function BudgetProgress({
   bookedAmount,
   estimatedAmount,
   showDetails = true,
+  currency = 'USD',
 }: BudgetProgressProps) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency,
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);

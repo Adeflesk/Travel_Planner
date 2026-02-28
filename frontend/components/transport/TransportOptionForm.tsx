@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { TransportOption, TransportOptionCreate, TransportOptionStatus, TransportType } from '@/lib/types';
+import { useTripCurrency } from '@/lib/trip-context';
 
 interface TransportOptionFormProps {
   transportType: TransportType;
@@ -15,7 +16,8 @@ export function TransportOptionForm({ transportType, initialData, onSave, onCanc
   const [carrier, setCarrier] = useState(initialData?.carrier ?? '');
   const [duration, setDuration] = useState(initialData?.duration_minutes?.toString() ?? '');
   const [cost, setCost] = useState(initialData?.cost?.toString() ?? '');
-  const [currency, setCurrency] = useState(initialData?.currency ?? 'USD');
+  const tripCurrency = useTripCurrency();
+  const [currency, setCurrency] = useState(initialData?.currency ?? tripCurrency);
   const [frequency, setFrequency] = useState(initialData?.frequency ?? '');
   const [bookingUrl, setBookingUrl] = useState(initialData?.booking_url ?? '');
   const [notes, setNotes] = useState(initialData?.notes ?? '');

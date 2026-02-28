@@ -4,6 +4,7 @@ import { Wallet } from 'lucide-react';
 import { useBudget } from './useBudget';
 import { BudgetProgress } from './BudgetProgress';
 import { BudgetBreakdown } from './BudgetBreakdown';
+import { useTripCurrency } from '@/lib/trip-context';
 
 interface BudgetCardProps {
   tripId: number;
@@ -12,6 +13,7 @@ interface BudgetCardProps {
 
 export function BudgetCard({ tripId, showBreakdown = true }: BudgetCardProps) {
   const { budget, loading, error } = useBudget(tripId);
+  const currency = useTripCurrency();
 
   if (loading) {
     return (
@@ -47,6 +49,7 @@ export function BudgetCard({ tripId, showBreakdown = true }: BudgetCardProps) {
           bookedAmount={budget.booked_amount}
           estimatedAmount={budget.estimated_amount}
           showDetails={true}
+          currency={currency}
         />
       </div>
 
@@ -56,6 +59,7 @@ export function BudgetCard({ tripId, showBreakdown = true }: BudgetCardProps) {
           categories={budget.by_category}
           totalBudget={budget.total_budget}
           defaultExpanded={false}
+          currency={currency}
         />
       )}
     </div>

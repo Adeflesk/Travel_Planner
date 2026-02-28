@@ -30,6 +30,7 @@ class TripBase(BaseModel):
     budget_danger_threshold: Optional[int] = 90
     status: TripStatus = "planning"
     context: Optional[dict[str, Any]] = None
+    default_currency: Optional[str] = None
 
     @field_validator("context", mode="before")
     @classmethod
@@ -90,6 +91,7 @@ class TripUpdate(BaseModel):
     budget_danger_threshold: Optional[int] = None
     status: Optional[TripStatus] = None
     context: Optional[dict[str, Any]] = None
+    default_currency: Optional[str] = None
 
     @field_validator("context", mode="before")
     @classmethod

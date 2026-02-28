@@ -46,6 +46,7 @@ interface TripWizardProps {
         start_date: string;
         end_date: string;
         budget?: number;
+        default_currency?: string;
         context: TripContext;
     }) => void;
     onCancel: () => void;
@@ -98,6 +99,7 @@ export const TripWizard = ({ onSubmit, onCancel, loading }: TripWizardProps) => 
             start_date: data.start_date,
             end_date: data.end_date,
             budget: data.budget ? parseFloat(data.budget) : undefined,
+            default_currency: data.budget_currency,
             context,
         });
     };
@@ -268,22 +270,20 @@ export const TripWizard = ({ onSubmit, onCancel, loading }: TripWizardProps) => 
                                 <button
                                     type="button"
                                     onClick={() => set({ overnight_flight: true })}
-                                    className={`px-4 py-2 text-sm font-semibold rounded-lg border transition-colors ${
-                                        data.overnight_flight
-                                            ? 'bg-sky-600 text-white border-sky-600'
-                                            : 'bg-white text-sky-700 border-sky-300 hover:bg-sky-50'
-                                    }`}
+                                    className={`px-4 py-2 text-sm font-semibold rounded-lg border transition-colors ${data.overnight_flight
+                                        ? 'bg-sky-600 text-white border-sky-600'
+                                        : 'bg-white text-sky-700 border-sky-300 hover:bg-sky-50'
+                                        }`}
                                 >
                                     Yes, overnight
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => set({ overnight_flight: false })}
-                                    className={`px-4 py-2 text-sm font-semibold rounded-lg border transition-colors ${
-                                        !data.overnight_flight
-                                            ? 'bg-slate-100 text-slate-700 border-slate-300'
-                                            : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
-                                    }`}
+                                    className={`px-4 py-2 text-sm font-semibold rounded-lg border transition-colors ${!data.overnight_flight
+                                        ? 'bg-slate-100 text-slate-700 border-slate-300'
+                                        : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                                        }`}
                                 >
                                     No, same-day arrivals
                                 </button>

@@ -14,6 +14,7 @@ export interface Trip {
   created_at: string;
   updated_at: string;
   context?: TripContext | null;
+  default_currency?: string;
   is_owner?: boolean;
   shared_by?: string;
   day_count?: number;
@@ -202,6 +203,7 @@ export interface TripFormData {
   budget_danger_threshold?: number;
   status?: string;
   context?: TripContext | null;
+  default_currency?: string;
   day_count?: number;
   total_spent?: number;
 }

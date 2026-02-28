@@ -41,7 +41,7 @@ test.describe('Trip Day Activities Management', () => {
 
     test('should add a new activity to a trip day', async ({ authenticatedPage }) => {
         // Click Add Activity button
-        await authenticatedPage.getByRole('button', { name: /Add Activity/i }).first().click();
+        await authenticatedPage.getByRole('button', { name: 'Activity', exact: true }).first().click();
 
         // Fill in activity details
         await authenticatedPage.locator('#activity-title').fill('Morning Coffee');
@@ -55,7 +55,7 @@ test.describe('Trip Day Activities Management', () => {
 
         // Verify activity appears in the list
         await expect(authenticatedPage.getByText('Morning Coffee')).toBeVisible();
-        await expect(authenticatedPage.getByText('08:00 - 09:00')).toBeVisible();
+        await expect(authenticatedPage.getByText(/08:00.*09:00/)).toBeVisible();
         await expect(authenticatedPage.getByText('Local Cafe')).toBeVisible();
     });
 

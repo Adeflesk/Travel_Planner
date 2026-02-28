@@ -8,6 +8,7 @@ interface BudgetBreakdownProps {
   categories: CategoryBudget[];
   totalBudget: number | null;
   defaultExpanded?: boolean;
+  currency?: string;
 }
 
 const categoryIcons: Record<string, string> = {
@@ -44,13 +45,14 @@ export function BudgetBreakdown({
   categories,
   totalBudget,
   defaultExpanded = false,
+  currency = 'USD',
 }: BudgetBreakdownProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency,
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);

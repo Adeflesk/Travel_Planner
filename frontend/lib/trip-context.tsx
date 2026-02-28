@@ -20,6 +20,7 @@ interface TripContextValue {
   endDate: string;   // ISO date string YYYY-MM-DD
   timezone?: string;
   tripContext?: TripContext | null;
+  defaultCurrency: string;
 }
 
 const TripContextCtx = createContext<TripContextValue | null>(null);
@@ -30,6 +31,7 @@ interface TripProviderProps {
   endDate: string;
   timezone?: string;
   tripContext?: TripContext | null;
+  defaultCurrency?: string;
   children: ReactNode;
 }
 
@@ -39,10 +41,13 @@ export function TripProvider({
   endDate,
   timezone,
   tripContext,
+  defaultCurrency,
   children,
 }: TripProviderProps) {
+  const resolvedCurrency = defaultCurrency ?? tripContext?.budget_currency ?? 'USD';
+
   return (
-    <TripContextCtx.Provider value={{ tripId, startDate, endDate, timezone, tripContext }}>
+    <TripContextCtx.Provider value={{ tripId, startDate, endDate, timezone, tripContext, defaultCurrency: resolvedCurrency }}>
       {children}
     </TripContextCtx.Provider>
   );
@@ -64,3 +69,12 @@ export const stopDurationHours = (ctx: TripContext | null | undefined): number =
   if (!ctx) return 2;
   return ctx.pacing === 'relaxed' ? 4 : ctx.pacing === 'packed' ? 1 : 2;
 };
+
+/**
+ * Returns the trip's default currency for pre-filling cost forms.
+ * Falls back to 'USD' when used outside a TripProvider.
+ */
+export function useTripCurrency(): string {
+  const ctx = useContext(TripContextCtx);
+  return ctx?.defaultCurrency ?? 'USD';
+}
