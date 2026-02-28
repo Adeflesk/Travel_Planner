@@ -68,6 +68,15 @@ export function TransportForm({
 
   const cfg = TRANSPORT_CONFIG[type] ?? TRANSPORT_CONFIG['other'];
 
+  const advanceArrToNextDay = (fromDayId: string) => {
+    if (!fromDayId) return;
+    const depDay = tripDays.find(d => d.id === parseInt(fromDayId, 10));
+    if (!depDay) return;
+    const depIndex = tripDays.indexOf(depDay);
+    const nextDay = tripDays[depIndex + 1];
+    if (nextDay) setArrDayId(nextDay.id.toString());
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const extra: Record<string, unknown> = {};
@@ -147,7 +156,17 @@ export function TransportForm({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Departure day</label>
-              <select className={inputCls} value={depDayId} onChange={e => setDepDayId(e.target.value)}>
+              <select
+                className={inputCls}
+                value={depDayId}
+                onChange={e => {
+                  const newDepId = e.target.value;
+                  setDepDayId(newDepId);
+                  if (overnight && newDepId) {
+                    advanceArrToNextDay(newDepId);
+                  }
+                }}
+              >
                 <option value="">— none —</option>
                 {tripDays.map(d => (
                   <option key={d.id} value={d.id}>{formatDayLabel(d)}</option>
@@ -169,12 +188,7 @@ export function TransportForm({
                 type="button"
                 onClick={() => {
                   setOvernight(true);
-                  const depDay = tripDays.find(d => d.id === parseInt(depDayId, 10));
-                  if (depDay) {
-                    const depIndex = tripDays.indexOf(depDay);
-                    const nextDay = tripDays[depIndex + 1];
-                    if (nextDay) setArrDayId(nextDay.id.toString());
-                  }
+                  advanceArrToNextDay(depDayId);
                 }}
                 className="px-3 py-1 bg-amber-600 text-white text-xs font-semibold rounded-md hover:bg-amber-700 whitespace-nowrap"
               >
@@ -185,27 +199,28 @@ export function TransportForm({
 
           {/* Overnight toggle — only for overnight-capable types */}
           {cfg.overnightSupported && (
-            <label className="flex items-center gap-3 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={overnight}
-                onChange={e => {
-                  setOvernight(e.target.checked);
-                  if (!e.target.checked) {
-                    setArrDayId(depDayId);
-                  } else {
-                    const depDay = tripDays.find(d => d.id === parseInt(depDayId, 10));
-                    if (depDay) {
-                      const depIndex = tripDays.indexOf(depDay);
-                      const nextDay = tripDays[depIndex + 1];
-                      if (nextDay) setArrDayId(nextDay.id.toString());
+            <>
+              <label className="flex items-center gap-3 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={overnight}
+                  disabled={!depDayId}
+                  onChange={e => {
+                    setOvernight(e.target.checked);
+                    if (!e.target.checked) {
+                      setArrDayId(depDayId);
+                    } else {
+                      advanceArrToNextDay(depDayId);
                     }
-                  }
-                }}
-                className="w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
-              />
-              <span className="text-sm font-medium text-slate-700">Crosses midnight / Overnight</span>
-            </label>
+                  }}
+                  className="w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+                <span className="text-sm font-medium text-slate-700">Crosses midnight / Overnight</span>
+              </label>
+              {!depDayId && (
+                <p className="text-xs text-slate-400 ml-7">Select a departure day to enable overnight</p>
+              )}
+            </>
           )}
 
           {/* Arrival day picker — only when overnight is on */}
