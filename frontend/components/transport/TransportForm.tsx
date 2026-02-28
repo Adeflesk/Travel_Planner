@@ -160,22 +160,80 @@ export function TransportForm({
             </div>
           </div>
 
-          {/* Arrival day + time */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Arrival day</label>
-              <select className={inputCls} value={arrDayId} onChange={e => setArrDayId(e.target.value)}>
-                <option value="">— none —</option>
-                {tripDays.map(d => (
-                  <option key={d.id} value={d.id}>{formatDayLabel(d)}</option>
-                ))}
-              </select>
+          {/* Auto-detect overnight nudge */}
+          {cfg.overnightSupported && !overnight && depTime && arrTime && arrTime < depTime && (
+            <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm">
+              <span className="text-amber-600">⚠</span>
+              <span className="text-amber-800 flex-1">Arrival before departure — travelling overnight?</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setOvernight(true);
+                  const depDay = tripDays.find(d => d.id === parseInt(depDayId, 10));
+                  if (depDay) {
+                    const depIndex = tripDays.indexOf(depDay);
+                    const nextDay = tripDays[depIndex + 1];
+                    if (nextDay) setArrDayId(nextDay.id.toString());
+                  }
+                }}
+                className="px-3 py-1 bg-amber-600 text-white text-xs font-semibold rounded-md hover:bg-amber-700 whitespace-nowrap"
+              >
+                Set overnight
+              </button>
             </div>
+          )}
+
+          {/* Overnight toggle — only for overnight-capable types */}
+          {cfg.overnightSupported && (
+            <label className="flex items-center gap-3 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={overnight}
+                onChange={e => {
+                  setOvernight(e.target.checked);
+                  if (!e.target.checked) {
+                    setArrDayId(depDayId);
+                  } else {
+                    const depDay = tripDays.find(d => d.id === parseInt(depDayId, 10));
+                    if (depDay) {
+                      const depIndex = tripDays.indexOf(depDay);
+                      const nextDay = tripDays[depIndex + 1];
+                      if (nextDay) setArrDayId(nextDay.id.toString());
+                    }
+                  }
+                }}
+                className="w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+              />
+              <span className="text-sm font-medium text-slate-700">Crosses midnight / Overnight</span>
+            </label>
+          )}
+
+          {/* Arrival day picker — only when overnight is on */}
+          {overnight && cfg.overnightSupported && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Arrival day</label>
+                <select className={inputCls} value={arrDayId} onChange={e => setArrDayId(e.target.value)}>
+                  <option value="">— none —</option>
+                  {tripDays.map(d => (
+                    <option key={d.id} value={d.id}>{formatDayLabel(d)}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Arrival time</label>
+                <input className={inputCls} type="time" value={arrTime} onChange={e => setArrTime(e.target.value)} />
+              </div>
+            </div>
+          )}
+
+          {/* Drive: always show arrival time inline */}
+          {!cfg.overnightSupported && (
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Arrival time</label>
               <input className={inputCls} type="time" value={arrTime} onChange={e => setArrTime(e.target.value)} />
             </div>
-          </div>
+          )}
 
           {/* Carrier + Reference — config-driven */}
           {(cfg.showCarrier || cfg.showReference) && (
