@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { TRANSPORT_CONFIG } from './transport-config';
+import type { TransportType } from './types';
 
 describe('TRANSPORT_CONFIG', () => {
   it('has an entry for every transport type', () => {
-    const types = ['flight', 'train', 'bus', 'drive', 'ferry', 'other'];
+    const types: TransportType[] = ['flight', 'train', 'bus', 'drive', 'ferry', 'other'];
     types.forEach(t => {
       expect(TRANSPORT_CONFIG[t], `missing config for "${t}"`).toBeDefined();
     });
@@ -50,8 +51,16 @@ describe('TRANSPORT_CONFIG', () => {
     expect(TRANSPORT_CONFIG['ferry'].showDistance).toBe(true);
   });
 
-  it('train and bus show frequency', () => {
+  it('train, bus, and ferry show frequency', () => {
     expect(TRANSPORT_CONFIG['train'].showFrequency).toBe(true);
     expect(TRANSPORT_CONFIG['bus'].showFrequency).toBe(true);
+    expect(TRANSPORT_CONFIG['ferry'].showFrequency).toBe(true);
+  });
+
+  it('all types except drive support overnight', () => {
+    const overnightTypes: TransportType[] = ['flight', 'train', 'bus', 'ferry', 'other'];
+    overnightTypes.forEach(t => {
+      expect(TRANSPORT_CONFIG[t].overnightSupported).toBe(true);
+    });
   });
 });

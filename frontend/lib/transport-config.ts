@@ -1,3 +1,5 @@
+import { TransportType } from './types';
+
 export type TransportFieldConfig = {
   showCarrier: boolean;
   carrierLabel?: string;
@@ -11,7 +13,7 @@ export type TransportFieldConfig = {
   overnightSupported: boolean;
 };
 
-export const TRANSPORT_CONFIG: Record<string, TransportFieldConfig> = {
+export const TRANSPORT_CONFIG: Record<TransportType, TransportFieldConfig> = {
   flight: {
     showCarrier: true,
     carrierLabel: 'Airline',
@@ -71,8 +73,10 @@ export const TRANSPORT_CONFIG: Record<string, TransportFieldConfig> = {
   other: {
     showCarrier: true,
     carrierLabel: 'Carrier',
+    // carrierPlaceholder intentionally omitted — too open-ended for "other"
     showReference: true,
     referenceLabel: 'Reference',
+    // referencePlaceholder intentionally omitted — too open-ended for "other"
     showDistance: false,
     showTolls: false,
     showFrequency: false,
