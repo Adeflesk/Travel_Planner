@@ -22,16 +22,21 @@ export const DayTimeline = ({
     onEditTransport,
 }: DayTimelineProps) => {
     return (
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden p-6 relative">
-            <div className="relative border-l-2 border-slate-100 ml-8 pb-10">
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden p-6 relative">
+            <div className="relative border-l border-slate-200 ml-10 pb-10">
                 {/* Time grid backdrop */}
                 <div className="absolute inset-y-0 left-0 right-0 pointer-events-none">
                     {HOURS.map((hour) => {
                         const displayHour = hour > 12 ? hour - 12 : hour;
                         const ampm = hour >= 12 ? 'pm' : 'am';
                         return (
-                            <div key={hour} className="h-16 border-t border-slate-50 relative group">
-                                <span className="absolute -left-12 top-0 -translate-y-1/2 text-xs font-semibold text-slate-400 group-hover:text-slate-600 w-10 text-right">
+                            <div key={hour} className="h-16 relative group">
+                                {/* Hairline hour rule */}
+                                <div className="absolute inset-x-0 top-0 border-t border-slate-100" />
+                                {/* Rail dot */}
+                                <span className="absolute -left-[5px] top-0 -translate-y-1/2 w-2 h-2 rounded-full bg-slate-200 group-hover:bg-slate-400 transition-colors" />
+                                {/* Time label */}
+                                <span className="absolute -left-[3.5rem] top-0 -translate-y-1/2 text-[11px] font-medium text-slate-400 group-hover:text-slate-600 w-11 text-right transition-colors">
                                     {displayHour}{ampm}
                                 </span>
                             </div>
@@ -72,13 +77,13 @@ export const DayTimeline = ({
                             <div
                                 key={activity.id}
                                 onClick={() => onEditActivity(activity)}
-                                className="p-3 bg-slate-50 rounded-xl border border-slate-200 hover:border-sky-300 hover:bg-sky-50 transition-colors cursor-pointer group flex items-start justify-between"
+                                className="p-3 bg-white rounded-xl border border-slate-200 hover:border-slate-300 hover:shadow-sm transition-all cursor-pointer group flex items-start justify-between"
                             >
                                 <div>
-                                    <h4 className="font-semibold text-sm text-slate-900 group-hover:text-sky-900 line-clamp-1">{activity.title}</h4>
-                                    <p className="text-xs text-slate-500 mt-1 capitalize">{activity.category || 'Other'}</p>
+                                    <h4 className="font-semibold text-sm text-slate-900 line-clamp-1">{activity.title}</h4>
+                                    <p className="text-xs text-slate-400 mt-1 capitalize">{activity.category || 'Other'}</p>
                                 </div>
-                                <span className="text-slate-300 group-hover:text-sky-400">•••</span>
+                                <span className="text-slate-200 group-hover:text-slate-400 text-lg leading-none">›</span>
                             </div>
                         ))}
                     </div>
@@ -87,7 +92,7 @@ export const DayTimeline = ({
 
             {/* Unscheduled transport (no departure time) */}
             {currentDayId != null && transportItems.some(t => t.departure_day_id === currentDayId && !t.departure_time) && (
-                <div className="mt-6 border-t border-dashed border-sky-100 pt-4">
+                <div className="mt-6 border-t border-dashed border-slate-200 pt-4">
                     <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-3">Transport — no time set</h3>
                     <div className="space-y-2">
                         {transportItems
@@ -96,11 +101,11 @@ export const DayTimeline = ({
                                 <div
                                     key={t.id}
                                     onClick={() => onEditTransport?.(t)}
-                                    className="p-3 bg-sky-50 rounded-xl border border-sky-200 text-sky-800 cursor-pointer hover:bg-sky-100 transition-colors flex items-center gap-2"
+                                    className="p-3 bg-white rounded-xl border border-slate-200 cursor-pointer hover:border-slate-300 hover:shadow-sm transition-all flex items-center gap-2"
                                 >
                                     <span className="text-base">✈</span>
-                                    <span className="text-sm font-medium">{t.origin} → {t.destination}</span>
-                                    {t.carrier && <span className="text-xs text-sky-500">{t.carrier}</span>}
+                                    <span className="text-sm font-medium text-slate-700">{t.origin} → {t.destination}</span>
+                                    {t.carrier && <span className="text-xs text-slate-400">{t.carrier}</span>}
                                 </div>
                             ))}
                     </div>

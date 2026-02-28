@@ -15,6 +15,16 @@ const TYPE_ICON: Record<TransportType, string> = {
     other: '🚀',
 };
 
+// Hex colors matching design-tokens.css transport colors
+const TYPE_HEX: Record<TransportType, string> = {
+    flight: '#0EA5E9',  // sky-500
+    train: '#8B5CF6',   // violet-500
+    bus: '#22C55E',     // green-500
+    drive: '#F59E0B',   // amber-500
+    ferry: '#06B6D4',   // cyan-500
+    other: '#94A3B8',   // slate-400
+};
+
 const DAY_START_MINS = 7 * 60; // 7am
 
 function timeToMins(time: string): number {
@@ -33,25 +43,26 @@ export const TransportBlock = ({ transport, currentDayId, onClick }: TransportBl
     const heightRem = 3; // fixed 3rem height for transport blocks
 
     const icon = TYPE_ICON[transport.transport_type] ?? '🚀';
+    const hex = TYPE_HEX[transport.transport_type] ?? TYPE_HEX.other;
 
     if (isDeparture) {
         return (
             <div
                 onClick={onClick}
-                className="absolute left-0 right-0 rounded-lg p-2.5 shadow-sm border bg-sky-50 border-sky-200 text-sky-800 hover:bg-sky-100 cursor-pointer overflow-hidden transition-all"
-                style={{ top: `${topRem}rem`, height: `${heightRem}rem`, zIndex: 10 }}
+                className="absolute left-0 right-0 bg-white rounded-r-lg shadow-sm border border-slate-100 hover:shadow-md cursor-pointer overflow-hidden transition-all"
+                style={{ top: `${topRem}rem`, height: `${heightRem}rem`, zIndex: 10, borderLeft: `3px solid ${hex}` }}
             >
-                <div className="flex items-center gap-2">
-                    <span className="text-base leading-none">{icon}</span>
+                <div className="flex items-center gap-2 px-2.5 py-2">
+                    <span className="text-base leading-none shrink-0">{icon}</span>
                     <div className="min-w-0">
-                        <h4 className="font-semibold text-sm leading-tight truncate">
+                        <h4 className="font-semibold text-sm leading-tight truncate text-slate-900">
                             {transport.origin} → {transport.destination}
                         </h4>
-                        <p className="text-xs opacity-75 truncate">
+                        <p className="text-xs text-slate-400 truncate mt-0.5">
                             {transport.departure_time}
                             {transport.carrier ? ` · ${transport.carrier}` : ''}
-                            {transport.booked ? ' · Booked ✓' : ''}
-                            {transport.arrival_day_id !== currentDayId ? ' → next day' : transport.arrival_time ? ` → ${transport.arrival_time}` : ''}
+                            {transport.booked ? ' · ✓' : ''}
+                            {transport.arrival_day_id !== currentDayId ? ' · next day' : transport.arrival_time ? ` → ${transport.arrival_time}` : ''}
                         </p>
                     </div>
                 </div>
@@ -63,12 +74,12 @@ export const TransportBlock = ({ transport, currentDayId, onClick }: TransportBl
     return (
         <div
             onClick={onClick}
-            className="absolute left-0 right-0 rounded-lg p-2 shadow-sm border bg-teal-50 border-teal-200 text-teal-800 hover:bg-teal-100 cursor-pointer overflow-hidden transition-all"
-            style={{ top: `${topRem}rem`, height: `${heightRem * 0.75}rem`, zIndex: 10 }}
+            className="absolute left-0 right-0 bg-white rounded-r-lg border border-slate-100 cursor-pointer overflow-hidden transition-all opacity-70 hover:opacity-100 hover:shadow-sm"
+            style={{ top: `${topRem}rem`, height: `${heightRem * 0.75}rem`, zIndex: 10, borderLeft: `3px solid ${hex}` }}
         >
-            <div className="flex items-center gap-2">
-                <span className="text-sm">{icon}</span>
-                <p className="text-xs font-medium truncate">← arrived from {transport.origin} at {transport.arrival_time}</p>
+            <div className="flex items-center gap-2 px-2.5 py-1.5">
+                <span className="text-sm shrink-0">{icon}</span>
+                <p className="text-xs font-medium text-slate-500 truncate">arrived from {transport.origin}</p>
             </div>
         </div>
     );

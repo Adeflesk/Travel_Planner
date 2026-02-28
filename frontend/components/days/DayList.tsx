@@ -79,23 +79,35 @@ export const DayList = ({ days, tripId, tripStartDate, onRefresh }: DayListProps
                         <Link
                             key={day.id}
                             href={`/trips/${tripId}/days/${day.id}`}
-                            className="group block bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-sky-300 transition-all text-left"
+                            className="group block bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300 transition-all text-left"
                         >
-                            <div className="flex justify-between items-start mb-4">
-                                <div>
-                                    <div className="text-sm font-semibold text-sky-600 mb-1">
-                                        {format(parseSafeDate(day.date), 'EEEE, MMM d')}
-                                    </div>
-                                    <h3 className="text-base font-bold text-slate-900 line-clamp-1 group-hover:text-blue-600 transition-colors">
+                            <div className="flex items-start gap-3 mb-3">
+                                {/* Date badge */}
+                                <div className="flex flex-col items-center justify-center bg-slate-900 text-white rounded-lg px-2.5 pt-2.5 pb-1.5 min-w-[44px] shrink-0">
+                                    <span
+                                        className="text-2xl font-bold leading-none"
+                                        style={{ fontFamily: 'var(--font-display)' }}
+                                    >
+                                        {format(parseSafeDate(day.date), 'd')}
+                                    </span>
+                                    <span className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mt-0.5 leading-none">
+                                        {format(parseSafeDate(day.date), 'MMM')}
+                                    </span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
+                                        {format(parseSafeDate(day.date), 'EEEE')}
+                                    </p>
+                                    <h3 className="text-sm font-bold text-slate-900 truncate mt-0.5 group-hover:text-slate-700 transition-colors">
                                         {day.title || day.location || 'Untitled Day'}
                                     </h3>
                                 </div>
-                                <div className="px-2 py-1 bg-slate-100 rounded-md text-xs font-semibold text-slate-600">
-                                    {day.activities?.length || 0} items
-                                </div>
+                                <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 rounded-full px-2 py-0.5 shrink-0 self-start mt-0.5">
+                                    {day.activities?.length || 0}
+                                </span>
                             </div>
-                            <p className="text-sm text-slate-500 line-clamp-2 min-h-[40px]">
-                                {day.notes || <span className="italic text-slate-400">No notes added.</span>}
+                            <p className="text-xs text-slate-400 line-clamp-2 pl-14">
+                                {day.notes || <span className="italic">No notes added</span>}
                             </p>
                         </Link>
                     ))}
