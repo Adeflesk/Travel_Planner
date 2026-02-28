@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { TripTransport, TripTransportCreate, TripTransportUpdate } from '@/lib/types';
 import { transportApi } from '@/lib/api';
+import { geocodeAddress } from '@/lib/geocode-utils';
 
 export function useTransport(tripId: number, dayId: number) {
   const [items, setItems] = useState<TripTransport[]>([]);
@@ -25,8 +26,27 @@ export function useTransport(tripId: number, dayId: number) {
   }, [load]);
 
   const createTransport = async (data: TripTransportCreate) => {
-    await transportApi.create(tripId, data);
+    const res = await transportApi.create(tripId, data);
     await load();
+
+    // Background geocoding — only geocode if coordinates not already provided
+    const id = res.data.id;
+    if (data.origin && data.origin_latitude == null) {
+      geocodeAddress(data.origin).then(coords => {
+        if (coords) {
+          transportApi.update(id, { origin_latitude: coords.lat, origin_longitude: coords.lng })
+            .catch(console.error);
+        }
+      });
+    }
+    if (data.destination && data.destination_latitude == null) {
+      geocodeAddress(data.destination).then(coords => {
+        if (coords) {
+          transportApi.update(id, { destination_latitude: coords.lat, destination_longitude: coords.lng })
+            .catch(console.error);
+        }
+      });
+    }
   };
 
   const updateTransport = async (id: number, data: TripTransportUpdate) => {
