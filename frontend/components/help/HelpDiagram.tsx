@@ -9,6 +9,7 @@ interface DiagramNode {
 interface DiagramEdge {
   from: string;
   to: string;
+  label?: string;
 }
 
 interface HelpDiagramProps {
