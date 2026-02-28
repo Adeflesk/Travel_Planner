@@ -68,6 +68,8 @@ export interface Destination {
   departure_date?: string;
   notes?: string;
   order: number;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface Activity {
@@ -150,6 +152,10 @@ export interface TripTransport {
   booked: boolean;
   overnight: boolean;
   sort_order: number;
+  origin_latitude?: number;
+  origin_longitude?: number;
+  destination_latitude?: number;
+  destination_longitude?: number;
   extra?: Record<string, unknown>;
   options?: TransportOption[];
 }
@@ -170,6 +176,10 @@ export interface TripTransportCreate {
   booked?: boolean;
   overnight?: boolean;
   sort_order?: number;
+  origin_latitude?: number;
+  origin_longitude?: number;
+  destination_latitude?: number;
+  destination_longitude?: number;
   extra?: Record<string, unknown>;
 }
 
@@ -216,6 +226,8 @@ export interface DestinationFormData {
   timezone?: string;
   arrival_date?: string;
   departure_date?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface ExpenseFormData {
@@ -483,6 +495,7 @@ export interface TripDay {
   location?: string;
   notes?: string;
   sort_order: number;
+  destination_id?: number | null;
   activities?: DayActivity[];
   transports?: TripTransport[];
 }
@@ -513,6 +526,7 @@ export interface TripDayCreate {
   title?: string;
   location?: string;
   notes?: string;
+  destination_id?: number | null;
 }
 
 export interface UserSettings {
