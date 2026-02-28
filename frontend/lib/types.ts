@@ -16,7 +16,6 @@ export interface Trip {
   context?: TripContext | null;
   is_owner?: boolean;
   shared_by?: string;
-  journey_count?: number;
   day_count?: number;
   total_spent?: number;
 }
@@ -73,7 +72,6 @@ export interface Destination {
 export interface Activity {
   id: number;
   destination_id?: number | null;
-  segment_id?: number | null;
   name: string;
   description?: string;
   activity_type?: string;
@@ -93,9 +91,6 @@ export interface Expense {
   trip_id: number;
   destination_id?: number | null;
   activity_id?: number | null;
-  segment_id?: number | null;
-  segment_option_id?: number;
-  stop_option_id?: number;
   category: string;
   amount: number;
   currency: string;
@@ -115,77 +110,86 @@ export interface PackingItem {
   is_packed: boolean;
 }
 
-// Route type options for journeys
-export type RouteType = 'fastest' | 'shortest' | 'scenic' | 'avoid_highways' | 'avoid_tolls';
+// Transport types
+export type TransportType = 'flight' | 'train' | 'bus' | 'drive' | 'ferry' | 'other';
+export type TransportOptionStatus = 'researching' | 'selected' | 'booked' | 'rejected';
 
-export interface Journey {
+export interface TransportOption {
+  id: number;
+  transport_id: number;
+  transport_type: TransportType;
+  name: string;
+  carrier?: string;
+  duration_minutes?: number;
+  cost?: number;
+  currency?: string;
+  frequency?: string;
+  booking_url?: string;
+  notes?: string;
+  status: TransportOptionStatus;
+  extra?: Record<string, unknown>;
+  order: number;
+}
+
+export interface TripTransport {
   id: number;
   trip_id: number;
-  origin_id?: number;
-  destination_id?: number;
-  // Text fields for locations not in destinations (e.g., home airport)
-  origin_name?: string;
-  destination_name?: string;
-  transport_mode: string;
-  departure_datetime?: string;
-  arrival_datetime?: string;
+  transport_type: TransportType;
+  origin: string;
+  destination: string;
+  departure_day_id?: number;
+  arrival_day_id?: number;
+  departure_time?: string;
+  arrival_time?: string;
   carrier?: string;
-  booking_reference?: string;
+  reference?: string;
   cost?: number;
-  currency: string;
+  currency?: string;
   notes?: string;
-  status: 'planned' | 'booked' | 'completed';
-  order: number;
-  origin_timezone?: string;
-  destination_timezone?: string;
-  // Route details (for road trips)
-  distance_km?: number;
-  distance_miles?: number;
-  estimated_duration_minutes?: number;
-  route_type?: RouteType;
-  has_tolls?: boolean;
-  toll_cost?: number;
-  route_notes?: string;
+  booked: boolean;
+  overnight: boolean;
+  sort_order: number;
+  extra?: Record<string, unknown>;
+  options?: TransportOption[];
 }
 
-export type JourneyTimelineItemType = 'stop' | 'activity';
+export interface TripTransportCreate {
+  transport_type: TransportType;
+  origin: string;
+  destination: string;
+  departure_day_id?: number;
+  arrival_day_id?: number;
+  departure_time?: string;
+  arrival_time?: string;
+  carrier?: string;
+  reference?: string;
+  cost?: number;
+  currency?: string;
+  notes?: string;
+  booked?: boolean;
+  overnight?: boolean;
+  sort_order?: number;
+  extra?: Record<string, unknown>;
+}
 
-export interface JourneyTimelineStop {
-  type: 'stop';
-  id: number;
-  journey_id: number;
+export type TripTransportUpdate = Partial<TripTransportCreate>;
+
+export interface TransportOptionCreate {
+  transport_type: TransportType;
   name: string;
-  location?: string;
-  planned_arrival?: string;
-  planned_departure?: string;
-  actual_arrival?: string;
-  actual_departure?: string;
+  carrier?: string;
+  duration_minutes?: number;
+  cost?: number;
+  currency?: string;
+  frequency?: string;
+  booking_url?: string;
   notes?: string;
-  order: number;
+  status?: TransportOptionStatus;
+  extra?: Record<string, unknown>;
+  order?: number;
 }
 
-export interface JourneyTimelineActivity {
-  type: 'activity';
-  id: number;
-  stop_id: number;
-  name: string;
-  description?: string;
-  option_type: StopOptionType;
-  estimated_duration?: number;
-  estimated_cost?: number;
-  currency: string;
-  url?: string;
-  notes?: string;
-  status: StopOptionStatus;
-  order: number;
-}
-
-export type JourneyTimelineItem = JourneyTimelineStop | JourneyTimelineActivity;
-
-export interface JourneyTimelineResponse {
-  journey_id: number;
-  items: JourneyTimelineItem[];
-}
+export type TransportOptionUpdate = Partial<TransportOptionCreate>;
 
 export interface TripFormData {
   name: string;
@@ -198,7 +202,6 @@ export interface TripFormData {
   budget_danger_threshold?: number;
   status?: string;
   context?: TripContext | null;
-  journey_count?: number;
   day_count?: number;
   total_spent?: number;
 }
@@ -217,7 +220,6 @@ export interface ExpenseFormData {
   trip_id: number;
   destination_id?: number | null;
   activity_id?: number | null;
-  segment_id?: number | null;
   category: string;
   amount: number;
   description?: string;
@@ -237,7 +239,6 @@ export interface PackingItemFormData {
 
 export interface ActivityFormData {
   destination_id?: number | null;
-  segment_id?: number | null;
   name: string;
   description?: string;
   activity_type?: string;
@@ -253,192 +254,6 @@ export interface ActivityFormData {
   is_completed?: boolean;
 }
 
-export interface JourneyFormData {
-  trip_id: number;
-  origin_id?: number;
-  destination_id?: number;
-  // Text fields for locations not in destinations (e.g., home airport)
-  origin_name?: string;
-  destination_name?: string;
-  transport_mode: string;
-  departure_datetime?: string;
-  arrival_datetime?: string;
-  origin_timezone?: string;
-  destination_timezone?: string;
-  carrier?: string;
-  booking_reference?: string;
-  cost?: number;
-  currency?: string;
-  notes?: string;
-  status?: string;
-  order?: number;
-  // Route details
-  distance_km?: number;
-  distance_miles?: number;
-  estimated_duration_minutes?: number;
-  route_type?: RouteType;
-  has_tolls?: boolean;
-  toll_cost?: number;
-  route_notes?: string;
-  segments?: JourneySegmentDraft[];
-}
-
-export type JourneySegmentIntent = 'SIMPLE' | 'AIR_TRAVEL' | 'AIR_LAYOVER' | 'MULTI_STOP' | 'ROAD_TRIP' | 'ROAD_TRIP_WITH_STOPS';
-
-export type SegmentType = 'TRANSFER' | 'LEG' | 'BUS' | 'RAIL' | 'FLIGHT' | 'LAYOVER' | 'STOP';
-
-export interface JourneySegment {
-  id: number;
-  journey_id: number;
-  segment_type: SegmentType;
-  origin_id?: number;
-  origin_name?: string;
-  destination_id?: number;
-  destination_name?: string;
-  start_datetime?: string;
-  end_datetime?: string;
-  origin_timezone?: string;
-  destination_timezone?: string;
-  metadata?: Record<string, unknown>;
-  order: number;
-}
-
-export interface LocationRef {
-  type: 'custom' | 'destination';
-  destination_id?: number;
-  name?: string;
-}
-
-export interface JourneySegmentDraft {
-  segment_type: SegmentType;
-  origin: LocationRef;
-  destination: LocationRef;
-  order: number;
-  start_datetime?: string;
-  end_datetime?: string;
-  origin_timezone?: string;
-  destination_timezone?: string;
-  metadata?: Record<string, unknown>;
-  notes?: string;
-}
-
-// Segment Option Types
-export type SegmentOptionStatus = 'researching' | 'selected' | 'booked' | 'rejected';
-
-export interface SegmentOption {
-  id: number;
-  segment_id: number;
-  name: string;
-  provider?: string;
-  frequency?: string;
-  estimated_duration?: number;  // Duration in minutes
-  cost?: number;
-  currency: string;
-  booking_url?: string;
-  notes?: string;
-  status: SegmentOptionStatus;
-  order: number;
-}
-
-export interface SegmentOptionFormData {
-  segment_id: number;
-  name: string;
-  provider?: string;
-  frequency?: string;
-  estimated_duration?: number;
-  cost?: number;
-  currency?: string;
-  booking_url?: string;
-  notes?: string;
-  status?: SegmentOptionStatus;
-  order?: number;
-}
-
-// Journey Stop Types
-export type StopOptionType = 'activity' | 'meal' | 'sightseeing' | 'rest' | 'fuel' | 'shopping' | 'other';
-export type StopOptionStatus = 'considering' | 'selected' | 'skipped' | 'done';
-
-export interface JourneyStop {
-  id: number;
-  journey_id: number;
-  name: string;
-  location?: string;
-  planned_arrival?: string;
-  planned_departure?: string;
-  actual_arrival?: string;
-  actual_departure?: string;
-  notes?: string;
-  order: number;
-}
-
-export interface JourneyStopWithOptions extends JourneyStop {
-  options: StopOption[];
-}
-
-export interface JourneyStopFormData {
-  journey_id: number;
-  name: string;
-  location?: string;
-  planned_arrival?: string;
-  planned_departure?: string;
-  actual_arrival?: string;
-  actual_departure?: string;
-  notes?: string;
-  order?: number;
-}
-
-export interface StopOption {
-  id: number;
-  stop_id?: number;
-  segment_id?: number;
-  name: string;
-  description?: string;
-  option_type: StopOptionType;
-  estimated_duration?: number;  // Duration in minutes
-  estimated_cost?: number;
-  currency: string;
-  url?: string;
-  notes?: string;
-  status: StopOptionStatus;
-  order: number;
-}
-
-export interface StopOptionFormData {
-  stop_id?: number;
-  segment_id?: number;
-  name: string;
-  description?: string;
-  option_type?: StopOptionType;
-  estimated_duration?: number;
-  estimated_cost?: number;
-  currency?: string;
-  url?: string;
-  notes?: string;
-  status?: StopOptionStatus;
-  order?: number;
-}
-
-// Journey Document Types
-export type DocumentType = 'ticket' | 'confirmation' | 'rental' | 'map' | 'visa' | 'insurance' | 'other';
-
-export interface JourneyDocument {
-  id: number;
-  journey_id: number;
-  name: string;
-  document_type: DocumentType;
-  file_path?: string;
-  url?: string;
-  notes?: string;
-  created_at: string;
-}
-
-export interface JourneyDocumentFormData {
-  journey_id: number;
-  name: string;
-  document_type?: DocumentType;
-  url?: string;
-  notes?: string;
-}
 
 // Summary Types
 export interface ExpenseSummary {
@@ -471,13 +286,6 @@ export interface TripProgress {
 export interface DestinationWithActivities {
   destination: Destination;
   activities: Activity[];
-}
-
-export interface TimelineItem {
-  type: 'destination' | 'journey';
-  sort_date: string | null;
-  destination?: Destination;
-  journey?: Journey;
 }
 
 export interface DestinationAccommodation {
@@ -553,7 +361,6 @@ export interface TripShareCreate {
 // Trip Statistics Types
 export interface TripStatsCounts {
   destinations: number;
-  journeys: number;
   activities: number;
   expenses: number;
   packing_items: number;
@@ -561,13 +368,13 @@ export interface TripStatsCounts {
 
 export interface TripStats {
   total_cost: number;
-  journey_cost: number;
+  transport_cost: number;
   expense_cost: number;
   days_until_departure: number | null;
   duration_days: number;
   completion_percentage: number;
-  booked_journeys: number;
-  total_journeys: number;
+  booked_transports: number;
+  total_transports: number;
   packed_items: number;
   total_packing_items: number;
   counts: TripStatsCounts;
@@ -675,7 +482,7 @@ export interface TripDay {
   notes?: string;
   sort_order: number;
   activities?: DayActivity[];
-  journeys?: Journey[];
+  transports?: TripTransport[];
 }
 
 export interface DayActivity {
