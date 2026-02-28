@@ -1,4 +1,9 @@
-"""Add overnight column to trip_transports."""
+"""
+Database migration: Add overnight column to trip_transports
+
+Usage:
+    python migrations/009_add_overnight_to_transports.py
+"""
 
 import os
 import sys
@@ -14,15 +19,28 @@ def _get_engine():
     return engine
 
 
+def _column_exists(conn, table: str, column: str) -> bool:
+    result = conn.execute(text(f"PRAGMA table_info({table})"))
+    return column in [row[1] for row in result]
+
+
 def upgrade() -> None:
     engine = _get_engine()
     with engine.connect() as conn:
-        conn.execute(
-            text(
-                "ALTER TABLE trip_transports ADD COLUMN overnight BOOLEAN NOT NULL DEFAULT FALSE"
+        if not _column_exists(conn, "trip_transports", "overnight"):
+            conn.execute(
+                text(
+                    "ALTER TABLE trip_transports ADD COLUMN overnight BOOLEAN NOT NULL DEFAULT FALSE"
+                )
             )
-        )
-        conn.commit()
+            conn.commit()
+
+
+def downgrade() -> None:
+    print(
+        "SQLite: DROP COLUMN not supported in older versions. For Postgres:\n"
+        "  ALTER TABLE trip_transports DROP COLUMN overnight;"
+    )
 
 
 if __name__ == "__main__":
