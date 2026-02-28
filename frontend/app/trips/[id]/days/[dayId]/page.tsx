@@ -4,8 +4,9 @@ import { use, useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { dayApi, tripApi } from '@/lib/api';
-import { TripDay } from '@/lib/types';
+import { Trip, TripDay } from '@/lib/types';
 import { DayBuilder } from '@/components/days/DayBuilder';
+import { TripProvider } from '@/lib/trip-context';
 
 export default function DayPage({ params }: { params: Promise<{ id: string; dayId: string }> }) {
     const { id, dayId: dayIdStr } = use(params);
@@ -15,6 +16,7 @@ export default function DayPage({ params }: { params: Promise<{ id: string; dayI
     const tripId = parseInt(id, 10);
     const dayId = parseInt(dayIdStr, 10);
 
+    const [trip, setTrip] = useState<Trip | null>(null);
     const [day, setDay] = useState<TripDay | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -52,26 +54,43 @@ export default function DayPage({ params }: { params: Promise<{ id: string; dayI
         }
 
         const load = async () => {
+            try {
+                const [tripRes] = await Promise.all([
+                    tripApi.getById(tripId),
+                ]);
+                setTrip(tripRes.data);
+            } catch (error) {
+                console.error('Error loading trip:', error);
+            }
             await fetchDay(false);
             setLoading(false);
         };
         load();
-    }, [isAuthenticated, authLoading, fetchDay, router]);
+    }, [isAuthenticated, authLoading, fetchDay, router, tripId]);
 
     if (authLoading || loading) return <p className="p-8 text-center text-slate-500">Loading day...</p>;
     if (!day) return <p className="p-8 text-center text-slate-500">Day not found.</p>;
 
     return (
-        <div className="min-h-screen bg-slate-50 px-4 py-8">
-            <div className="max-w-3xl mx-auto mb-6">
-                <button
-                    onClick={() => router.push(`/trips/${tripId}`)}
-                    className="text-sm font-semibold text-slate-500 hover:text-sky-600 transition-colors flex items-center gap-1.5"
-                >
-                    <span>←</span> Back to trip
-                </button>
+        <TripProvider
+            tripId={tripId}
+            startDate={trip?.start_date}
+            endDate={trip?.end_date}
+            timezone={trip?.timezone}
+            tripContext={trip?.context}
+            defaultCurrency={trip?.default_currency}
+        >
+            <div className="min-h-screen bg-slate-50 px-4 py-8">
+                <div className="max-w-3xl mx-auto mb-6">
+                    <button
+                        onClick={() => router.push(`/trips/${tripId}`)}
+                        className="text-sm font-semibold text-slate-500 hover:text-sky-600 transition-colors flex items-center gap-1.5"
+                    >
+                        <span>←</span> Back to trip
+                    </button>
+                </div>
+                <DayBuilder day={day} tripId={tripId} onRefresh={handleRefresh} />
             </div>
-            <DayBuilder day={day} tripId={tripId} onRefresh={handleRefresh} />
-        </div>
+        </TripProvider>
     );
 }

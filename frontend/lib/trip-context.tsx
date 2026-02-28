@@ -16,8 +16,8 @@ export interface TripContext {
 
 interface TripContextValue {
   tripId: number;
-  startDate: string; // ISO date string YYYY-MM-DD
-  endDate: string;   // ISO date string YYYY-MM-DD
+  startDate?: string; // ISO date string YYYY-MM-DD
+  endDate?: string;   // ISO date string YYYY-MM-DD
   timezone?: string;
   tripContext?: TripContext | null;
   defaultCurrency: string;
@@ -27,8 +27,8 @@ const TripContextCtx = createContext<TripContextValue | null>(null);
 
 interface TripProviderProps {
   tripId: number;
-  startDate: string;
-  endDate: string;
+  startDate?: string;
+  endDate?: string;
   timezone?: string;
   tripContext?: TripContext | null;
   defaultCurrency?: string;
