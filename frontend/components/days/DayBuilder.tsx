@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { TripDay, TripTransport, TripTransportCreate, TripTransportUpdate } from '@/lib/types';
+import { TripDay, TripTransport, TripTransportCreate, TripTransportUpdate, Destination } from '@/lib/types';
 import { X } from 'lucide-react';
 import {
     ActivityForm,
@@ -10,7 +10,7 @@ import {
 } from './';
 import { Button } from '@/components/ui/Button';
 import { TransportForm, TransportItem, useTransport } from '@/components/transport';
-import { tripApi } from '@/lib/api';
+import { tripApi, destinationApi } from '@/lib/api';
 
 interface DayBuilderProps {
     day: TripDay;
@@ -41,13 +41,20 @@ export const DayBuilder = ({ day, tripId, onRefresh }: DayBuilderProps) => {
     // Transport state
     const { items: transportItems, reload: reloadTransport, createTransport, updateTransport, deleteTransport } = useTransport(tripId, day.id);
     const [tripDays, setTripDays] = useState<TripDay[]>([]);
+    const [destinations, setDestinations] = useState<Destination[]>([]);
     const [isTransportFormOpen, setIsTransportFormOpen] = useState(false);
     const [selectedTransport, setSelectedTransport] = useState<TripTransport | null>(null);
     const [isTransportSubmitting, setIsTransportSubmitting] = useState(false);
 
-    // Load all trip days for the transport form's day selectors
+    // Load all trip days and destinations for the transport form
     useEffect(() => {
-        tripApi.getDays(tripId).then(res => setTripDays(res.data)).catch(() => {});
+        Promise.all([
+            tripApi.getDays(tripId),
+            destinationApi.getByTripId(tripId),
+        ]).then(([daysRes, destsRes]) => {
+            setTripDays(daysRes.data);
+            setDestinations(destsRes.data);
+        }).catch(() => {});
     }, [tripId]);
 
     const handleSaveTransport = async (data: TripTransportCreate | TripTransportUpdate) => {
@@ -138,6 +145,7 @@ export const DayBuilder = ({ day, tripId, onRefresh }: DayBuilderProps) => {
             {isTransportFormOpen && (
                 <TransportForm
                     tripDays={tripDays}
+                    destinations={destinations}
                     defaultDayId={day.id}
                     initialData={selectedTransport ?? undefined}
                     onSave={handleSaveTransport}

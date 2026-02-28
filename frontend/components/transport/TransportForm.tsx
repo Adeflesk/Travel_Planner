@@ -2,12 +2,13 @@
 
 import { useState } from 'react';
 import { X } from 'lucide-react';
-import { TripTransport, TripTransportCreate, TripTransportUpdate, TransportType, TripDay } from '@/lib/types';
+import { TripTransport, TripTransportCreate, TripTransportUpdate, TransportType, TripDay, Destination } from '@/lib/types';
 import { useTripCurrency } from '@/lib/trip-context';
 import { TRANSPORT_CONFIG } from '@/lib/transport-config';
 
 interface TransportFormProps {
   tripDays: TripDay[];
+  destinations?: Destination[];
   defaultDayId?: number;
   initialData?: TripTransport;
   onSave: (data: TripTransportCreate | TripTransportUpdate) => void;
@@ -33,6 +34,7 @@ function formatDayLabel(day: TripDay): string {
 
 export function TransportForm({
   tripDays,
+  destinations,
   defaultDayId,
   initialData,
   onSave,
@@ -68,6 +70,18 @@ export function TransportForm({
   );
   const [tolls, setTolls] = useState<boolean>((initialData?.extra?.tolls as boolean) ?? false);
 
+  const [originCoords, setOriginCoords] = useState<{ lat: number; lng: number } | null>(
+    initialData?.origin_latitude != null
+      ? { lat: initialData.origin_latitude, lng: initialData.origin_longitude! }
+      : null
+  );
+  const [destCoords] = useState<{ lat: number; lng: number } | null>(
+    initialData?.destination_latitude != null
+      ? { lat: initialData.destination_latitude, lng: initialData.destination_longitude! }
+      : null
+  );
+  const [prefilledOrigin, setPrefilledOrigin] = useState<string | null>(null);
+
   const cfg = TRANSPORT_CONFIG[type] ?? TRANSPORT_CONFIG['other'];
 
   const advanceArrToNextDay = (fromDayId: string) => {
@@ -101,6 +115,10 @@ export function TransportForm({
       booked,
       overnight,
       notes: notes || undefined,
+      origin_latitude: originCoords?.lat,
+      origin_longitude: originCoords?.lng,
+      destination_latitude: destCoords?.lat,
+      destination_longitude: destCoords?.lng,
       extra: Object.keys(extra).length ? extra : undefined,
     };
     onSave(data);
@@ -145,7 +163,22 @@ export function TransportForm({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">From *</label>
-              <input className={inputCls} value={origin} onChange={e => setOrigin(e.target.value)} required placeholder="e.g. Sydney (SYD)" />
+              <input
+                className={inputCls}
+                value={origin}
+                onChange={e => {
+                  setOrigin(e.target.value);
+                  if (e.target.value !== prefilledOrigin) {
+                    setOriginCoords(null);
+                    setPrefilledOrigin(null);
+                  }
+                }}
+                required
+                placeholder="e.g. Sydney (SYD)"
+              />
+              {prefilledOrigin && origin === prefilledOrigin && (
+                <p className="text-xs text-sky-600 mt-1">&#x1F4CD; Auto-filled from linked destination</p>
+              )}
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">To *</label>
@@ -165,6 +198,24 @@ export function TransportForm({
                   setDepDayId(newDepId);
                   if (overnight && newDepId) {
                     advanceArrToNextDay(newDepId);
+                  }
+
+                  // Smart pre-fill origin from linked destination
+                  if (newDepId && destinations) {
+                    const depDay = tripDays.find(d => d.id === parseInt(newDepId, 10));
+                    if (depDay?.destination_id) {
+                      const dest = destinations.find(d => d.id === depDay.destination_id);
+                      if (dest) {
+                        const label = dest.name + (dest.country ? `, ${dest.country}` : '');
+                        setOrigin(label);
+                        setPrefilledOrigin(label);
+                        if (dest.latitude != null && dest.longitude != null) {
+                          setOriginCoords({ lat: dest.latitude, lng: dest.longitude });
+                        } else {
+                          setOriginCoords(null);
+                        }
+                      }
+                    }
                   }
                 }}
               >
