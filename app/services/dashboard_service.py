@@ -75,17 +75,17 @@ def _get_action_items_for_trip(
     days_until_start = (trip.start_date - today).days
     trip_urgency = _urgency_from_days(days_until_start)
 
-    # Booking: journeys not booked
-    unbooked_journeys = (
-        db.query(models.Journey)
-        .filter(models.Journey.trip_id == trip.id, models.Journey.status != "booked")
+    # Booking: transport not booked
+    unbooked_transport = (
+        db.query(models.TripTransport)
+        .filter(
+            models.TripTransport.trip_id == trip.id,
+            models.TripTransport.booked.is_(False),
+        )
         .all()
     )
-    for journey in unbooked_journeys:
-        days_until_departure = None
-        if journey.departure_datetime:
-            days_until_departure = (journey.departure_datetime.date() - today).days
-        urgency = _urgency_from_days(days_until_departure or days_until_start)
+    for transport in unbooked_transport:
+        urgency = trip_urgency
         items.append(
             schemas.DashboardActionItem(
                 type="booking",
@@ -93,7 +93,7 @@ def _get_action_items_for_trip(
                 trip_name=trip.name,
                 trip_id=trip.id,
                 urgency=urgency,
-                detail=f"{journey.transport_mode.title()} not booked",
+                detail=f"{transport.transport_type.title()} not booked",
             )
         )
 

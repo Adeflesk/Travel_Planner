@@ -17,13 +17,9 @@ from .settings import router as settings_router
 from .activities import router as activities_router
 from .expenses import router as expenses_router
 from .packing import router as packing_router
-from .journeys import router as journeys_router
-from .journey_segments import router as journey_segments_router
-from .journey_stops import router as journey_stops_router
-from .stop_options import router as stop_options_router
-from .journey_documents import router as journey_documents_router
-from .segment_options import router as segment_options_router
 from .suggestions import router as suggestions_router
+from .trip_transports import router as trip_transports_router
+from .transport_options import router as transport_options_router
 
 __all__ = [
     "health_router",
@@ -34,14 +30,10 @@ __all__ = [
     "activities_router",
     "expenses_router",
     "packing_router",
-    "journeys_router",
-    "journey_segments_router",
-    "journey_stops_router",
-    "stop_options_router",
-    "journey_documents_router",
-    "segment_options_router",
     "dashboard_router",
     "suggestions_router",
     "trip_days_router",
     "settings_router",
+    "trip_transports_router",
+    "transport_options_router",
 ]

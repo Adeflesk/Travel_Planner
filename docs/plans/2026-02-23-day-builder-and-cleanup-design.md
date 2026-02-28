@@ -1,8 +1,10 @@
 # Design: Day Builder, Codebase Cleanup, and Big Picture Architecture
 
 **Date:** 2026-02-23
-**Status:** Design approved, not yet implemented
-**Related docs:** `docs/plans/2026-02-22-trip-wizard-architecture-design.md`, `docs/plans/2026-02-23-trip-wizard-architecture-plan.md`
+**Status:** Phase A (cleanup) ✅ Done · Phase B (Day Builder) ✅ Implemented
+**Related docs:** `docs/plans/2026-02-22-trip-wizard-architecture-design.md`
+
+> ⚠️ **Architecture Note:** The Journey/Segment builder referenced in this doc (Phases C & D) has been **discarded** and replaced by the TripTransport model. See `docs/plans/2026-02-27-transport-redesign-design.md`.
 
 ---
 
@@ -102,18 +104,31 @@ Delete `.venv312/` directory (active venv remains at `.venv/`).
 
 ### 1c. Docs pruning
 
-| File | Action | Reason |
-|---|---|---|
-| `docs/plans/gcs-free-tier-migration.md` | Delete | Old GCS cloud storage research, superseded |
-| `docs/plans/gcs-migration-spec.md` | Delete | Old GCS cloud storage research, superseded |
-| `docs/plans/brainstorming.txt` | Delete | Informal notes, now captured in design docs |
-| `docs/plans/2026-02-22-leg-segment-type-design.md` | Delete | Content absorbed into trip wizard design |
-| `docs/plans/2026-02-22-leg-segment-type-plan.md` | Delete | Content absorbed into trip wizard plan |
+✅ **Done** — the following files have been deleted:
 
-**Keep:**
-- `docs/plans/expense-architecture-review.md` — referenced by trip wizard design
+| File | Reason |
+|---|---|
+| `Plans.txt` (root) | Informal notes, superseded |
+| `docs/plans/gcs-free-tier-migration.md` | Old GCS cloud storage research, superseded |
+| `docs/plans/gcs-migration-spec.md` | Old GCS cloud storage research, superseded |
+| `docs/plans/brainstorming.txt` | Informal notes, now captured in design docs |
+| `docs/plans/2026-02-22-leg-segment-type-design.md` | Content absorbed into trip wizard design, then superseded |
+| `docs/plans/2026-02-22-leg-segment-type-plan.md` | Content absorbed into trip wizard plan, then superseded |
+| `docs/plans/segment-builder-architecture.md` | Segment builder replaced by TripTransport model |
+| `docs/plans/async-imagining-moonbeam.md` | Segment builder optimisation — segment builder discarded |
+| `docs/plans/2026-02-22-road-trip-builder-design.md` | Road trip builder replaced by TripTransport model |
+| `docs/plans/2026-02-22-road-trip-builder-plan.md` | Road trip builder replaced by TripTransport model |
+| `docs/plans/2026-02-23-trip-wizard-architecture-plan.md` | Superseded by transport redesign |
+| `docs/plans/expense-architecture-review.md` | Absorbed into trip wizard design |
+| `docs/features/021-unified-segments-practicality-engine.md` | Segment-based; replaced by TripTransport model |
+| `docs/features/021-segment-activities-integration.md` | Segment-based; replaced by TripTransport model |
+
+**Remaining active plans:**
 - `docs/plans/nextauth-fastapi-neon-integration.md` — future reference for auth migration
-- All `road-trip-builder-*` and `trip-wizard-*` docs — active plans
+- `docs/plans/2026-02-22-trip-wizard-architecture-design.md` — TripContext / TripWizard / TripSettings sections remain relevant
+- `docs/plans/2026-02-27-transport-redesign-design.md` — **current architecture** (replaces segment builder)
+- `docs/plans/2026-02-27-transport-form-intelligence-design.md` — current approved design
+- `docs/plans/2026-02-27-transport-form-intelligence-plan.md` — current implementation plan
 
 ---
 

@@ -7,9 +7,10 @@ interface DayHeaderProps {
     day: TripDay;
     onEditDay: () => void;
     onAddActivity: () => void;
+    onAddTransport?: () => void;
 }
 
-export const DayHeader = ({ day, onEditDay, onAddActivity }: DayHeaderProps) => {
+export const DayHeader = ({ day, onEditDay, onAddActivity, onAddTransport }: DayHeaderProps) => {
     return (
         <div className="bg-white px-5 py-6 rounded-2xl shadow-sm border border-slate-200 mb-8 mt-2 flex items-start justify-between">
             <div>
@@ -31,12 +32,22 @@ export const DayHeader = ({ day, onEditDay, onAddActivity }: DayHeaderProps) => 
                 </p>
                 {day.notes && <p className="text-sm text-slate-500 mt-3 max-w-xl leading-relaxed">{day.notes}</p>}
             </div>
-            <button
-                onClick={onAddActivity}
-                className="bg-black hover:bg-slate-800 text-white shadow-sm font-semibold rounded-xl px-5 py-2.5 transition-colors transform active:scale-95"
-            >
-                + Add Activity
-            </button>
+            <div className="flex items-center gap-2">
+                {onAddTransport && (
+                    <button
+                        onClick={onAddTransport}
+                        className="bg-white hover:bg-sky-50 text-sky-700 border border-sky-200 shadow-sm font-semibold rounded-xl px-4 py-2.5 transition-colors"
+                    >
+                        + Transport
+                    </button>
+                )}
+                <button
+                    onClick={onAddActivity}
+                    className="bg-black hover:bg-slate-800 text-white shadow-sm font-semibold rounded-xl px-5 py-2.5 transition-colors transform active:scale-95"
+                >
+                    + Activity
+                </button>
+            </div>
         </div>
     );
 };

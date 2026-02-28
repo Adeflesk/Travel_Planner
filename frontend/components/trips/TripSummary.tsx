@@ -58,17 +58,17 @@ export function TripSummary({ tripId, budget }: TripSummaryProps) {
       ) : (
         <>
           <div className="space-y-3">
-            {/* Journeys */}
+            {/* Transport */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-gray-600">
                 <Plane className="w-4 h-4 text-blue-500" />
-                <span className="text-sm">Journeys</span>
-                {summary.journeys.count > 0 && (
-                  <span className="text-xs text-gray-400">({summary.journeys.count})</span>
+                <span className="text-sm">Transport</span>
+                {summary.transport.count > 0 && (
+                  <span className="text-xs text-gray-400">({summary.transport.count})</span>
                 )}
               </div>
               <span className="font-medium text-gray-800">
-                ${Number(summary.journeys.total).toFixed(2)}
+                ${Number(summary.transport.total).toFixed(2)}
               </span>
             </div>
 

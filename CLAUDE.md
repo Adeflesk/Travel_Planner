@@ -22,18 +22,16 @@ When working on git branches, always confirm the current branch with `git branch
 
 Before creating or switching git branches, confirm the current branch and ensure new branches are created from the correct base branch (usually the active feature branch, not master/main).
 
-### ⚠️ Git Worktrees — iCloud Drive Rule
+### Git Worktrees
 
-This project is in `~/Documents/`, which iCloud Drive syncs. **Never create worktrees inside the repo** (e.g. `.worktrees/`). iCloud generates ` 2`/` 3`/` 4` duplicate files that get accidentally committed.
+Create worktrees outside the repo to keep the working directory clean:
 
-**Always use:**
 ```bash
 mkdir -p ~/worktrees/Travel_Planner
 git worktree add -b feature/<name> ~/worktrees/Travel_Planner/<name> master
 ```
 
 See `.agent/workflows/create-worktree.md` for the full worktree lifecycle.
-
 
 ## Development Workflow
 

@@ -27,7 +27,7 @@ export default function GettingStartedPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-6">
           <div className="flex items-start gap-3 p-4 bg-primary-50 rounded-lg">
-            <MapPinned className="w-6 h-6 text-primary-600 flex-shrink-0 mt-1" />
+            <MapPinned className="w-6 h-6 text-primary-600 shrink-0 mt-1" />
             <div>
               <h4 className="font-semibold text-slate-900 mb-1">Plan Destinations</h4>
               <p className="text-sm text-slate-700">
@@ -37,17 +37,17 @@ export default function GettingStartedPage() {
           </div>
 
           <div className="flex items-start gap-3 p-4 bg-green-50 rounded-lg">
-            <Plane className="w-6 h-6 text-green-600 flex-shrink-0 mt-1" />
+            <Plane className="w-6 h-6 text-green-600 shrink-0 mt-1" />
             <div>
-              <h4 className="font-semibold text-slate-900 mb-1">Track Journeys</h4>
+              <h4 className="font-semibold text-slate-900 mb-1">Plan Transport</h4>
               <p className="text-sm text-slate-700">
-                Manage flights, trains, and road trips
+                Add flights, trains, drives, and more to each day
               </p>
             </div>
           </div>
 
           <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-lg">
-            <Wallet className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
+            <Wallet className="w-6 h-6 text-blue-600 shrink-0 mt-1" />
             <div>
               <h4 className="font-semibold text-slate-900 mb-1">Monitor Budget</h4>
               <p className="text-sm text-slate-700">
@@ -57,7 +57,7 @@ export default function GettingStartedPage() {
           </div>
 
           <div className="flex items-start gap-3 p-4 bg-purple-50 rounded-lg">
-            <Package className="w-6 h-6 text-purple-600 flex-shrink-0 mt-1" />
+            <Package className="w-6 h-6 text-purple-600 shrink-0 mt-1" />
             <div>
               <h4 className="font-semibold text-slate-900 mb-1">Pack Smart</h4>
               <p className="text-sm text-slate-700">
@@ -100,15 +100,30 @@ export default function GettingStartedPage() {
               content: (
                 <ul className="list-disc ml-5 space-y-2">
                   <li><strong>Trip Name</strong>: Give your trip a memorable name (e.g., &quot;Summer Europe Tour&quot;)</li>
-                  <li><strong>Description</strong>: Add a brief description (optional)</li>
+                  <li><strong>Home base</strong>: Your departure city (optional)</li>
                   <li><strong>Dates</strong>: Set your start and end dates</li>
                   <li><strong>Budget</strong>: Set a total budget (optional but recommended)</li>
-                  <li><strong>Status</strong>: Choose &quot;Planning&quot; if you&apos;re still organizing</li>
                 </ul>
               ),
             },
             {
-              title: 'Save Your Trip',
+              title: 'Answer the Setup Questions',
+              content: (
+                <>
+                  The wizard walks you through a few quick questions:
+                  <ul className="list-disc ml-5 mt-2 space-y-1">
+                    <li>How many travellers and whether to split costs</li>
+                    <li>Trip type (single city, multi-city, road trip, international)</li>
+                    <li>Whether you have flights or a car</li>
+                    <li>Accommodation type and pacing preference</li>
+                    <li>Budget currency</li>
+                  </ul>
+                  All questions are optional — skip through to use the defaults.
+                </>
+              ),
+            },
+            {
+              title: 'Create Your Trip',
               content: (
                 <>
                   Click <strong>&quot;Create Trip&quot;</strong> to save. You&apos;ll be taken to your trip detail page!
@@ -180,27 +195,32 @@ export default function GettingStartedPage() {
         </HelpTip>
       </HelpSection>
 
-      <HelpSection id="plan-journey" title="Planning Your First Journey">
+      <HelpSection id="plan-transport" title="Adding Transport to a Day">
         <p className="mb-4">
-          Journeys help you track how you&apos;ll get from one place to another. Whether it&apos;s a flight, train, or road trip, keep all your travel details in one place.
+          Transport is added day by day alongside activities. Open any day and add a flight,
+          train, drive, or other transport — it appears in the day&apos;s chronological timeline.
         </p>
 
         <HelpStepList
           steps={[
             {
-              title: 'Navigate to Journeys Tab',
-              content: 'Click the &quot;Journeys&quot; tab in your trip detail page.',
+              title: 'Open the Days Tab',
+              content: 'On your trip page, click the "Days" tab to see your day-by-day itinerary.',
             },
             {
-              title: 'Add a Journey',
+              title: 'Open a Day',
+              content: 'Click on the day you want to add transport to.',
+            },
+            {
+              title: 'Click "+ Add Transport"',
               content: (
                 <>
-                  Click <strong>&quot;Add Journey&quot;</strong> and select:
+                  Click <strong>&quot;+ Add Transport&quot;</strong> and fill in:
                   <ul className="list-disc ml-5 mt-2 space-y-1">
-                    <li>Transport mode (Flight, Train, Bus, Car, etc.)</li>
-                    <li>Origin and destination (can be home airport or a trip destination)</li>
-                    <li>Departure and arrival times</li>
-                    <li>Cost and booking reference (optional)</li>
+                    <li>Transport type (Flight, Train, Bus, Drive, Ferry, Other)</li>
+                    <li>Origin and destination (free text — e.g. &quot;JFK Airport&quot;)</li>
+                    <li>Departure and arrival day &amp; time</li>
+                    <li>Carrier, booking reference, cost (optional)</li>
                   </ul>
                 </>
               ),
@@ -208,10 +228,10 @@ export default function GettingStartedPage() {
           ]}
         />
 
-        <HelpScreenshot
-          title="Journey Form"
-          description="Add journey details including transport mode and timing"
-        />
+        <HelpTip variant="tip">
+          If your transport arrives on a different day (e.g. an overnight flight), set the arrival
+          day separately — it will appear on both days automatically.
+        </HelpTip>
       </HelpSection>
 
       <HelpSection id="track-budget" title="Tracking Your Budget">
@@ -258,12 +278,22 @@ export default function GettingStartedPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-6">
           <Link
+            href="/help/journeys"
+            className="p-4 border border-slate-200 rounded-lg hover:border-primary-500 hover:shadow-md transition-all"
+          >
+            <h4 className="font-semibold text-slate-900 mb-1">Add Transport</h4>
+            <p className="text-sm text-slate-600">
+              Add flights, trains, drives, and more to each day of your trip
+            </p>
+          </Link>
+
+          <Link
             href="/help/activities"
             className="p-4 border border-slate-200 rounded-lg hover:border-primary-500 hover:shadow-md transition-all"
           >
             <h4 className="font-semibold text-slate-900 mb-1">Plan Activities</h4>
             <p className="text-sm text-slate-600">
-              Schedule things to do and create to-do lists for each destination
+              Schedule things to do and add activities to each day
             </p>
           </Link>
 
@@ -278,22 +308,12 @@ export default function GettingStartedPage() {
           </Link>
 
           <Link
-            href="/help/sharing"
+            href="/help/timeline"
             className="p-4 border border-slate-200 rounded-lg hover:border-primary-500 hover:shadow-md transition-all"
           >
-            <h4 className="font-semibold text-slate-900 mb-1">Share Your Trip</h4>
+            <h4 className="font-semibold text-slate-900 mb-1">View the Timeline</h4>
             <p className="text-sm text-slate-600">
-              Collaborate with travel companions by sharing trips
-            </p>
-          </Link>
-
-          <Link
-            href="/help/dashboard"
-            className="p-4 border border-slate-200 rounded-lg hover:border-primary-500 hover:shadow-md transition-all"
-          >
-            <h4 className="font-semibold text-slate-900 mb-1">Explore Dashboard</h4>
-            <p className="text-sm text-slate-600">
-              Understand your dashboard widgets and action items
+              See all your days, activities, and transport in one chronological view
             </p>
           </Link>
         </div>

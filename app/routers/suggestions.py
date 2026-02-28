@@ -37,33 +37,36 @@ def get_carrier_suggestions(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    """Get carrier/airline name suggestions based on user's journey history."""
+    """Get carrier/airline name suggestions based on user's transport history."""
 
     # Get recent carriers (ordered by most recent - using ID as proxy for recency)
     recent_query = (
-        db.query(distinct(models.Journey.carrier))
+        db.query(distinct(models.TripTransport.carrier))
         .join(models.Trip)
         .filter(
             models.Trip.user_id == current_user.id,
-            models.Journey.carrier.isnot(None),
-            models.Journey.carrier != "",
+            models.TripTransport.carrier.isnot(None),
+            models.TripTransport.carrier != "",
         )
-        .order_by(models.Journey.id.desc())
+        .order_by(models.TripTransport.id.desc())
         .limit(3)
     )
     recent_carriers = [row[0] for row in recent_query.all()]
 
     # Get all unique carriers for suggestions
     all_carriers_query = (
-        db.query(models.Journey.carrier, func.count(models.Journey.id).label("count"))
+        db.query(
+            models.TripTransport.carrier,
+            func.count(models.TripTransport.id).label("count"),
+        )
         .join(models.Trip)
         .filter(
             models.Trip.user_id == current_user.id,
-            models.Journey.carrier.isnot(None),
-            models.Journey.carrier != "",
+            models.TripTransport.carrier.isnot(None),
+            models.TripTransport.carrier != "",
         )
-        .group_by(models.Journey.carrier)
-        .order_by(func.count(models.Journey.id).desc())
+        .group_by(models.TripTransport.carrier)
+        .order_by(func.count(models.TripTransport.id).desc())
         .limit(limit)
     )
     all_carriers = [row[0] for row in all_carriers_query.all()]
@@ -88,7 +91,7 @@ def get_location_suggestions(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    """Get location suggestions from destinations and journey origins/destinations."""
+    """Get location suggestions from destinations and transport origins/destinations."""
 
     # Get destination names
     dest_names = (
@@ -102,23 +105,25 @@ def get_location_suggestions(
         .all()
     )
 
-    # Get journey origin/destination names (free text)
-    journey_origins = (
-        db.query(distinct(models.Journey.origin_name))
+    # Get transport origin/destination names
+    transport_origins = (
+        db.query(distinct(models.TripTransport.origin))
+        .join(models.Trip)
         .filter(
-            models.Journey.user_id == current_user.id,
-            models.Journey.origin_name.isnot(None),
-            models.Journey.origin_name != "",
+            models.Trip.user_id == current_user.id,
+            models.TripTransport.origin.isnot(None),
+            models.TripTransport.origin != "",
         )
         .all()
     )
 
-    journey_destinations = (
-        db.query(distinct(models.Journey.destination_name))
+    transport_destinations = (
+        db.query(distinct(models.TripTransport.destination))
+        .join(models.Trip)
         .filter(
-            models.Journey.user_id == current_user.id,
-            models.Journey.destination_name.isnot(None),
-            models.Journey.destination_name != "",
+            models.Trip.user_id == current_user.id,
+            models.TripTransport.destination.isnot(None),
+            models.TripTransport.destination != "",
         )
         .all()
     )
@@ -126,8 +131,8 @@ def get_location_suggestions(
     # Combine and deduplicate
     all_locations = set()
     all_locations.update([row[0] for row in dest_names])
-    all_locations.update([row[0] for row in journey_origins])
-    all_locations.update([row[0] for row in journey_destinations])
+    all_locations.update([row[0] for row in transport_origins])
+    all_locations.update([row[0] for row in transport_destinations])
 
     # Convert to sorted list (alphabetically)
     location_list = sorted(list(all_locations))[:limit]
@@ -301,17 +306,20 @@ def get_currency_suggestions(
         .all()
     )
 
-    # Get currencies from journeys
-    journey_currencies = (
-        db.query(models.Journey.currency, func.count(models.Journey.id).label("count"))
+    # Get currencies from transport
+    transport_currencies = (
+        db.query(
+            models.TripTransport.currency,
+            func.count(models.TripTransport.id).label("count"),
+        )
         .join(models.Trip)
         .filter(
             models.Trip.user_id == current_user.id,
-            models.Journey.currency.isnot(None),
-            models.Journey.currency != "",
+            models.TripTransport.currency.isnot(None),
+            models.TripTransport.currency != "",
         )
-        .group_by(models.Journey.currency)
-        .order_by(func.count(models.Journey.id).desc())
+        .group_by(models.TripTransport.currency)
+        .order_by(func.count(models.TripTransport.id).desc())
         .all()
     )
 
@@ -319,7 +327,7 @@ def get_currency_suggestions(
     currency_counts = {}
     for currency, count in expense_currencies:
         currency_counts[currency] = currency_counts.get(currency, 0) + count
-    for currency, count in journey_currencies:
+    for currency, count in transport_currencies:
         currency_counts[currency] = currency_counts.get(currency, 0) + count
 
     # Sort by total count

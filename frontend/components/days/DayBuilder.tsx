@@ -1,4 +1,5 @@
-import { TripDay } from '@/lib/types';
+import { useState, useEffect } from 'react';
+import { TripDay, TripTransport, TripTransportCreate, TripTransportUpdate } from '@/lib/types';
 import { X } from 'lucide-react';
 import {
     ActivityForm,
@@ -8,6 +9,8 @@ import {
     useDayBuilder
 } from './';
 import { Button } from '@/components/ui/Button';
+import { TransportForm, TransportItem, useTransport } from '@/components/transport';
+import { tripApi } from '@/lib/api';
 
 interface DayBuilderProps {
     day: TripDay;
@@ -15,7 +18,7 @@ interface DayBuilderProps {
     onRefresh: () => void;
 }
 
-export const DayBuilder = ({ day, onRefresh }: DayBuilderProps) => {
+export const DayBuilder = ({ day, tripId, onRefresh }: DayBuilderProps) => {
     const {
         selectedActivity,
         isFormOpen,
@@ -35,21 +38,88 @@ export const DayBuilder = ({ day, onRefresh }: DayBuilderProps) => {
     const scheduled = activities.filter(a => a.start_time).sort((a, b) => a.start_time.localeCompare(b.start_time));
     const unscheduled = activities.filter(a => !a.start_time);
 
+    // Transport state
+    const { items: transportItems, reload: reloadTransport, createTransport, updateTransport, deleteTransport } = useTransport(tripId, day.id);
+    const [tripDays, setTripDays] = useState<TripDay[]>([]);
+    const [isTransportFormOpen, setIsTransportFormOpen] = useState(false);
+    const [selectedTransport, setSelectedTransport] = useState<TripTransport | null>(null);
+    const [isTransportSubmitting, setIsTransportSubmitting] = useState(false);
+
+    // Load all trip days for the transport form's day selectors
+    useEffect(() => {
+        tripApi.getDays(tripId).then(res => setTripDays(res.data)).catch(() => {});
+    }, [tripId]);
+
+    const handleSaveTransport = async (data: TripTransportCreate | TripTransportUpdate) => {
+        setIsTransportSubmitting(true);
+        try {
+            if (selectedTransport) {
+                await updateTransport(selectedTransport.id, data as TripTransportUpdate);
+            } else {
+                await createTransport(data as TripTransportCreate);
+            }
+            setIsTransportFormOpen(false);
+            setSelectedTransport(null);
+        } catch (err) {
+            console.error('Error saving transport:', err);
+        } finally {
+            setIsTransportSubmitting(false);
+        }
+    };
+
+    const handleDeleteTransport = async () => {
+        if (!selectedTransport) return;
+        try {
+            await deleteTransport(selectedTransport.id);
+            setIsTransportFormOpen(false);
+            setSelectedTransport(null);
+        } catch (err) {
+            console.error('Error deleting transport:', err);
+        }
+    };
+
+    const openTransportEdit = (t: TripTransport) => {
+        setSelectedTransport(t);
+        setIsTransportFormOpen(true);
+    };
+
     return (
         <div className="max-w-3xl mx-auto pb-24">
             <DayHeader
                 day={day}
                 onEditDay={() => setShowEditDayModal(true)}
                 onAddActivity={openCreateForm}
+                onAddTransport={() => {
+                    setSelectedTransport(null);
+                    setIsTransportFormOpen(true);
+                }}
             />
 
             <DayTimeline
                 scheduled={scheduled}
                 unscheduled={unscheduled}
                 onEditActivity={openEditForm}
+                transportItems={transportItems}
+                currentDayId={day.id}
+                onEditTransport={openTransportEdit}
             />
 
-            {/* Activity Form Modal */}
+            {/* Transport cards below timeline (full detail view) */}
+            {transportItems.length > 0 && (
+                <div className="mt-6 space-y-3">
+                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Transport</h3>
+                    {transportItems.map(t => (
+                        <TransportItem
+                            key={t.id}
+                            transport={t}
+                            currentDayId={day.id}
+                            onEdit={openTransportEdit}
+                            onDelete={deleteTransport}
+                            onReload={reloadTransport}
+                        />
+                    ))}
+                </div>
+            )}
 
             {/* Activity Form Modal */}
             {isFormOpen && (
@@ -59,6 +129,22 @@ export const DayBuilder = ({ day, onRefresh }: DayBuilderProps) => {
                     onSave={handleSaveActivity}
                     onClose={() => setIsFormOpen(false)}
                     onDelete={selectedActivity?.id ? handleDeleteActivity : undefined}
+                />
+            )}
+
+            {/* Transport Form Modal */}
+            {isTransportFormOpen && (
+                <TransportForm
+                    tripDays={tripDays}
+                    defaultDayId={day.id}
+                    initialData={selectedTransport ?? undefined}
+                    onSave={handleSaveTransport}
+                    onDelete={selectedTransport ? handleDeleteTransport : undefined}
+                    onClose={() => {
+                        setIsTransportFormOpen(false);
+                        setSelectedTransport(null);
+                    }}
+                    isSubmitting={isTransportSubmitting}
                 />
             )}
 

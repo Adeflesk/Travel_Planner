@@ -32,16 +32,12 @@ from app.routers import (  # noqa: E402
     activities_router,
     expenses_router,
     packing_router,
-    journeys_router,
-    journey_segments_router,
-    journey_stops_router,
-    stop_options_router,
-    segment_options_router,
-    journey_documents_router,
     dashboard_router,
     suggestions_router,
     trip_days_router,
     settings_router,
+    trip_transports_router,
+    transport_options_router,
 )
 from app import models  # noqa: E402
 from database import engine  # noqa: E402
@@ -128,16 +124,12 @@ def create_app() -> FastAPI:
     app.include_router(activities_router)
     app.include_router(expenses_router)
     app.include_router(packing_router)
-    app.include_router(journeys_router)
-    app.include_router(journey_segments_router)
-    app.include_router(journey_stops_router)
-    app.include_router(stop_options_router)
-    app.include_router(segment_options_router)
-    app.include_router(journey_documents_router)
     app.include_router(dashboard_router)
     app.include_router(suggestions_router)
     app.include_router(trip_days_router)
     app.include_router(settings_router)
+    app.include_router(trip_transports_router)
+    app.include_router(transport_options_router)
 
     return app
 

@@ -486,9 +486,9 @@ export function TripOverviewDashboard({
             value={
               statsLoading
                 ? '—'
-                : `${stats?.booked_journeys ?? 0}/${stats?.total_journeys ?? 0}`
+                : `${stats?.booked_transports ?? 0}/${stats?.total_transports ?? 0}`
             }
-            label="Journeys booked"
+            label="Transport booked"
             icon={Route}
             iconColor="#4ECDC4"
             iconBg="rgba(78,205,196,0.12)"

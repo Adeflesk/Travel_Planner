@@ -5,11 +5,10 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Trip, TripDay } from '@/lib/types';
 import { tripApi } from '@/lib/api';
-import { MapPin, Receipt, Package, Compass, Route, Clock, Users, Calendar } from 'lucide-react';
+import { MapPin, Receipt, Package, Compass, Clock, Users, Calendar } from 'lucide-react';
 import { DestinationList } from '@/components/destinations';
 import { ExpenseList } from '@/components/expenses';
 import { TripActivityList } from '@/components/trip-activities';
-import { JourneyList } from '@/components/journeys';
 import { TripTimeline } from '@/components/timeline';
 import { PackingList } from '@/components/packing';
 import { DayList } from '@/components/days';
@@ -32,12 +31,11 @@ function TripDetailContent() {
   const [trip, setTrip] = useState<Trip | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<
-    'days' | 'destinations' | 'journeys' | 'timeline' | 'expenses' | 'activities' | 'packing'
+    'days' | 'destinations' | 'timeline' | 'expenses' | 'activities' | 'packing'
   >('days');
   const [showShareModal, setShowShareModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [days, setDays] = useState<TripDay[]>([]);
-  const [daysLoading, setDaysLoading] = useState(true);
   const [defaultTabSet, setDefaultTabSet] = useState(false);
 
   useEffect(() => {
@@ -67,13 +65,10 @@ function TripDetailContent() {
 
     const loadDays = async () => {
       try {
-        setDaysLoading(true);
         const response = await tripApi.getDays(tripId);
         setDays(response.data);
       } catch (error) {
         console.error('Error loading days:', error);
-      } finally {
-        setDaysLoading(false);
       }
     };
 
@@ -160,7 +155,6 @@ function TripDetailContent() {
               {[
                 { id: 'days', label: 'Itinerary', icon: Calendar },
                 { id: 'destinations', label: 'Destinations', icon: MapPin },
-                { id: 'journeys', label: 'Journeys', icon: Route },
                 { id: 'timeline', label: 'Timeline', icon: Clock },
                 { id: 'expenses', label: 'Expenses', icon: Receipt },
                 { id: 'activities', label: 'Activities', icon: Compass },
@@ -191,7 +185,6 @@ function TripDetailContent() {
                 />
               )}
               {activeTab === 'destinations' && <DestinationList tripId={tripId} />}
-              {activeTab === 'journeys' && <JourneyList tripId={tripId} />}
               {activeTab === 'timeline' && <TripTimeline tripId={tripId} />}
               {activeTab === 'expenses' && <ExpenseList tripId={tripId} />}
               {activeTab === 'activities' && <TripActivityList tripId={tripId} />}

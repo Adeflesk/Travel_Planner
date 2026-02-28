@@ -77,22 +77,21 @@ def setup_database(db_engine):
 
     # Create trip_summary view for tests
     with db_engine.connect() as conn:
+        conn.execute(text("DROP VIEW IF EXISTS trip_summary"))
         conn.execute(
             text(
                 """
-            CREATE VIEW IF NOT EXISTS trip_summary AS
+            CREATE VIEW trip_summary AS
             SELECT
                 t.id,
                 t.name,
                 t.start_date,
                 t.end_date,
                 t.budget,
-                COUNT(DISTINCT j.id)              AS journey_count,
                 COUNT(DISTINCT td.id)             AS day_count,
                 COALESCE(SUM(e.amount), 0)        AS total_spent,
                 t.budget - COALESCE(SUM(e.amount), 0) AS budget_remaining
             FROM trips t
-            LEFT JOIN journeys j    ON j.trip_id = t.id
             LEFT JOIN trip_days td  ON td.trip_id = t.id
             LEFT JOIN expenses e    ON e.trip_id = t.id
             GROUP BY t.id;
@@ -115,20 +114,17 @@ def db_setup(db_engine, testing_session_local, setup_database):
     """
     from sqlalchemy import text, inspect
 
-    # Tables in reverse dependency order to avoid foreign key constraints
+    # Tables in reverse dependency order (leaf rows first so FK constraints are satisfied).
+    # Keep this list in sync with app/models whenever models are added/removed.
     tables_to_clean = [
         "user_settings",
         "trip_shares",
         "packing_items",
-        "expenses",
         "day_activities",
+        "transport_options",
+        "trip_transports",
+        "expenses",
         "activities",
-        "segment_options",
-        "stop_options",
-        "journey_stops",
-        "journey_segments",
-        "journey_documents",
-        "journeys",
         "destinations",
         "trip_days",
         "trips",
@@ -265,3 +261,30 @@ def pytest_runtest_teardown(item):
     from sqlalchemy.orm import close_all_sessions
 
     close_all_sessions()
+
+
+# ---------------------------------------------------------------------------
+# Shared helper — importable by any test module
+# ---------------------------------------------------------------------------
+
+
+def create_other_user(db, email="other@example.com"):
+    """
+    Create a secondary user and return (user, token).
+
+    Used by router tests that need to verify ownership / permission boundaries.
+    Import directly: ``from conftest import create_other_user``
+    """
+    from app.core.security import create_access_token
+    from app import models
+
+    user = models.User(
+        email=email, hashed_password="x", full_name="Other", is_active=True
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    token = create_access_token(
+        {"sub": str(user.id), "email": user.email, "role": user.role.value}
+    )
+    return user, token

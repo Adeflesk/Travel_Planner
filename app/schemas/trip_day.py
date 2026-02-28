@@ -1,8 +1,7 @@
 import datetime
 from typing import List, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from .day_activity import DayActivityResponse
-from .journey import Journey as JourneyResponse
 
 
 class TripDayBase(BaseModel):
@@ -27,9 +26,7 @@ class TripDayUpdate(BaseModel):
 
 
 class TripDayResponse(TripDayBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     activities: List[DayActivityResponse] = []
-    journeys: List[JourneyResponse] = []
-
-    class Config:
-        from_attributes = True

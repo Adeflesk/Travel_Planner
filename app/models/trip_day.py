@@ -22,4 +22,13 @@ class TripDay(Base):
     activities = relationship(
         "DayActivity", back_populates="day", cascade="all, delete-orphan"
     )
-    journeys = relationship("Journey", back_populates="day")
+    departing_transports = relationship(
+        "TripTransport",
+        foreign_keys="TripTransport.departure_day_id",
+        back_populates="departure_day",
+    )
+    arriving_transports = relationship(
+        "TripTransport",
+        foreign_keys="TripTransport.arrival_day_id",
+        back_populates="arrival_day",
+    )

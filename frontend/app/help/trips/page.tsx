@@ -19,7 +19,8 @@ export default function TripsGuidePage() {
     >
       <HelpSection id="overview" title="Overview">
         <p className="mb-4">
-          Trips are the foundation of Travel Planner. Each trip contains destinations, journeys, activities, expenses, and packing lists.
+          Trips are the foundation of Travel Planner. Each trip contains destinations, days,
+          transport, activities, expenses, and packing lists.
         </p>
       </HelpSection>
 
@@ -75,6 +76,25 @@ export default function TripsGuidePage() {
         </ul>
       </HelpSection>
 
+      <HelpSection id="wizard" title="Trip Wizard">
+        <p className="mb-4">
+          When creating a new trip, a short wizard walks you through a few setup questions to
+          personalise your experience. All questions are optional — skip through to use the defaults.
+        </p>
+
+        <ul className="list-disc ml-6 space-y-2">
+          <li><strong>Travellers</strong>: How many people and whether to split costs</li>
+          <li><strong>Trip type</strong>: Single city, multi-city, road trip, or international</li>
+          <li><strong>Transport</strong>: Whether you have a car or flights</li>
+          <li><strong>Pacing</strong>: Relaxed, balanced, or packed — affects default activity durations</li>
+          <li><strong>Budget currency</strong>: Sets the default currency for expenses</li>
+        </ul>
+
+        <HelpTip variant="info">
+          You can update these settings anytime from the trip page using the settings (gear) icon.
+        </HelpTip>
+      </HelpSection>
+
       <HelpSection id="budget" title="Setting Budgets">
         <p className="mb-4">
           Set a total budget and configure warning thresholds to stay on track.
@@ -91,7 +111,7 @@ export default function TripsGuidePage() {
         </p>
 
         <HelpTip variant="warning">
-          Changing trip dates won&apos;t automatically update destination or journey dates.
+          Changing trip dates won&apos;t automatically update destination or day dates.
         </HelpTip>
       </HelpSection>
     </HelpLayout>

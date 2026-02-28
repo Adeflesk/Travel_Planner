@@ -1,20 +1,7 @@
 from datetime import date
 
-from app.core.security import create_access_token
 from app import models
-
-
-def create_user_and_token(db, email="other@example.com"):
-    user = models.User(
-        email=email, hashed_password="x", full_name="Other", is_active=True
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    token = create_access_token(
-        {"sub": str(user.id), "email": user.email, "role": user.role.value}
-    )
-    return user, token
+from conftest import create_other_user as create_user_and_token
 
 
 def test_create_activity(client, test_user, db_session):

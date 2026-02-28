@@ -1,5 +1,5 @@
 from typing import Any, Dict, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class UserSettingsBase(BaseModel):
@@ -15,8 +15,7 @@ class UserSettingsUpdate(BaseModel):
 
 
 class UserSettingsResponse(UserSettingsBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     user_id: int
-
-    class Config:
-        from_attributes = True

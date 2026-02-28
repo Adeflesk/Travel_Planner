@@ -7,7 +7,7 @@ Defines Activity-related Pydantic models: `ActivityBase`, `ActivityCreate`,
 Author: Travel Planner Team
 """
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict
 from datetime import date as DateType, time
 from decimal import Decimal
 from typing import Optional
@@ -30,18 +30,6 @@ class ActivityBase(BaseModel):
 
 class ActivityCreate(ActivityBase):
     destination_id: Optional[int] = None
-    segment_id: Optional[int] = None
-
-    @field_validator("destination_id")
-    @classmethod
-    def validate_at_least_one_link(cls, v, info):
-        """Ensure at least one of destination_id or segment_id is provided"""
-        segment_id = info.data.get("segment_id")
-        if v is None and segment_id is None:
-            raise ValueError(
-                "At least one of destination_id or segment_id must be provided"
-            )
-        return v
 
 
 class ActivityUpdate(BaseModel):
@@ -58,12 +46,10 @@ class ActivityUpdate(BaseModel):
     is_todo: Optional[bool] = None
     is_completed: Optional[bool] = None
     destination_id: Optional[int] = None
-    segment_id: Optional[int] = None
 
 
 class Activity(ActivityBase):
     id: int
     destination_id: Optional[int] = None
-    segment_id: Optional[int] = None
 
     model_config = ConfigDict(from_attributes=True)

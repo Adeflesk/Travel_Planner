@@ -46,11 +46,11 @@ export const helpGuides: HelpGuide[] = [
   },
   {
     id: 'journeys',
-    title: 'Journeys & Transportation',
+    title: 'Transport',
     category: 'Travel',
-    description: 'Plan transportation between destinations',
+    description: 'Add and manage transport on your day itinerary',
     path: '/help/journeys',
-    keywords: ['journey', 'flight', 'train', 'car', 'transport', 'travel', 'stops', 'route'],
+    keywords: ['transport', 'flight', 'train', 'bus', 'drive', 'ferry', 'travel', 'booking', 'carrier', 'reference'],
     icon: 'Plane',
   },
   {
@@ -136,7 +136,7 @@ export const helpCategories: HelpCategory[] = [
   {
     id: 'travel',
     title: 'Managing Travel',
-    description: 'Journeys and activities',
+    description: 'Transport and activities on your day pages',
     icon: 'Plane',
     guides: ['journeys', 'activities'],
   },

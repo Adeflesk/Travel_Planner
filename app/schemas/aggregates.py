@@ -13,7 +13,6 @@ from datetime import datetime
 
 from .destination import Destination
 from .activity import Activity
-from .journey import Journey
 from .expense import Expense
 
 
@@ -38,23 +37,6 @@ class TimelineDestinationItem(BaseModel):
     type: str = "destination"
     sort_date: Optional[datetime] = None
     data: Destination
-
-
-class TimelineJourneyItem(BaseModel):
-    """Journey item for timeline"""
-
-    type: str = "journey"
-    sort_date: Optional[datetime] = None
-    data: Journey
-
-
-class TimelineItem(BaseModel):
-    """Generic timeline item (union of destination/journey)"""
-
-    type: str
-    sort_date: Optional[datetime] = None
-    destination: Optional[Destination] = None
-    journey: Optional[Journey] = None
 
 
 class DestinationAccommodation(BaseModel):

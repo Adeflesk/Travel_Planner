@@ -25,7 +25,6 @@ from app.services.budget_service import get_budget_status as svc_get_budget_stat
 from app.services.expense_service import get_expense_summary as svc_get_expense_summary
 from app.services.timeline_service import (
     get_accommodation_expenses as svc_get_accommodation_expenses,
-    get_timeline as svc_get_timeline,
 )
 from database import get_db
 
@@ -113,17 +112,16 @@ def get_trips(
         ids_csv = ",".join(str(i) for i in all_trip_ids)
         rows = db.execute(
             text(
-                f"SELECT id, journey_count, day_count, total_spent, budget_remaining"
+                f"SELECT id, day_count, total_spent, budget_remaining"
                 f" FROM trip_summary WHERE id IN ({ids_csv})"
             )
         ).fetchall()
         for row in rows:
             summary_map[row[0]] = {
-                "journey_count": row[1] or 0,
-                "day_count": row[2] or 0,
-                "total_spent": Decimal(str(row[3] or 0)),
-                "budget_remaining": Decimal(str(row[4]))
-                if row[4] is not None
+                "day_count": row[1] or 0,
+                "total_spent": Decimal(str(row[2] or 0)),
+                "budget_remaining": Decimal(str(row[3]))
+                if row[3] is not None
                 else None,
             }
 
@@ -135,7 +133,6 @@ def get_trips(
             **trip_dict,
             is_owner=is_owner,
             shared_by=shared_by,
-            journey_count=summary.get("journey_count", 0),
             day_count=summary.get("day_count", 0),
             total_spent=summary.get("total_spent", Decimal("0")),
             budget_remaining=summary.get("budget_remaining"),
@@ -300,23 +297,6 @@ def get_destinations_with_activities(
 
 
 @router.get(
-    "/trips/{trip_id}/timeline/",
-    response_model=List[schemas.TimelineItem],
-    tags=["trips"],
-)
-def get_trip_timeline(
-    trip_id: int,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
-):
-    get_trip_or_404(trip_id, db, current_user)  # Check access
-    result = svc_get_timeline(trip_id, db)
-    if result is None:
-        raise HTTPException(status_code=404, detail="Trip not found")
-    return result
-
-
-@router.get(
     "/trips/{trip_id}/accommodation-expenses/",
     response_model=List[schemas.DestinationAccommodation],
     tags=["trips"],
@@ -363,19 +343,19 @@ def get_trip_stats(
         or 0
     )
 
-    # Count and sum journeys
-    journey_stats = (
+    # Count and sum transports
+    transport_stats = (
         db.query(
-            func.count(models.Journey.id),
-            func.coalesce(func.sum(models.Journey.cost), 0),
-            func.sum(case((models.Journey.status == "booked", 1), else_=0)),
+            func.count(models.TripTransport.id),
+            func.coalesce(func.sum(models.TripTransport.cost), 0),
+            func.sum(case((models.TripTransport.booked.is_(True), 1), else_=0)),
         )
-        .filter(models.Journey.trip_id == trip_id)
+        .filter(models.TripTransport.trip_id == trip_id)
         .first()
     )
-    journey_count = journey_stats[0] or 0
-    journey_cost = Decimal(str(journey_stats[1] or 0))
-    booked_journeys = journey_stats[2] or 0
+    transport_count = transport_stats[0] or 0
+    transport_cost = Decimal(str(transport_stats[1] or 0))
+    booked_transports = transport_stats[2] or 0
 
     # Get activity count (through destinations)
     activity_count = (
@@ -413,27 +393,26 @@ def get_trip_stats(
     packed_items = packing_stats[1] or 0
 
     # Calculate total cost
-    total_cost = journey_cost + expense_cost
+    total_cost = transport_cost + expense_cost
 
-    # Calculate completion percentage (based on booked journeys)
+    # Calculate completion percentage (based on booked transports)
     completion_percentage = 0.0
-    if journey_count > 0:
-        completion_percentage = (booked_journeys / journey_count) * 100
+    if transport_count > 0:
+        completion_percentage = (booked_transports / transport_count) * 100
 
     return schemas.TripStats(
         total_cost=total_cost,
-        journey_cost=journey_cost,
+        transport_cost=transport_cost,
         expense_cost=expense_cost,
         days_until_departure=days_until_departure,
         duration_days=duration_days,
         completion_percentage=round(completion_percentage, 1),
-        booked_journeys=booked_journeys,
-        total_journeys=journey_count,
+        booked_transports=booked_transports,
+        total_transports=transport_count,
         packed_items=packed_items,
         total_packing_items=total_packing_items,
         counts=schemas.TripStatsCounts(
             destinations=destination_count,
-            journeys=journey_count,
             activities=activity_count,
             expenses=expense_count,
             packing_items=total_packing_items,

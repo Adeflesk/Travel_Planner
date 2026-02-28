@@ -1,10 +1,5 @@
 """
 app/schemas/expense.py - Expense Pydantic schemas
-
-Defines Expense-related Pydantic models: `ExpenseBase`, `ExpenseCreate`,
-`ExpenseUpdate`, and `Expense`. Also includes `ExpenseSummary`.
-
-Author: Travel Planner Team
 """
 
 from pydantic import BaseModel
@@ -28,9 +23,6 @@ class ExpenseCreate(ExpenseBase):
     trip_id: int
     destination_id: Optional[int] = None
     activity_id: Optional[int] = None
-    segment_option_id: Optional[int] = None
-    stop_option_id: Optional[int] = None
-    segment_id: Optional[int] = None
 
 
 class ExpenseUpdate(BaseModel):
@@ -42,9 +34,6 @@ class ExpenseUpdate(BaseModel):
     booked: Optional[bool] = None
     paid: Optional[bool] = None
     cancel_by_date: Optional[DateType] = None
-    segment_option_id: Optional[int] = None
-    stop_option_id: Optional[int] = None
-    segment_id: Optional[int] = None
 
 
 class Expense(ExpenseBase):
@@ -52,9 +41,6 @@ class Expense(ExpenseBase):
     trip_id: int
     destination_id: Optional[int] = None
     activity_id: Optional[int] = None
-    segment_option_id: Optional[int] = None
-    stop_option_id: Optional[int] = None
-    segment_id: Optional[int] = None
 
     model_config = {"from_attributes": True}
 

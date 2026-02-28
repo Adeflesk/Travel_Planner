@@ -1,58 +1,12 @@
 """
-app/services/timeline_service.py - Timeline and accommodation services
-
-Provides timeline merging and accommodation expense grouping logic.
-
-Author: Travel Planner Team
+app/services/timeline_service.py - Accommodation expense grouping service
 """
 
-from datetime import datetime, time
 from typing import List, Dict, Optional
 
 from sqlalchemy.orm import Session
 
 from app import models
-
-
-def get_timeline(trip_id: int, db: Session) -> Optional[List[Dict]]:
-    trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
-    if not trip:
-        return None
-
-    destinations = (
-        db.query(models.Destination).filter(models.Destination.trip_id == trip_id).all()
-    )
-
-    journeys = db.query(models.Journey).filter(models.Journey.trip_id == trip_id).all()
-
-    timeline = []
-
-    for dest in destinations:
-        sort_date = None
-        if dest.arrival_date:
-            # Use end-of-day so same-day journeys appear before arrival destination.
-            sort_date = datetime.combine(dest.arrival_date, time.max)
-        elif dest.departure_date:
-            # Fallback to departure date end-of-day when arrival is missing.
-            sort_date = datetime.combine(dest.departure_date, time.max)
-        timeline.append(
-            {"type": "destination", "sort_date": sort_date, "destination": dest}
-        )
-
-    for journey in journeys:
-        timeline.append(
-            {
-                "type": "journey",
-                "sort_date": journey.departure_datetime,
-                "journey": journey,
-            }
-        )
-
-    timeline.sort(
-        key=lambda x: x["sort_date"] if x["sort_date"] is not None else datetime.min
-    )
-
-    return timeline
 
 
 def get_accommodation_expenses(trip_id: int, db: Session) -> Optional[List[Dict]]:

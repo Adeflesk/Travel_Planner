@@ -63,9 +63,9 @@ function TripStatsCard({ tripId }: TripSidebarProps) {
           </p>
         </div>
         <div>
-          <p className="text-slate-500 text-xs">Journeys</p>
+          <p className="text-slate-500 text-xs">Transport</p>
           <p className="font-semibold text-slate-900">
-            {stats.booked_journeys}/{stats.total_journeys}
+            {stats.booked_transports}/{stats.total_transports}
           </p>
         </div>
         <div>

@@ -5,17 +5,20 @@ tests/test_sharing.py - Tests for trip sharing endpoints.
 import pytest
 from datetime import date
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.main import app
 from app.models import Base, User, Trip, UserRole
-from app.core.security import get_password_hash, create_access_token
+from app.core.security import create_access_token
 from database import get_db
 
 
-# Test database setup
+# ---------------------------------------------------------------------------
+# Single in-memory DB shared across the entire test_sharing module
+# ---------------------------------------------------------------------------
+
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 
 engine = create_engine(
@@ -34,33 +37,25 @@ def override_get_db():
         db.close()
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(scope="module", autouse=True)
 def setup_database():
-    """Create tables before each test and drop after."""
-    from sqlalchemy import text
-
+    """Create schema once for the whole module; drop after."""
     Base.metadata.create_all(bind=engine)
 
-    # Create trip_summary view for tests
     with engine.connect() as conn:
+        conn.execute(text("DROP VIEW IF EXISTS trip_summary"))
         conn.execute(
             text(
                 """
-            CREATE VIEW IF NOT EXISTS trip_summary AS
+            CREATE VIEW trip_summary AS
             SELECT
-                t.id,
-                t.name,
-                t.start_date,
-                t.end_date,
-                t.budget,
-                COUNT(DISTINCT j.id)              AS journey_count,
+                t.id, t.name, t.start_date, t.end_date, t.budget,
                 COUNT(DISTINCT td.id)             AS day_count,
                 COALESCE(SUM(e.amount), 0)        AS total_spent,
                 t.budget - COALESCE(SUM(e.amount), 0) AS budget_remaining
             FROM trips t
-            LEFT JOIN journeys j    ON j.trip_id = t.id
-            LEFT JOIN trip_days td  ON td.trip_id = t.id
-            LEFT JOIN expenses e    ON e.trip_id = t.id
+            LEFT JOIN trip_days td ON td.trip_id = t.id
+            LEFT JOIN expenses e   ON e.trip_id  = t.id
             GROUP BY t.id;
         """
             )
@@ -71,9 +66,29 @@ def setup_database():
     Base.metadata.drop_all(bind=engine)
 
 
+@pytest.fixture(autouse=True)
+def clean_tables():
+    """DELETE all rows between tests — much faster than drop/create."""
+    yield
+    with engine.connect() as conn:
+        for table in [
+            "trip_shares",
+            "packing_items",
+            "expenses",
+            "day_activities",
+            "activities",
+            "destinations",
+            "trip_days",
+            "trips",
+            "users",
+        ]:
+            conn.execute(text(f"DELETE FROM {table}"))
+        conn.commit()
+
+
 @pytest.fixture
 def client():
-    """Create test client with overridden database."""
+    """Test client with the sharing-module DB override."""
     previous_override = app.dependency_overrides.get(get_db)
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as c:
@@ -86,11 +101,11 @@ def client():
 
 @pytest.fixture
 def owner_user():
-    """Create a user who owns a trip."""
+    """Create a user who owns a trip (no bcrypt — fast plain hash)."""
     db = TestingSessionLocal()
     user = User(
         email="owner@example.com",
-        hashed_password=get_password_hash("ownerpassword"),
+        hashed_password="x",
         full_name="Trip Owner",
         role=UserRole.USER,
         is_active=True,
@@ -98,7 +113,6 @@ def owner_user():
     db.add(user)
     db.commit()
     db.refresh(user)
-
     token = create_access_token(
         data={"sub": str(user.id), "email": user.email, "role": user.role.value}
     )
@@ -112,11 +126,11 @@ def owner_user():
 
 @pytest.fixture
 def other_user():
-    """Create another user to share trips with."""
+    """Create another user to share trips with (no bcrypt — fast plain hash)."""
     db = TestingSessionLocal()
     user = User(
         email="other@example.com",
-        hashed_password=get_password_hash("otherpassword"),
+        hashed_password="x",
         full_name="Other User",
         role=UserRole.USER,
         is_active=True,
@@ -124,7 +138,6 @@ def other_user():
     db.add(user)
     db.commit()
     db.refresh(user)
-
     token = create_access_token(
         data={"sub": str(user.id), "email": user.email, "role": user.role.value}
     )

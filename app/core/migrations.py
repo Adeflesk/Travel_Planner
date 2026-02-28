@@ -59,18 +59,6 @@ def run_migrations(engine: Engine) -> None:
     """Run all pending migrations."""
     logger.info("Running database migrations...")
 
-    # Journey route details columns (Feature 016)
-    journey_columns = [
-        ("distance_km", "NUMERIC(10, 2)", "NULL"),
-        ("distance_miles", "NUMERIC(10, 2)", "NULL"),
-        ("estimated_duration_minutes", "INTEGER", "NULL"),
-        ("route_type", "VARCHAR(50)", "NULL"),
-        ("has_tolls", "BOOLEAN", "0"),
-        ("toll_cost", "NUMERIC(10, 2)", "NULL"),
-        ("route_notes", "TEXT", "NULL"),
-        ("day_id", "INTEGER", "NULL"),
-    ]
-
     trip_columns = [
         ("timezone", "VARCHAR(50)", "NULL"),
         ("context", "TEXT", "NULL"),
@@ -81,9 +69,6 @@ def run_migrations(engine: Engine) -> None:
     ]
 
     applied_migrations: list[str] = []
-    for col_name, col_type, default in journey_columns:
-        if add_column_if_not_exists(engine, "journeys", col_name, col_type, default):
-            applied_migrations.append(f"journeys.{col_name}")
 
     # Trip budget threshold columns (Feature 018)
     trip_threshold_columns = [
@@ -105,22 +90,6 @@ def run_migrations(engine: Engine) -> None:
             engine, "destinations", col_name, col_type, default
         ):
             applied_migrations.append(f"destinations.{col_name}")
-
-    # Expense link columns (Feature 022)
-    expense_link_columns = [
-        ("segment_option_id", "INTEGER", "NULL"),
-        ("stop_option_id", "INTEGER", "NULL"),
-        ("segment_id", "INTEGER", "NULL"),
-    ]
-    for col_name, col_type, default in expense_link_columns:
-        if add_column_if_not_exists(engine, "expenses", col_name, col_type, default):
-            applied_migrations.append(f"expenses.{col_name}")
-
-    # Stop option segment link (Feature 021)
-    if add_column_if_not_exists(
-        engine, "stop_options", "segment_id", "INTEGER", "NULL"
-    ):
-        applied_migrations.append("stop_options.segment_id")
 
     migrations_run = len(applied_migrations)
     if migrations_run > 0:
@@ -144,12 +113,10 @@ def create_trip_summary_view(engine: Engine) -> None:
             t.start_date,
             t.end_date,
             t.budget,
-            COUNT(DISTINCT j.id)              AS journey_count,
             COUNT(DISTINCT td.id)             AS day_count,
             COALESCE(SUM(e.amount), 0)        AS total_spent,
             t.budget - COALESCE(SUM(e.amount), 0) AS budget_remaining
         FROM trips t
-        LEFT JOIN journeys j    ON j.trip_id = t.id
         LEFT JOIN trip_days td  ON td.trip_id = t.id
         LEFT JOIN expenses e    ON e.trip_id = t.id
         GROUP BY t.id;

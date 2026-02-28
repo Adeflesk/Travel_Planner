@@ -1,5 +1,5 @@
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class DayActivityBase(BaseModel):
@@ -34,7 +34,6 @@ class DayActivityUpdate(BaseModel):
 
 
 class DayActivityResponse(DayActivityBase):
-    id: int
+    model_config = ConfigDict(from_attributes=True)
 
-    class Config:
-        from_attributes = True
+    id: int

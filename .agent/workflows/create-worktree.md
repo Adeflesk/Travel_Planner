@@ -1,18 +1,12 @@
 ---
-description: how to create a git worktree safely (outside iCloud Drive sync scope)
+description: how to create a git worktree
 ---
 
 # Create a Git Worktree
 
-## ⚠️ iCloud Drive Warning
-
-This project lives in `~/Documents/`, which is **synced by iCloud Drive**. Placing
-worktrees inside the repo (e.g. `.worktrees/`) causes macOS Finder/iCloud to generate
-duplicate files with ` 2`, ` 3`, ` 4` suffixes, which then get accidentally committed.
-
-**Always create worktrees outside `~/Documents/`.**
-
 ## Safe Worktree Base Directory
+
+Create worktrees outside the repo to keep the working directory clean:
 
 ```
 ~/worktrees/Travel_Planner/
@@ -23,11 +17,6 @@ Create it once if it doesn't exist:
 ```bash
 mkdir -p ~/worktrees/Travel_Planner
 ```
-
-This directory is:
-- Outside iCloud Drive's sync scope (iCloud only syncs `~/Documents`, `~/Desktop`, `~/Library`)
-- Consistent and easy to remember
-- Never accidentally committed (not inside the repo)
 
 ## Creating a Worktree
 
@@ -84,13 +73,3 @@ git checkout feature/road-trip
 git checkout master
 git merge feature/road-trip
 ```
-
-## Why NOT `.worktrees/` Inside the Repo
-
-The old convention was `.worktrees/<name>` inside the repo root. **Do not use this.**
-
-| Location | iCloud synced? | Safe? |
-|---|---|---|
-| `~/Documents/playground/Travel_Planner/.worktrees/` | ✅ Yes | ❌ No |
-| `~/worktrees/Travel_Planner/` | ❌ No | ✅ Yes |
-| `/tmp/worktrees/Travel_Planner/` | ❌ No | ✅ Yes (lost on reboot) |

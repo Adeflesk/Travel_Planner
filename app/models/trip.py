@@ -65,7 +65,7 @@ class Trip(Base):
     packing_items = relationship(
         "PackingItem", back_populates="trip", cascade="all, delete-orphan"
     )
-    journeys = relationship(
-        "Journey", back_populates="trip", cascade="all, delete-orphan"
-    )
     days = relationship("TripDay", back_populates="trip", cascade="all, delete-orphan")
+    transports = relationship(
+        "TripTransport", back_populates="trip", cascade="all, delete-orphan"
+    )

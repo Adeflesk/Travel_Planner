@@ -1,6 +1,13 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # =========================
+# Backend runtime files
+# =========================
+backend.log
+backend*.log
+backend.pid
+
+# =========================
 # Python
 # =========================
 __pycache__/
@@ -102,16 +109,6 @@ playwright/.cache/
 # Git worktrees
 # =========================
 .worktrees/
-
-# =========================
-# macOS duplicate files (Finder/iCloud " 2", " 3", " 4" suffixes)
-# =========================
-*\ 2
-*\ 2.*
-*\ 3
-*\ 3.*
-*\ 4
-*\ 4.*
 
 # =========================
 # project specific temp files

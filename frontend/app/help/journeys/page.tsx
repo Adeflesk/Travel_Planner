@@ -5,7 +5,6 @@ import {
   HelpSection,
   HelpStepList,
   HelpTip,
-  HelpScreenshot,
   HelpDiagram,
 } from '@/components/help';
 
@@ -13,359 +12,259 @@ export default function JourneysGuidePage() {
   return (
     <HelpLayout
       guideId="journeys"
-      title="Journeys & Transportation"
-      description="Plan transportation between destinations"
+      title="Transport"
+      description="Add and manage transport on your day itinerary"
       category="Travel"
     >
       <HelpSection id="overview" title="Overview">
         <p className="mb-4">
-          Journeys help you track how you&apos;ll get from one place to another during your trip.
-          Whether it&apos;s a flight between cities, a scenic road trip with multiple stops, or a
-          train journey, keep all your transportation details organized in one place.
+          Transport items live on your day pages alongside activities, building your itinerary
+          chronologically day by day. Whether it&apos;s a flight, train, road trip, or ferry —
+          each transport item is tied to the day it departs.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-6">
           <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <h4 className="font-semibold text-slate-900 mb-2">Point-to-Point Journeys</h4>
+            <h4 className="font-semibold text-slate-900 mb-2">On Your Day Page</h4>
             <p className="text-sm text-slate-700">
-              Flights, trains, and bus trips between destinations with departure and arrival times
+              Open any day and add transport alongside your activities. Everything is ordered
+              chronologically by time.
             </p>
           </div>
           <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-            <h4 className="font-semibold text-slate-900 mb-2">Road Trips with Stops</h4>
+            <h4 className="font-semibold text-slate-900 mb-2">Trip Timeline</h4>
             <p className="text-sm text-slate-700">
-              Car journeys with multiple waypoints, scenic stops, and planned activities along the route
+              The Timeline tab gives you a read-only chronological view of all days, activities,
+              and transport across your entire trip.
             </p>
           </div>
         </div>
       </HelpSection>
 
-      <HelpSection id="transport-modes" title="Transport Modes">
+      <HelpSection id="transport-modes" title="Transport Types">
         <p className="mb-4">
-          Choose the appropriate transport mode for your journey:
+          Choose the appropriate type for your transport:
         </p>
 
         <ul className="list-disc ml-6 space-y-2">
           <li><strong>Flight</strong>: Air travel between cities or countries</li>
           <li><strong>Train</strong>: Railway journeys</li>
           <li><strong>Bus</strong>: Coach or bus transport</li>
-          <li><strong>Car</strong>: Driving (ideal for road trips with stops)</li>
+          <li><strong>Drive</strong>: Car journeys (own car or rental)</li>
           <li><strong>Ferry</strong>: Water transport</li>
           <li><strong>Other</strong>: Any other mode of transportation</li>
         </ul>
 
         <HelpTip variant="info">
-          The transport mode helps organize your journeys and can affect route planning options.
+          Some types unlock extra fields — drives show a distance field; flights show a flight
+          number field; trains and buses show a frequency field.
         </HelpTip>
       </HelpSection>
 
-      <HelpSection id="add" title="Adding a Journey">
+      <HelpSection id="add" title="Adding Transport to a Day">
         <HelpStepList
           steps={[
             {
-              title: 'Navigate to Journeys Tab',
-              content: 'Open your trip and click the "Journeys" tab in the main navigation.',
+              title: 'Open a Day',
+              content: 'Navigate to your trip and open the Days tab. Click on the day you want to add transport to.',
             },
             {
-              title: 'Click Add Journey',
-              content: 'Click the "Add Journey" button to open the journey form.',
+              title: 'Click "+ Add Transport"',
+              content: 'You\'ll see an "+ Add Transport" button alongside the "+ Add Activity" button in the day view.',
             },
             {
-              title: 'Select Transport Mode',
-              content: 'Choose your mode of transportation (flight, train, car, etc.).',
+              title: 'Choose Transport Type',
+              content: 'Select flight, train, bus, drive, ferry, or other.',
             },
             {
               title: 'Set Origin and Destination',
               content: (
                 <>
-                  Choose your starting point and ending point. You can:
+                  Enter where you&apos;re travelling from and to. Use free text — for example:
                   <ul className="list-disc ml-5 mt-2 space-y-1">
-                    <li>Link to trip destinations (e.g., Paris → Rome)</li>
-                    <li>Enter free text for other locations (e.g., Home Airport, Hotel name)</li>
+                    <li>&quot;Sydney Airport (SYD)&quot; → &quot;London Heathrow (LHR)&quot;</li>
+                    <li>&quot;Paris Gare du Nord&quot; → &quot;Amsterdam Centraal&quot;</li>
+                    <li>&quot;Hotel car park&quot; → &quot;Grand Canyon South Rim&quot;</li>
                   </ul>
                 </>
               ),
             },
             {
-              title: 'Add Departure and Arrival Times',
-              content: 'Enter when you depart and when you arrive.',
+              title: 'Set Departure & Arrival',
+              content: (
+                <>
+                  Set the departure day and time. If your transport arrives on a different day
+                  (e.g. an overnight flight), set the arrival day separately — the transport will
+                  appear on both days.
+                </>
+              ),
             },
             {
               title: 'Add Optional Details',
               content: (
                 <>
-                  Include additional information:
+                  Fill in extra details as you have them:
                   <ul className="list-disc ml-5 mt-2 space-y-1">
-                    <li>Carrier/airline name</li>
-                    <li>Booking reference number</li>
+                    <li>Carrier / airline / operator name</li>
+                    <li>Booking reference or flight number</li>
                     <li>Cost and currency</li>
-                    <li>Notes or special requirements</li>
+                    <li>Notes</li>
+                    <li>Type-specific: distance (drive), frequency (bus/train), flight number (flight)</li>
                   </ul>
                 </>
               ),
             },
             {
-              title: 'Save Journey',
-              content: 'Click "Create Journey" to save.',
+              title: 'Toggle "Booked" When Confirmed',
+              content: 'Once your ticket is booked, mark it as Booked to visually confirm it on the day timeline.',
             },
           ]}
         />
 
-        <HelpScreenshot
-          title="Journey Form"
-          description="Add journey with transport mode, origin, destination, and timing"
-        />
-
         <HelpTip variant="tip">
-          Add booking references and costs to keep all travel details organized in one place!
+          Add booking references and costs to keep all travel details in one place. You can
+          promote transport costs to tracked trip expenses from the Expenses tab.
         </HelpTip>
       </HelpSection>
 
-      <HelpSection id="flexible-locations" title="Flexible Origin & Destination">
+      <HelpSection id="cross-day" title="Cross-Day Transport">
         <p className="mb-4">
-          Journeys support flexible location references:
+          When a transport item departs on one day and arrives on a different day (e.g. an
+          overnight flight or a long train journey), it appears on <strong>both</strong> day pages:
         </p>
 
         <div className="space-y-4 my-6">
-          <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-            <h4 className="font-semibold text-slate-900 mb-2">Linked to Trip Destinations</h4>
-            <p className="text-sm text-slate-700 mb-2">
-              Select from your trip&apos;s destinations when traveling between cities in your itinerary.
+          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <h4 className="font-semibold text-slate-900 mb-2">On the Departure Day</h4>
+            <p className="text-sm text-slate-700">
+              Shows the full transport details with a badge indicating it arrives on a later day.
             </p>
-            <p className="text-xs text-slate-600 italic">
-              Example: Journey from &quot;Paris&quot; destination to &quot;Rome&quot; destination
+            <p className="text-xs text-slate-600 italic mt-1">
+              Example: ✈ Sydney (SYD) → Dubai (DXB) · Departs 11:00 → arrives Day 2 at 06:20
             </p>
           </div>
 
-          <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-            <h4 className="font-semibold text-slate-900 mb-2">Free Text Locations</h4>
-            <p className="text-sm text-slate-700 mb-2">
-              Enter any location name when traveling from/to places not in your destinations list.
+          <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+            <h4 className="font-semibold text-slate-900 mb-2">On the Arrival Day</h4>
+            <p className="text-sm text-slate-700">
+              Shows a compact arrival block with the arrival time and origin.
             </p>
-            <p className="text-xs text-slate-600 italic">
-              Example: Journey from &quot;JFK Airport&quot; to &quot;Manhattan Hotel&quot;
+            <p className="text-xs text-slate-600 italic mt-1">
+              Example: ← Arriving from Sydney (SYD) at 06:20
             </p>
           </div>
         </div>
 
-        <HelpTip variant="info">
-          Use free text for home airports, hotels, or any location that isn&apos;t a main destination.
-        </HelpTip>
-      </HelpSection>
-
-      <HelpSection id="stops" title="Adding Journey Stops">
-        <p className="mb-4">
-          For road trips or multi-leg journeys, add stops along your route to plan waypoints,
-          scenic viewpoints, meal breaks, or overnight stays.
-        </p>
-
-        <HelpStepList
-          steps={[
-            {
-              title: 'Open Journey Details',
-              content: 'Click on an existing journey to view its details.',
-            },
-            {
-              title: 'Navigate to Stops Section',
-              content: 'Scroll to the "Journey Stops" section or click the Stops tab.',
-            },
-            {
-              title: 'Add a Stop',
-              content: 'Click "Add Stop" to create a new waypoint.',
-            },
-            {
-              title: 'Enter Stop Details',
-              content: (
-                <>
-                  Fill in the stop information:
-                  <ul className="list-disc ml-5 mt-2 space-y-1">
-                    <li><strong>Stop Name</strong>: Name of the location (e.g., &quot;Grand Canyon Viewpoint&quot;)</li>
-                    <li><strong>Location</strong>: Address or general location</li>
-                    <li><strong>Planned Arrival</strong>: When you expect to arrive</li>
-                    <li><strong>Planned Departure</strong>: When you plan to leave</li>
-                    <li><strong>Notes</strong>: Any additional information</li>
-                  </ul>
-                </>
-              ),
-            },
-            {
-              title: 'Reorder Stops',
-              content: 'Drag and drop stops to reorder them along your route.',
-            },
-          ]}
-        />
-
-        <HelpScreenshot
-          title="Journey Stops"
-          description="View and manage stops along your journey route"
-        />
-
         <HelpDiagram
           type="flow"
           nodes={[
-            { id: 'start', label: 'Origin', color: 'primary' },
-            { id: 'stop1', label: 'Stop 1', color: 'success' },
-            { id: 'stop2', label: 'Stop 2', color: 'success' },
-            { id: 'stop3', label: 'Stop 3', color: 'success' },
-            { id: 'end', label: 'Destination', color: 'primary' },
+            { id: 'day1', label: 'Day 1 (Departure)', color: 'primary' },
+            { id: 'day2', label: 'Day 2 (Arrival)', color: 'success' },
           ]}
           edges={[
-            { from: 'start', to: 'stop1' },
-            { from: 'stop1', to: 'stop2' },
-            { from: 'stop2', to: 'stop3' },
-            { from: 'stop3', to: 'end' },
+            { from: 'day1', to: 'day2', label: 'Overnight flight' },
           ]}
         />
 
-        <HelpTip variant="tip">
-          Stops are automatically ordered along your route. You can reorder them by dragging!
+        <HelpTip variant="info">
+          The Trip Timeline view makes cross-day transport easy to follow — you can see the full
+          journey across days in one place.
         </HelpTip>
       </HelpSection>
 
-      <HelpSection id="stop-options" title="Adding Stop Options">
+      <HelpSection id="compare-options" title="Comparing Transport Options">
         <p className="mb-4">
-          For each stop, you can add multiple activity options to help plan what to do there.
-          This is perfect for exploring different possibilities before finalizing your itinerary.
+          Not sure which flight or train to take? Add multiple options to a single transport item
+          and compare them side by side before committing.
         </p>
 
         <HelpStepList
           steps={[
             {
-              title: 'Open a Stop',
-              content: 'Click on a journey stop to view its details.',
+              title: 'Add a Transport Item',
+              content: 'Create a transport item on a day page without filling in all details yet.',
             },
             {
-              title: 'Add Stop Option',
-              content: 'Click "Add Option" in the stop options section.',
+              title: 'Click "+ Add Option"',
+              content: 'In the transport item, click the "Add Option" button to add a comparable alternative.',
             },
             {
-              title: 'Enter Option Details',
+              title: 'Fill in Option Details',
               content: (
                 <>
-                  Fill in the activity option:
+                  Each option can have its own:
                   <ul className="list-disc ml-5 mt-2 space-y-1">
-                    <li><strong>Name</strong>: Activity name (e.g., &quot;Lunch at Local Cafe&quot;)</li>
-                    <li><strong>Description</strong>: Details about the activity</li>
-                    <li><strong>Type</strong>: Activity, Meal, Sightseeing, Rest, Fuel, Shopping, or Other</li>
-                    <li><strong>Duration</strong>: Estimated time needed</li>
-                    <li><strong>Cost</strong>: Expected expense (optional)</li>
-                    <li><strong>URL</strong>: Link to website or booking page</li>
+                    <li>Name (e.g. &quot;Vueling flight VY7821&quot; or &quot;Renfe AVE&quot;)</li>
+                    <li>Carrier and duration</li>
+                    <li>Cost and currency</li>
+                    <li>Booking URL</li>
+                    <li>Status: Researching, Selected, Booked, or Rejected</li>
                   </ul>
                 </>
               ),
             },
             {
-              title: 'Set Option Status',
-              content: (
-                <>
-                  Choose a status to track your decision:
-                  <ul className="list-disc ml-5 mt-2 space-y-1">
-                    <li><strong>Considering</strong>: Evaluating this option</li>
-                    <li><strong>Selected</strong>: Decided to do this</li>
-                    <li><strong>Skipped</strong>: Won&apos;t do this activity</li>
-                    <li><strong>Done</strong>: Completed this activity</li>
-                  </ul>
-                </>
-              ),
+              title: 'Select Your Preferred Option',
+              content: 'When you\'ve decided, mark one option as "Selected." Its details will be promoted to the parent transport item.',
+            },
+            {
+              title: 'Mark as Booked',
+              content: 'Once the ticket is confirmed, mark the option as "Booked" to update the transport item\'s booked status.',
             },
           ]}
         />
 
-        <HelpScreenshot
-          title="Stop Options"
-          description="Manage multiple activity options for each stop along your journey"
-        />
-
         <HelpTip variant="success">
-          <strong>Pro tip:</strong> Add multiple options for each stop, then mark your final
-          choices as &quot;Selected&quot; to create your ideal itinerary!
+          <strong>Pro tip:</strong> Use the Researching status to track options you&apos;re still
+          evaluating, and Rejected for ones you&apos;ve ruled out — so you remember what you
+          already considered.
         </HelpTip>
       </HelpSection>
 
-      <HelpSection id="route-planning" title="Route Planning Features">
+      <HelpSection id="unscheduled" title="Unscheduled Transport">
         <p className="mb-4">
-          For car journeys, track route-specific information:
+          If you know you need a transport but haven&apos;t figured out the day yet, you can save
+          it without a departure day. Unscheduled transport items appear in a separate
+          &quot;Unscheduled Transport&quot; section at the bottom of the Trip Timeline, so
+          nothing gets lost.
         </p>
-
-        <ul className="list-disc ml-6 space-y-2">
-          <li><strong>Distance</strong>: Track kilometers or miles</li>
-          <li><strong>Estimated Duration</strong>: Driving time</li>
-          <li><strong>Route Type</strong>: Fastest, shortest, scenic, or custom preferences</li>
-          <li><strong>Tolls</strong>: Mark if route includes toll roads and estimated costs</li>
-          <li><strong>Route Notes</strong>: Special instructions or points of interest</li>
-        </ul>
 
         <HelpTip variant="warning">
-          Remember to account for rest stops and meal breaks when calculating total journey time!
-        </HelpTip>
-      </HelpSection>
-
-      <HelpSection id="documents" title="Journey Documents">
-        <p className="mb-4">
-          Attach important documents to your journeys:
-        </p>
-
-        <ul className="list-disc ml-6 space-y-2">
-          <li><strong>Tickets</strong>: Flight, train, or bus tickets</li>
-          <li><strong>Confirmations</strong>: Booking confirmations</li>
-          <li><strong>Rental Agreements</strong>: Car rental documents</li>
-          <li><strong>Maps</strong>: Route maps or directions</li>
-          <li><strong>Insurance</strong>: Travel insurance documents</li>
-        </ul>
-
-        <HelpTip variant="info">
-          You can upload files (PDF, images) or save URLs to online documents.
-        </HelpTip>
-      </HelpSection>
-
-      <HelpSection id="timeline" title="Journey Timeline View">
-        <p className="mb-4">
-          View your journey with all stops in chronological order using the Journey Timeline feature.
-          This shows:
-        </p>
-
-        <ul className="list-disc ml-6 space-y-2">
-          <li>Departure from origin</li>
-          <li>Each stop with planned arrival/departure times</li>
-          <li>Activities at each stop</li>
-          <li>Final arrival at destination</li>
-        </ul>
-
-        <HelpTip variant="tip">
-          Use the timeline view to identify scheduling conflicts or gaps in your route!
+          Don&apos;t forget to assign unscheduled transport to a day before your trip — they
+          won&apos;t appear in the day-by-day itinerary until you do.
         </HelpTip>
       </HelpSection>
 
       <HelpSection id="best-practices" title="Best Practices">
         <div className="space-y-4 my-6">
           <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <h4 className="font-semibold text-slate-900 mb-2">✓ For Flights & Trains</h4>
+            <h4 className="font-semibold text-slate-900 mb-2">✓ For Flights</h4>
             <ul className="text-sm text-slate-700 space-y-1">
-              <li>• Add booking references for easy access</li>
-              <li>• Include carrier name and flight/train number</li>
-              <li>• Note any transfer or connection details</li>
-              <li>• Attach confirmation emails as documents</li>
+              <li>• Add the flight number in the reference field</li>
+              <li>• Use the confirmation number as the booking reference</li>
+              <li>• Set carrier to the airline (e.g. &quot;Qatar Airways&quot;)</li>
+              <li>• Set departure and arrival days carefully for overnight flights</li>
+              <li>• Mark as Booked once tickets are confirmed</li>
             </ul>
           </div>
 
           <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-            <h4 className="font-semibold text-slate-900 mb-2">✓ For Road Trips</h4>
+            <h4 className="font-semibold text-slate-900 mb-2">✓ For Drives</h4>
             <ul className="text-sm text-slate-700 space-y-1">
-              <li>• Break long drives into multiple stops</li>
-              <li>• Add rest stops every 2-3 hours</li>
-              <li>• Research and add stop options for flexibility</li>
-              <li>• Note scenic viewpoints or photo opportunities</li>
-              <li>• Track toll roads and estimated costs</li>
+              <li>• Enter the distance in the distance field</li>
+              <li>• Break multi-day drives into separate transport items per day</li>
+              <li>• Add fuel or toll costs to the Expenses tab</li>
+              <li>• Use notes for parking info or road conditions</li>
             </ul>
           </div>
 
           <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
             <h4 className="font-semibold text-slate-900 mb-2">✓ General Tips</h4>
             <ul className="text-sm text-slate-700 space-y-1">
-              <li>• Update actual times if plans change</li>
-              <li>• Link journey costs to trip expenses</li>
-              <li>• Use the status field to track booking progress</li>
-              <li>• Add emergency contact info in notes</li>
+              <li>• Update costs as you book to keep your budget accurate</li>
+              <li>• Use the Timeline tab to spot scheduling gaps or conflicts</li>
+              <li>• Add notes for check-in times, terminal info, or platform numbers</li>
+              <li>• Use transport options to compare prices before booking</li>
             </ul>
           </div>
         </div>

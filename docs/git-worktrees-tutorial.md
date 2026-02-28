@@ -16,23 +16,10 @@ Your repo's `.git/` database is shared — commits, history, refs — but each w
 
 ---
 
-## ⚠️ iCloud Drive Warning
-
-This project lives in `~/Documents/`, which **iCloud Drive syncs automatically**. Placing worktrees inside the repo (e.g. `.worktrees/`) causes iCloud/Finder to create ` 2`, ` 3`, ` 4` duplicate file suffixes that get accidentally committed.
-
-**Always create worktrees at `~/worktrees/Travel_Planner/`** — outside iCloud's sync scope.
-
-```bash
-mkdir -p ~/worktrees/Travel_Planner
-git worktree add -b feature/<name> ~/worktrees/Travel_Planner/<name> master
-```
-
----
-
 ## How It Fits Together Visually
 
 ```
-~/Documents/playground/Travel_Planner/   ← main worktree (master, iCloud synced)
+~/Development/Travel_Planner/            ← main worktree (master)
 ├── .git/                                ← shared git database
 │   ├── worktrees/
 │   │   └── road-trip-builder/           ← worktree metadata only
@@ -40,7 +27,7 @@ git worktree add -b feature/<name> ~/worktrees/Travel_Planner/<name> master
 ├── frontend/
 └── app/
 
-~/worktrees/Travel_Planner/              ← safe worktree home (NOT iCloud synced)
+~/worktrees/Travel_Planner/              ← linked worktrees live here
 └── road-trip-builder/                   ← linked worktree (feature/road-trip-builder)
     ├── frontend/
     ├── app/
@@ -79,7 +66,7 @@ git worktree list
 
 Example output:
 ```
-/Users/you/Documents/playground/Travel_Planner           cdaea59d [master]
+/Users/you/Development/Travel_Planner                    cdaea59d [master]
 /Users/you/worktrees/Travel_Planner/road-trip-builder    f8e1b8e8 [feature/road-trip-builder]
 ```
 
@@ -132,7 +119,7 @@ mkdir -p ~/worktrees/Travel_Planner
 git worktree add -b feature/road-trip-builder ~/worktrees/Travel_Planner/road-trip-builder master
 ```
 
-This created `~/worktrees/Travel_Planner/road-trip-builder/` branching off `master` — outside iCloud's sync scope. An AI agent then implemented all 7 tasks inside that directory without touching the main workspace at all.
+This created `~/worktrees/Travel_Planner/road-trip-builder/` branching off `master`. An AI agent then implemented all 7 tasks inside that directory without touching the main workspace at all.
 
 ### 3. Main workspace stayed on `master`
 
@@ -160,9 +147,9 @@ git merge feature/road-trip-builder
 
 ## Why `~/worktrees/Travel_Planner/` Is the Convention Here
 
-Linked worktrees are kept at `~/worktrees/Travel_Planner/` — **outside the repo and outside iCloud Drive's sync scope**. This prevents macOS Finder from generating ` 2`/` 3`/` 4` duplicate files.
+Linked worktrees are kept at `~/worktrees/Travel_Planner/` — outside the repo, keeping the main working directory clean.
 
-Git doesn't care where the worktree directory is — this location is purely a safety convention for this project.
+Git doesn't care where the worktree directory is — this location is purely a convention for this project.
 
 ---
 
@@ -182,7 +169,7 @@ Since each worktree is a full copy of the project files, you can run the fronten
 
 ```
 Main workspace (master):
-  cd ~/Documents/playground/Travel_Planner/frontend && npm run dev        # → localhost:3000
+  cd ~/Development/Travel_Planner/frontend && npm run dev        # → localhost:3000
 
 Linked worktree (feature/road-trip-builder):
   cd ~/worktrees/Travel_Planner/road-trip-builder/frontend && npm run dev -- --port 3001   # → localhost:3001

@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { expenseApi, journeyApi } from '@/lib/api';
-import { ExpenseSummary, Journey } from '@/lib/types';
+import { expenseApi, transportApi } from '@/lib/api';
+import { ExpenseSummary, TripTransport } from '@/lib/types';
 
 export interface TripCostSummary {
-  journeys: {
+  transport: {
     total: number;
     count: number;
     byCurrency: Record<string, number>;
@@ -26,12 +26,11 @@ export function useTripSummary(tripId: number, budget?: number) {
 
   const loadSummary = useCallback(async () => {
     try {
-      const [expenseSummaryRes, journeysRes] = await Promise.all([
+      const [expenseSummaryRes, transportRes] = await Promise.all([
         expenseApi.getSummary(tripId).catch(() => ({ data: null })),
-        journeyApi.getByTripId(tripId).catch(() => ({ data: [] })),
+        transportApi.getByTripId(tripId).catch(() => ({ data: [] })),
       ]);
 
-      // Handle missing or invalid expense summary data
       const expenseSummary: ExpenseSummary = expenseSummaryRes.data || {
         total: 0,
         paid_total: 0,
@@ -39,14 +38,13 @@ export function useTripSummary(tripId: number, budget?: number) {
         by_category: {},
         count: 0,
       };
-      const journeys: Journey[] = journeysRes.data || [];
+      const transports: TripTransport[] = transportRes.data || [];
 
-      // Calculate journey totals
-      const journeyTotals = journeys.reduce(
-        (acc, journey) => {
-          if (journey.cost) {
-            const cost = Number(journey.cost);
-            const currency = journey.currency || 'USD';
+      const transportTotals = transports.reduce(
+        (acc, t) => {
+          if (t.cost) {
+            const cost = Number(t.cost);
+            const currency = t.currency || 'USD';
             acc.total += cost;
             acc.count += 1;
             acc.byCurrency[currency] = (acc.byCurrency[currency] || 0) + cost;
@@ -56,12 +54,11 @@ export function useTripSummary(tripId: number, budget?: number) {
         { total: 0, count: 0, byCurrency: {} as Record<string, number> }
       );
 
-      // Get expense data
       const byCategory = expenseSummary.by_category || {};
       const expenseTotal = Number(expenseSummary.total) || 0;
 
       const costSummary: TripCostSummary = {
-        journeys: journeyTotals,
+        transport: transportTotals,
         expenses: {
           total: expenseTotal,
           paid: Number(expenseSummary.paid_total) || 0,
@@ -69,15 +66,14 @@ export function useTripSummary(tripId: number, budget?: number) {
           byCategory: byCategory,
           count: expenseSummary.count || 0,
         },
-        grandTotal: journeyTotals.total + expenseTotal,
+        grandTotal: transportTotals.total + expenseTotal,
       };
 
       setSummary(costSummary);
     } catch (error) {
       console.error('Error loading trip summary:', error);
-      // Set default empty summary on error
       setSummary({
-        journeys: { total: 0, count: 0, byCurrency: {} },
+        transport: { total: 0, count: 0, byCurrency: {} },
         expenses: { total: 0, paid: 0, unpaid: 0, byCategory: {}, count: 0 },
         grandTotal: 0,
       });

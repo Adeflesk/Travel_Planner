@@ -1,8 +1,19 @@
 # Design: Trip Wizard + Architecture Refactor
 
 **Date:** 2026-02-22
-**Status:** Design approved, not yet implemented
+**Status:** Partially superseded — see note below
 **Related docs:** `docs/plans/segment-builder-architecture.md`, `docs/plans/expense-architecture-review.md`
+
+> ⚠️ **Important:** The journey/segment-specific sections of this plan (callbacks, typed segment metadata, propagation helpers in `useSegmentBuilder`) are **superseded** by the TripTransport redesign. See `docs/plans/2026-02-27-transport-redesign-design.md`.
+>
+> **Still active from this document:**
+> - Section 0 (zod, react-hook-form libraries)
+> - Section 1 (Trip Wizard Questions Flow — TripWizard.tsx)
+> - Section 2 (TripContext data model — `trip.context` JSONB column)
+> - Section 3a–3b (TripContextProvider + expense link tables)
+> - Section 4 (Expense architecture — link tables chosen as the approach)
+> - Section 5 (Policies: TripContext editability, TripSettings panel)
+> - Section 7 (Exchange Rate Service)
 
 ---
 

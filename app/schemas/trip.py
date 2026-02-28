@@ -141,7 +141,6 @@ class TripWithOwnership(Trip):
 
     is_owner: bool = True
     shared_by: Optional[str] = None
-    journey_count: int = 0
     day_count: int = 0
     total_spent: Decimal = Decimal("0")
     budget_remaining: Optional[Decimal] = None
@@ -151,7 +150,6 @@ class TripStatsCounts(BaseModel):
     """Counts of trip items by category."""
 
     destinations: int = 0
-    journeys: int = 0
     activities: int = 0
     expenses: int = 0
     packing_items: int = 0
@@ -161,13 +159,13 @@ class TripStats(BaseModel):
     """Trip statistics summary."""
 
     total_cost: Decimal = Decimal("0")
-    journey_cost: Decimal = Decimal("0")
+    transport_cost: Decimal = Decimal("0")
     expense_cost: Decimal = Decimal("0")
     days_until_departure: Optional[int] = None
     duration_days: int = 0
     completion_percentage: float = 0.0
-    booked_journeys: int = 0
-    total_journeys: int = 0
+    booked_transports: int = 0
+    total_transports: int = 0
     packed_items: int = 0
     total_packing_items: int = 0
     counts: TripStatsCounts = TripStatsCounts()

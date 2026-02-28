@@ -48,7 +48,8 @@ See [014-journey-enhancements-plan.md](./014-journey-enhancements-plan.md) for t
 |---|---------|----------|------------|--------|
 | 019 | [Trip Templates](./019-trip-templates.md) | Medium | Medium | Planned |
 | 020 | [Dashboard](./020-dashboard.md) | High | Medium | Planned |
-| 021 | [Segment Activities & Expenses Integration](./021-segment-activities-integration.md) | High | Medium | Planned |
+
+> **Note:** Feature 021 (Segment Activities & Expenses Integration) has been **discarded**. The entire Journey/Segment/Stop system is being replaced by the simpler day-first TripTransport model. See `docs/plans/2026-02-27-transport-redesign-design.md` for the current architecture.
 
 ### Design System
 
