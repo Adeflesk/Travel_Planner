@@ -2,15 +2,18 @@ import { format } from 'date-fns';
 import { Settings2, Plus, Plane } from 'lucide-react';
 import { TripDay } from '@/lib/types';
 import { parseSafeDate } from '@/lib/datetime-utils';
+import { DestinationPicker } from './DestinationPicker';
 
 interface DayHeaderProps {
     day: TripDay;
+    tripId: number;
     onEditDay: () => void;
     onAddActivity: () => void;
     onAddTransport?: () => void;
+    onDestinationChanged: () => void;
 }
 
-export const DayHeader = ({ day, onEditDay, onAddActivity, onAddTransport }: DayHeaderProps) => {
+export const DayHeader = ({ day, tripId, onEditDay, onAddActivity, onAddTransport, onDestinationChanged }: DayHeaderProps) => {
     const parsedDate = parseSafeDate(day.date);
     const dayName = format(parsedDate, 'EEEE');
     const monthYear = format(parsedDate, 'MMMM yyyy');
@@ -60,9 +63,11 @@ export const DayHeader = ({ day, onEditDay, onAddActivity, onAddTransport }: Day
                         )}
                         <p className="text-sm text-slate-400 mt-0.5 font-medium">{monthYear}</p>
                         <div className="flex items-center gap-2 mt-2 flex-wrap">
-                            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 bg-slate-100 px-3 py-1 rounded-full">
-                                📍 {day.location || 'No location set'}
-                            </span>
+                            <DestinationPicker
+                                day={day}
+                                tripId={tripId}
+                                onDestinationChanged={onDestinationChanged}
+                            />
                         </div>
                         {day.notes && (
                             <p className="text-xs text-slate-400 mt-2 max-w-xl leading-relaxed">

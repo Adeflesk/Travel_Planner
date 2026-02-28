@@ -87,12 +87,14 @@ export const DayBuilder = ({ day, tripId, onRefresh }: DayBuilderProps) => {
         <div className="max-w-3xl mx-auto pb-24">
             <DayHeader
                 day={day}
+                tripId={tripId}
                 onEditDay={() => setShowEditDayModal(true)}
                 onAddActivity={openCreateForm}
                 onAddTransport={() => {
                     setSelectedTransport(null);
                     setIsTransportFormOpen(true);
                 }}
+                onDestinationChanged={onRefresh}
             />
 
             <DayTimeline

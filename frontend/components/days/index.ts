@@ -6,3 +6,4 @@ export * from './DayForm';
 export * from './DayHeader';
 export * from './DayTimeline';
 export * from './useDayBuilder';
+export * from './DestinationPicker';
