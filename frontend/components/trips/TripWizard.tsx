@@ -21,6 +21,7 @@ interface WizardData {
     trip_type: TripContext['trip_type'];
     vehicle: TripContext['vehicle'];
     flight_type: TripContext['flight_type'];
+    overnight_flight: boolean;
     // Step 4
     accommodation: TripContext['accommodation'];
     pacing: TripContext['pacing'];
@@ -32,7 +33,7 @@ interface WizardData {
 const defaults: WizardData = {
     name: '', description: '', timezone: getLocalTimezone(), home_base: '', start_date: '', end_date: '',
     traveller_count: 1, split_costs: false,
-    trip_type: 'single_city', vehicle: 'none', flight_type: 'none',
+    trip_type: 'single_city', vehicle: 'none', flight_type: 'none', overnight_flight: false,
     accommodation: 'unknown', pacing: 'balanced',
     budget: '', budget_currency: 'USD',
 };
@@ -254,6 +255,41 @@ export const TripWizard = ({ onSubmit, onCancel, loading }: TripWizardProps) => 
                             </div>
                         </div>
                     </div>
+                    {/* Overnight inference callout — shown when a flight type is selected */}
+                    {data.flight_type !== 'none' && (
+                        <div className="mt-6 p-4 bg-sky-50 border border-sky-200 rounded-xl space-y-3">
+                            <p className="text-sm font-semibold text-sky-900">
+                                ✈ Will any of your flights cross midnight?
+                            </p>
+                            <p className="text-xs text-sky-700">
+                                If you depart one day and arrive the next, we&apos;ll flag those legs as overnight when you build your itinerary.
+                            </p>
+                            <div className="flex gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => set({ overnight_flight: true })}
+                                    className={`px-4 py-2 text-sm font-semibold rounded-lg border transition-colors ${
+                                        data.overnight_flight
+                                            ? 'bg-sky-600 text-white border-sky-600'
+                                            : 'bg-white text-sky-700 border-sky-300 hover:bg-sky-50'
+                                    }`}
+                                >
+                                    Yes, overnight
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => set({ overnight_flight: false })}
+                                    className={`px-4 py-2 text-sm font-semibold rounded-lg border transition-colors ${
+                                        !data.overnight_flight
+                                            ? 'bg-slate-100 text-slate-700 border-slate-300'
+                                            : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                                    }`}
+                                >
+                                    No, same-day arrivals
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
