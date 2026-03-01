@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import type { TripContext } from '@/lib/trip-context';
 import { Input, Textarea } from '@/components/ui/Input';
 import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
@@ -62,6 +62,7 @@ export const TripWizard = ({ onSubmit, onCancel, loading }: TripWizardProps) => 
     const set = (updates: Partial<WizardData>) => setData((d) => ({ ...d, ...updates }));
     const [isValidating, setIsValidating] = useState(false);
     const [locationWarnings, setLocationWarnings] = useState<{ home_base?: string; first_destination?: string }>({});
+    const lastValidated = useRef<{ home_base: string; first_destination: string } | null>(null);
 
     const timezones = useMemo(() => getSupportedTimezones(), []);
 
@@ -121,15 +122,27 @@ export const TripWizard = ({ onSubmit, onCancel, loading }: TripWizardProps) => 
             { key: 'first_destination', value: data.first_destination.trim() },
         ];
         const nonEmpty = fieldsToCheck.filter(f => f.value !== '');
-        if (nonEmpty.length > 0) {
+        const lv = lastValidated.current;
+        const unchanged = lv !== null &&
+            lv.home_base === data.home_base.trim() &&
+            lv.first_destination === data.first_destination.trim();
+
+        if (nonEmpty.length > 0 && !unchanged) {
             setIsValidating(true);
-            const results = await Promise.all(
-                nonEmpty.map(f => geocodeAddress(f.value).then(coords => ({ key: f.key, found: coords !== null })))
-            );
-            setIsValidating(false);
-            results.forEach(r => {
-                if (!r.found) warnings[r.key] = "We couldn't confirm this location — check the spelling if needed.";
-            });
+            try {
+                const results = await Promise.all(
+                    nonEmpty.map(f => geocodeAddress(f.value).then(coords => ({ key: f.key, found: coords !== null })))
+                );
+                results.forEach(r => {
+                    if (!r.found) warnings[r.key] = "We couldn't confirm this location — check the spelling if needed.";
+                });
+            } finally {
+                setIsValidating(false);
+            }
+            lastValidated.current = { home_base: data.home_base.trim(), first_destination: data.first_destination.trim() };
+        } else if (unchanged) {
+            // Re-use existing warnings — don't fire Nominatim again
+            Object.assign(warnings, locationWarnings);
         }
         setLocationWarnings(warnings);
         setStep(step + 1);
