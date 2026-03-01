@@ -35,7 +35,7 @@ export const DayBuilder = ({ day, tripId, onRefresh }: DayBuilderProps) => {
     } = useDayBuilder(day, onRefresh);
 
     const activities = day.activities || [];
-    const scheduled = activities.filter(a => a.start_time).sort((a, b) => a.start_time.localeCompare(b.start_time));
+    const scheduled = activities.filter(a => a.start_time).sort((a, b) => (a.start_time ?? '').localeCompare(b.start_time ?? ''));
     const unscheduled = activities.filter(a => !a.start_time);
 
     // Transport state

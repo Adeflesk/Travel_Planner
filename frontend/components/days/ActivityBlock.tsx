@@ -27,7 +27,7 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 export const ActivityBlock = ({ activity, onClick }: ActivityBlockProps) => {
-    const [startHour, startMin] = activity.start_time.split(':').map(Number);
+    const [startHour, startMin] = (activity.start_time ?? '00:00').split(':').map(Number);
     const totalStartMins = startHour * 60 + startMin;
     const dayStartMins = 7 * 60; // 7am
 
