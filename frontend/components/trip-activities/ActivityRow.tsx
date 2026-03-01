@@ -1,31 +1,22 @@
 'use client';
 
-import { Activity } from '@/lib/types';
-import { format } from 'date-fns';
-import { Trash2, CheckCircle2, Circle } from 'lucide-react';
+import { DayActivity } from '@/lib/types';
+import { Trash2, CheckCircle2, Circle, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 
 interface ActivityRowProps {
-  activity: Activity;
-  onToggleComplete: (activity: Activity) => void;
+  activity: DayActivity;
+  onToggleComplete: (activity: DayActivity) => void;
   onDelete: (id: number) => void;
 }
 
-export function ActivityRow({
-  activity,
-  onToggleComplete,
-  onDelete,
-}: ActivityRowProps) {
+export function ActivityRow({ activity, onToggleComplete, onDelete }: ActivityRowProps) {
   return (
-    <div
-      className={`flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition ${
-        activity.is_completed ? 'bg-green-50' : ''
-      }`}
-    >
+    <div className={`flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition ${activity.is_completed ? 'bg-green-50' : ''}`}>
       <button
         onClick={() => onToggleComplete(activity)}
         className="flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 focus-visible:ring-offset-2"
-        aria-label={activity.is_completed ? 'Mark activity incomplete' : 'Mark activity complete'}
+        aria-label={activity.is_completed ? 'Mark incomplete' : 'Mark complete'}
       >
         {activity.is_completed ? (
           <CheckCircle2 className="w-5 h-5 text-green-600" />
@@ -35,36 +26,20 @@ export function ActivityRow({
       </button>
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <p
-            className={`font-medium ${
-              activity.is_completed ? 'line-through text-gray-400' : 'text-gray-800'
-            }`}
-          >
-            {activity.name}
-          </p>
-          <Badge
-            variant={activity.status === 'booked' ? 'success' : activity.status === 'completed' ? 'default' : 'info'}
-            size="sm"
-          >
-            {activity.status}
-          </Badge>
-        </div>
+        <p className={`font-medium ${activity.is_completed ? 'line-through text-gray-400' : 'text-gray-800'}`}>
+          {activity.title}
+        </p>
         <div className="flex items-center gap-2 text-sm text-gray-500">
-          {activity.activity_type && (
-            <span className="capitalize">{activity.activity_type}</span>
-          )}
-          {activity.scheduled_date && (
+          {activity.category && <span className="capitalize">{activity.category}</span>}
+          {activity.start_time && (
             <>
-              {activity.activity_type && <span>•</span>}
-              <span>{format(new Date(activity.scheduled_date), 'MMM dd, yyyy')}</span>
+              {activity.category && <span>•</span>}
+              <Clock className="w-3 h-3" />
+              <span>{activity.start_time}</span>
             </>
           )}
-          {activity.is_todo && (
-            <>
-              <span>•</span>
-              <span className="text-orange-600">To-do</span>
-            </>
+          {activity.booked && (
+            <Badge variant="success" size="sm">Booked</Badge>
           )}
         </div>
       </div>

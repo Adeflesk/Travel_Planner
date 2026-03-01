@@ -1,14 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Activity, Destination } from '@/lib/types';
+import { DayActivity, Destination } from '@/lib/types';
 import { ChevronDown, ChevronRight, MapPin } from 'lucide-react';
 import { ActivityRow } from './ActivityRow';
 
 interface DestinationActivitiesSectionProps {
   destination: Destination;
-  activities: Activity[];
-  onToggleComplete: (activity: Activity) => void;
+  activities: DayActivity[];
+  onToggleComplete: (activity: DayActivity) => void;
   onDelete: (id: number) => void;
 }
 
