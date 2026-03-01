@@ -21,6 +21,7 @@ export const DestinationPicker = ({ day, tripId, onDestinationChanged }: Destina
     const [newName, setNewName] = useState('');
     const [newCountry, setNewCountry] = useState('');
     const [isCreating, setIsCreating] = useState(false);
+    const [locationWarning, setLocationWarning] = useState<string | null>(null);
     const popoverRef = useRef<HTMLDivElement>(null);
 
     // Fetch destinations for this trip
@@ -88,6 +89,15 @@ export const DestinationPicker = ({ day, tripId, onDestinationChanged }: Destina
         if (!newName.trim()) return;
         setIsCreating(true);
         setError(null);
+        setLocationWarning(null);
+
+        // Validate location before saving
+        const address = [newName.trim(), newCountry.trim()].filter(Boolean).join(', ');
+        const coords = await geocodeAddress(address);
+        if (!coords) {
+            setLocationWarning("We couldn't confirm this location — check the spelling if needed.");
+        }
+
         try {
             const res = await destinationApi.create({
                 trip_id: tripId,
@@ -105,21 +115,19 @@ export const DestinationPicker = ({ day, tripId, onDestinationChanged }: Destina
             // Optimistic update of the local list so reopening the popover shows the new entry
             setDestinations(prev => [...prev, dest]);
 
-            // Background geocode
-            const address = [newName.trim(), newCountry.trim()].filter(Boolean).join(', ');
-            geocodeAddress(address).then(coords => {
-                if (coords) {
-                    destinationApi.update(dest.id, {
-                        latitude: coords.lat,
-                        longitude: coords.lng,
-                    }).catch(console.error);
-                }
-            });
+            // Save coords if geocoding succeeded
+            if (coords) {
+                destinationApi.update(dest.id, {
+                    latitude: coords.lat,
+                    longitude: coords.lng,
+                }).catch(console.error);
+            }
 
             setNewName('');
             setNewCountry('');
             setShowCreateForm(false);
             setIsOpen(false);
+            setLocationWarning(null);
             onDestinationChanged();
         } catch (e) {
             console.error('Failed to create destination', e);
@@ -203,17 +211,26 @@ export const DestinationPicker = ({ day, tripId, onDestinationChanged }: Destina
                                     autoFocus
                                     placeholder="City name *"
                                     value={newName}
-                                    onChange={e => setNewName(e.target.value)}
+                                    onChange={e => {
+                                        setNewName(e.target.value);
+                                        if (locationWarning) setLocationWarning(null);
+                                    }}
                                     onKeyDown={e => e.key === 'Enter' && handleCreate()}
                                     className="w-full px-3 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-300"
                                 />
                                 <input
                                     placeholder="Country (optional)"
                                     value={newCountry}
-                                    onChange={e => setNewCountry(e.target.value)}
+                                    onChange={e => {
+                                        setNewCountry(e.target.value);
+                                        if (locationWarning) setLocationWarning(null);
+                                    }}
                                     onKeyDown={e => e.key === 'Enter' && handleCreate()}
                                     className="w-full px-3 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-300"
                                 />
+                                {locationWarning && (
+                                    <p className="text-xs text-amber-600">{locationWarning}</p>
+                                )}
                                 <div className="flex gap-2">
                                     <button
                                         onClick={handleCreate}
