@@ -109,6 +109,11 @@ export const dayApi = {
     (Object.keys(data) as Array<keyof typeof data>).forEach((key) => {
       const value = data[key as keyof typeof data];
       if (key === 'day_id' || key === 'id') return;
+      // Allow explicit null for nullable FK fields
+      if (value === null && key === 'destination_id') {
+        cleanedData[key] = null;
+        return;
+      }
       if (value !== '' && value !== undefined && value !== null && !Number.isNaN(value)) {
         cleanedData[key] = value;
       }
