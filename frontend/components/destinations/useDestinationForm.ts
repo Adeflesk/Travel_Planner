@@ -111,6 +111,7 @@ export function useDestinationForm(
 
   const startEdit = (dest: Destination) => {
     setEditingId(dest.id);
+    setLocationWarning(null);
     setFormData({
       trip_id: tripId,
       name: dest.name,
