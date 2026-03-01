@@ -55,6 +55,81 @@ def add_column_if_not_exists(
         return False
 
 
+def migrate_unified_activities(engine: Engine) -> None:
+    """Migrate to unified activities schema.
+
+    - Drops the legacy `activities` table if it exists.
+    - Rebuilds `day_activities` with a `destination_id` column if that column
+      is not yet present (SQLite does not support ADD COLUMN with FK references,
+      so a table-rebuild is required).
+    """
+    inspector = inspect(engine)
+    existing_tables = inspector.get_table_names()
+
+    activities_exists = "activities" in existing_tables
+    day_activities_exists = "day_activities" in existing_tables
+
+    # Check whether destination_id is already present BEFORE opening the
+    # transaction (inspector cannot be used inside engine.begin()).
+    needs_rebuild = False
+    if day_activities_exists:
+        day_activity_columns = {
+            col["name"] for col in inspector.get_columns("day_activities")
+        }
+        needs_rebuild = "destination_id" not in day_activity_columns
+
+    with engine.begin() as conn:
+        if activities_exists:
+            conn.execute(text("DROP TABLE IF EXISTS activities"))
+            logger.info("Dropped legacy activities table")
+
+        if day_activities_exists and needs_rebuild:
+            conn.execute(
+                text(
+                    """
+                CREATE TABLE day_activities_new (
+                    id INTEGER PRIMARY KEY,
+                    day_id INTEGER REFERENCES trip_days(id) ON DELETE CASCADE,
+                    destination_id INTEGER REFERENCES destinations(id) ON DELETE SET NULL,
+                    start_time VARCHAR(5),
+                    end_time VARCHAR(5),
+                    title TEXT NOT NULL,
+                    category VARCHAR(32),
+                    location TEXT,
+                    notes TEXT,
+                    cost FLOAT,
+                    currency VARCHAR(3),
+                    booked BOOLEAN NOT NULL DEFAULT 0,
+                    sort_order INTEGER NOT NULL DEFAULT 0,
+                    is_todo BOOLEAN NOT NULL DEFAULT 0,
+                    is_completed BOOLEAN NOT NULL DEFAULT 0
+                )
+            """
+                )
+            )
+            conn.execute(
+                text(
+                    """
+                INSERT INTO day_activities_new (
+                    id, day_id, start_time, end_time, title, category,
+                    location, notes, cost, currency, booked, sort_order,
+                    is_todo, is_completed
+                )
+                SELECT
+                    id, day_id, start_time, end_time, title, category,
+                    location, notes, cost, currency, booked, sort_order,
+                    0, 0
+                FROM day_activities
+            """
+                )
+            )
+            conn.execute(text("DROP TABLE day_activities"))
+            conn.execute(
+                text("ALTER TABLE day_activities_new RENAME TO day_activities")
+            )
+            logger.info("Migrated day_activities to unified schema")
+
+
 def run_migrations(engine: Engine) -> None:
     """Run all pending migrations."""
     logger.info("Running database migrations...")
@@ -125,6 +200,8 @@ def run_migrations(engine: Engine) -> None:
         )
     else:
         logger.info("No migrations needed")
+
+    migrate_unified_activities(engine)
 
     # Create/Update trip_summary view
     create_trip_summary_view(engine)
