@@ -5,6 +5,7 @@ import { DestinationFormData } from '@/lib/types';
 interface DestinationFormProps {
   formData: DestinationFormData;
   isEditing: boolean;
+  locationWarning?: string | null;
   onSubmit: (e: React.FormEvent) => void;
   onCancel: () => void;
   updateField: <K extends keyof DestinationFormData>(
@@ -16,6 +17,7 @@ interface DestinationFormProps {
 export function DestinationForm({
   formData,
   isEditing,
+  locationWarning,
   onSubmit,
   onCancel,
   updateField,
@@ -37,6 +39,11 @@ export function DestinationForm({
             className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
           />
         </div>
+        {locationWarning && (
+          <p className="col-span-full text-xs text-amber-600 -mt-2">
+            {locationWarning}
+          </p>
+        )}
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-700">
             Country <span className="text-gray-400 font-normal">(optional)</span>
