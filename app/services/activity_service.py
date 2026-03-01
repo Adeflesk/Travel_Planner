@@ -1,30 +1,42 @@
 """
-app/services/activity_service.py - Activity related services
+app/services/activity_service.py - Activity services
 
-Provides functions to compute trip progress and destinations-with-activities.
-
-Author: Travel Planner Team
+All functions now operate on the unified DayActivity model.
 """
 
-from typing import List, Dict, Optional
+from typing import Optional
 
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session
 
 from app import models
 
 
-def get_trip_progress(trip_id: int, db: Session) -> Optional[Dict]:
+def get_trip_progress(trip_id: int, db: Session) -> Optional[dict]:
+    """Compute completion progress across all DayActivities for a trip."""
     trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
     if not trip:
         return None
 
-    activities = (
-        db.query(models.Activity)
-        .join(models.Destination)
+    # Activities linked via a day belonging to the trip
+    via_day = (
+        db.query(models.DayActivity)
+        .join(models.TripDay, models.DayActivity.day_id == models.TripDay.id)
+        .filter(models.TripDay.trip_id == trip_id)
+        .all()
+    )
+    # Activities linked via destination belonging to the trip (avoid double-counting day-linked ones)
+    via_dest = (
+        db.query(models.DayActivity)
+        .join(
+            models.Destination,
+            models.DayActivity.destination_id == models.Destination.id,
+        )
         .filter(models.Destination.trip_id == trip_id)
+        .filter(models.DayActivity.day_id.is_(None))
         .all()
     )
 
+    activities = via_day + via_dest
     total = len(activities)
     completed = sum(1 for a in activities if a.is_completed)
     progress = round(completed / total * 100) if total > 0 else 0
@@ -36,16 +48,14 @@ def get_trip_progress(trip_id: int, db: Session) -> Optional[Dict]:
     }
 
 
-def get_destinations_with_activities(trip_id: int, db: Session) -> Optional[List[Dict]]:
+def get_destinations_with_activities(trip_id: int, db: Session) -> Optional[list[dict]]:
+    """Return each destination with its DayActivities (for the Activities tab)."""
     trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
     if not trip:
         return None
 
-    # Use selectinload to eagerly load activities (avoids N+1 queries)
-    # This issues just 2 queries: one for destinations, one for all their activities
     destinations = (
         db.query(models.Destination)
-        .options(selectinload(models.Destination.activities))
         .filter(models.Destination.trip_id == trip_id)
         .order_by(models.Destination.order)
         .all()
@@ -53,14 +63,12 @@ def get_destinations_with_activities(trip_id: int, db: Session) -> Optional[List
 
     result = []
     for dest in destinations:
-        # Sort activities in Python (already loaded via selectinload)
-        sorted_activities = sorted(
-            dest.activities,
-            key=lambda a: (
-                a.scheduled_date or "",
-                a.scheduled_time or "",
-            ),
+        dest_activities = (
+            db.query(models.DayActivity)
+            .filter(models.DayActivity.destination_id == dest.id)
+            .order_by(models.DayActivity.sort_order, models.DayActivity.start_time)
+            .all()
         )
-        result.append({"destination": dest, "activities": sorted_activities})
+        result.append({"destination": dest, "activities": dest_activities})
 
     return result
