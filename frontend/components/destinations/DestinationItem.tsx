@@ -4,7 +4,7 @@ import { Destination, Expense } from '@/lib/types';
 import { format } from 'date-fns';
 import { MapPin, Trash2, Edit2, ChevronDown, ChevronRight } from 'lucide-react';
 import { AccommodationInfo } from './AccommodationInfo';
-import { ActivityList } from '../activities';
+import { DestinationActivityList } from './DestinationActivityList';
 import { WeatherBadge, useWeather } from '../weather';
 
 interface DestinationItemProps {
@@ -87,10 +87,7 @@ export function DestinationItem({
       {/* Expandable Activities Section */}
       {isExpanded && (
         <div className="mt-4 pt-4 border-t border-gray-200">
-          <ActivityList 
-            destinationId={destination.id} 
-            destinationArrivalDate={destination.arrival_date}
-          />
+          <DestinationActivityList destinationId={destination.id} />
         </div>
       )}
     </div>
