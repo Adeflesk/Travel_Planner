@@ -85,7 +85,7 @@ def test_trip_day_activities(client, test_user):
         "title": "Breakfast",
         "category": "restaurant",
     }
-    resp = client.post("/trip-days/activities", json=act_payload)
+    resp = client.post("/activities/", json=act_payload)
     assert resp.status_code == 201
     act_data = resp.json()
     assert act_data["title"] == "Breakfast"
@@ -100,16 +100,14 @@ def test_trip_day_activities(client, test_user):
     assert acts[0]["id"] == act_id
 
     # Update activity
-    resp = client.patch(
-        f"/trip-days/activities/{act_id}", json={"title": "Brunch", "cost": 15.5}
-    )
+    resp = client.patch(f"/activities/{act_id}", json={"title": "Brunch", "cost": 15.5})
     assert resp.status_code == 200
     updated = resp.json()
     assert updated["title"] == "Brunch"
     assert updated["cost"] == 15.5
 
     # Delete activity
-    resp = client.delete(f"/trip-days/activities/{act_id}")
+    resp = client.delete(f"/activities/{act_id}")
     assert resp.status_code == 204
 
     resp = client.get(f"/trip-days/{day_id}/activities")

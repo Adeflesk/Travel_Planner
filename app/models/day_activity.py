@@ -28,3 +28,9 @@ class DayActivity(Base):
 
     day = relationship("TripDay", back_populates="activities")
     destination = relationship("Destination", back_populates="day_activities")
+    expenses = relationship(
+        "Expense",
+        foreign_keys="Expense.activity_id",
+        back_populates="activity",
+        overlaps="linked_activities,linked_expenses",
+    )

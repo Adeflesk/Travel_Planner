@@ -22,7 +22,7 @@ activity_expenses = Table(
     Column(
         "activity_id",
         Integer,
-        ForeignKey("activities.id", ondelete="CASCADE"),
+        ForeignKey("day_activities.id", ondelete="CASCADE"),
         primary_key=True,
     ),
     Column(
@@ -40,7 +40,7 @@ class Expense(Base):
     id = Column(Integer, primary_key=True, index=True)
     trip_id = Column(Integer, ForeignKey("trips.id"), nullable=False)
     destination_id = Column(Integer, ForeignKey("destinations.id"), nullable=True)
-    activity_id = Column(Integer, ForeignKey("activities.id"), nullable=True)
+    activity_id = Column(Integer, ForeignKey("day_activities.id"), nullable=True)
 
     category = Column(String(50), nullable=False)
     amount = Column(Numeric(10, 2), nullable=False)
@@ -53,9 +53,11 @@ class Expense(Base):
 
     trip = relationship("Trip", back_populates="expenses")
     destination = relationship("Destination", back_populates="expenses")
-    activity = relationship("Activity", back_populates="expenses")
+    activity = relationship(
+        "DayActivity", foreign_keys=[activity_id], back_populates="expenses"
+    )
     linked_activities = relationship(
-        "Activity",
+        "DayActivity",
         secondary=activity_expenses,
         backref="linked_expenses",
         overlaps="activity,expenses",
