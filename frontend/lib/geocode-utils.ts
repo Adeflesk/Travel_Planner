@@ -1,7 +1,8 @@
 /**
  * Utility for geocoding addresses to coordinates using Nominatim API.
  */
-
+import { NOMINATIM_USER_AGENT } from '@/lib/config';
+import { retryFetch } from '@/lib/retry-fetch';
 export interface Coordinates {
     lat: number;
     lng: number;
@@ -23,10 +24,10 @@ export async function geocodeAddress(address: string): Promise<Coordinates | nul
         url.searchParams.append('format', 'json');
         url.searchParams.append('limit', '1');
 
-        const res = await fetch(url.toString(), {
+        const res = await retryFetch(url.toString(), {
             method: 'GET',
             headers: {
-                'User-Agent': 'TravelPlannerApp/1.0 (Integration/Nominatim)',
+                'User-Agent': NOMINATIM_USER_AGENT,
             },
         });
 

@@ -11,6 +11,7 @@ class TripDayBase(BaseModel):
     location: Optional[str] = None
     notes: Optional[str] = None
     sort_order: int = 0
+    destination_id: Optional[int] = None
 
 
 class TripDayCreate(TripDayBase):
@@ -23,6 +24,7 @@ class TripDayUpdate(BaseModel):
     location: Optional[str] = None
     notes: Optional[str] = None
     sort_order: Optional[int] = None
+    destination_id: Optional[int] = None
 
 
 class TripDayResponse(TripDayBase):

@@ -4,6 +4,8 @@ import { createContext, useContext, ReactNode } from 'react';
 
 export interface TripContext {
   home_base?: string;
+  home_base_latitude?: number;
+  home_base_longitude?: number;
   traveller_count: number;
   split_costs: boolean;
   trip_type: 'single_city' | 'multi_city' | 'road_trip' | 'international';

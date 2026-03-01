@@ -13,6 +13,7 @@ from sqlalchemy import (
     String,
     Text,
     Date,
+    Float,
     ForeignKey,
 )
 from sqlalchemy.orm import relationship
@@ -33,9 +34,12 @@ class Destination(Base):
     departure_date = Column(Date)
     notes = Column(Text)
     order = Column(Integer, default=0)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
 
     trip = relationship("Trip", back_populates="destinations")
     activities = relationship(
         "Activity", back_populates="destination", cascade="all, delete-orphan"
     )
     expenses = relationship("Expense", back_populates="destination")
+    days = relationship("TripDay", back_populates="destination")

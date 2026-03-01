@@ -67,6 +67,19 @@ def run_migrations(engine: Engine) -> None:
 
     destination_columns = [
         ("timezone", "VARCHAR(50)", "NULL"),
+        ("latitude", "FLOAT", "NULL"),
+        ("longitude", "FLOAT", "NULL"),
+    ]
+
+    trip_day_columns = [
+        ("destination_id", "INTEGER", "NULL"),
+    ]
+
+    trip_transport_columns = [
+        ("origin_latitude", "FLOAT", "NULL"),
+        ("origin_longitude", "FLOAT", "NULL"),
+        ("destination_latitude", "FLOAT", "NULL"),
+        ("destination_longitude", "FLOAT", "NULL"),
     ]
 
     applied_migrations: list[str] = []
@@ -91,6 +104,19 @@ def run_migrations(engine: Engine) -> None:
             engine, "destinations", col_name, col_type, default
         ):
             applied_migrations.append(f"destinations.{col_name}")
+
+    for col_name, col_type, default in trip_day_columns:
+        if add_column_if_not_exists(engine, "trip_days", col_name, col_type, default):
+            if col_name == "destination_id":
+                # SQLite ADD COLUMN supports nullable FKs without special handling
+                pass
+            applied_migrations.append(f"trip_days.{col_name}")
+
+    for col_name, col_type, default in trip_transport_columns:
+        if add_column_if_not_exists(
+            engine, "trip_transports", col_name, col_type, default
+        ):
+            applied_migrations.append(f"trip_transports.{col_name}")
 
     migrations_run = len(applied_migrations)
     if migrations_run > 0:

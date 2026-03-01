@@ -40,6 +40,10 @@ class TripTransportBase(BaseModel):
     booked: bool = False
     overnight: bool = False
     sort_order: int = 0
+    origin_latitude: float | None = None
+    origin_longitude: float | None = None
+    destination_latitude: float | None = None
+    destination_longitude: float | None = None
     extra: dict[str, Any] | None = None
 
 
@@ -63,6 +67,10 @@ class TripTransportUpdate(BaseModel):
     booked: bool | None = None
     overnight: bool | None = None
     sort_order: int | None = None
+    origin_latitude: float | None = None
+    origin_longitude: float | None = None
+    destination_latitude: float | None = None
+    destination_longitude: float | None = None
     extra: dict[str, Any] | None = None
 
 

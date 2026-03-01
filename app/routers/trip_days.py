@@ -36,9 +36,26 @@ def create_trip_day(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
+    # Verify the trip exists
     trip = db.query(models.Trip).filter(models.Trip.id == day.trip_id).first()
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found")
+
+    # ---- New validation: ensure destination (if provided) belongs to this trip ----
+    if day.destination_id is not None:
+        dest = (
+            db.query(models.Destination)
+            .filter(models.Destination.id == day.destination_id)
+            .first()
+        )
+        if not dest:
+            raise HTTPException(status_code=400, detail="Destination not found")
+        if dest.trip_id != day.trip_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Destination does not belong to the specified trip",
+            )
+    # ---------------------------------------------------------------------------
 
     db_day = models.TripDay(**day.model_dump())
     try:
@@ -76,6 +93,22 @@ def update_trip_day(
     db_day = db.query(models.TripDay).filter(models.TripDay.id == day_id).first()
     if not db_day:
         raise HTTPException(status_code=404, detail="Trip day not found")
+
+    # ---- New validation: ensure destination (if provided) belongs to the same trip ----
+    if day_update.destination_id is not None:
+        dest = (
+            db.query(models.Destination)
+            .filter(models.Destination.id == day_update.destination_id)
+            .first()
+        )
+        if not dest:
+            raise HTTPException(status_code=400, detail="Destination not found")
+        if dest.trip_id != db_day.trip_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Destination does not belong to the same trip as this day",
+            )
+    # ---------------------------------------------------------------------------
 
     update_data = day_update.model_dump(exclude_unset=True)
     for key, value in update_data.items():

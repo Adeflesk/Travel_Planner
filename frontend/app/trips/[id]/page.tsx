@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Trip, TripDay } from '@/lib/types';
 import { tripApi } from '@/lib/api';
+import { geocodeAddress } from '@/lib/geocode-utils';
 import { MapPin, Receipt, Package, Compass, Clock, Users, Calendar } from 'lucide-react';
 import { DestinationList } from '@/components/destinations';
 import { ExpenseList } from '@/components/expenses';
@@ -91,6 +92,20 @@ function TripDetailContent() {
       // Reload trip to get updated context
       const response = await tripApi.getById(tripId);
       setTrip(response.data);
+
+      if (context.home_base && context.home_base !== trip?.context?.home_base) {
+        geocodeAddress(context.home_base).then(coords => {
+          if (coords) {
+            tripApi.update(tripId, {
+              context: {
+                ...context,
+                home_base_latitude: coords.lat,
+                home_base_longitude: coords.lng
+              }
+            }).catch(console.error);
+          }
+        });
+      }
     } catch (error) {
       console.error('Error saving settings:', error);
       throw error;

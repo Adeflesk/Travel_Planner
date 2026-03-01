@@ -15,10 +15,14 @@ class TripDay(Base):
     location = Column(Text)
     notes = Column(Text)
     sort_order = Column(Integer, nullable=False, default=0)
+    destination_id = Column(
+        Integer, ForeignKey("destinations.id", ondelete="SET NULL"), nullable=True
+    )
 
     __table_args__ = (UniqueConstraint("trip_id", "date", name="uq_trip_day"),)
 
     trip = relationship("Trip", back_populates="days")
+    destination = relationship("Destination", back_populates="days")
     activities = relationship(
         "DayActivity", back_populates="day", cascade="all, delete-orphan"
     )

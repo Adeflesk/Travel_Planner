@@ -21,6 +21,8 @@ class DestinationBase(BaseModel):
     departure_date: Optional[DateType] = None
     notes: Optional[str] = None
     order: int = 0
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 
 class DestinationCreate(DestinationBase):
@@ -36,6 +38,8 @@ class DestinationUpdate(BaseModel):
     departure_date: Optional[DateType] = None
     notes: Optional[str] = None
     order: Optional[int] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 
 class Destination(DestinationBase):

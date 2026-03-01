@@ -4,7 +4,9 @@
 import { useState, useEffect } from 'react';
 import { Trip } from '@/lib/types';
 import type { TripContext } from '@/lib/trip-context';
-import { tripApi } from '@/lib/api';
+import { tripApi, destinationApi } from '@/lib/api';
+import { geocodeAddress } from '@/lib/geocode-utils';
+import { autoCreateDaysForDestination } from '@/lib/destination-day-utils';
 import { TripCard, TripWizard } from '@/components/trips';
 import { Plus, X } from 'lucide-react';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -43,14 +45,63 @@ function TripsContent() {
     start_date: string;
     end_date: string;
     budget?: number;
+    default_currency?: string;
+    first_destination?: string;
     context: TripContext;
   }) => {
     setCreating(true);
     try {
-      await tripApi.create(data);
+      const response = await tripApi.create(data);
+      const tripId = response.data?.id;
       alert('Trip created successfully!');
       loadTrips();
       setShowForm(false);
+
+      if (tripId && data.context?.home_base) {
+        geocodeAddress(data.context.home_base).then(coords => {
+          if (coords) {
+            tripApi.update(tripId, {
+              context: {
+                ...data.context,
+                home_base_latitude: coords.lat,
+                home_base_longitude: coords.lng
+              }
+            }).catch(console.error);
+          }
+        });
+      }
+
+      if (tripId && data.first_destination) {
+        destinationApi.create({
+          trip_id: tripId,
+          name: data.first_destination,
+          timezone: data.timezone,
+          arrival_date: data.start_date,
+          departure_date: data.end_date,
+        }).then(destRes => {
+          const dest = destRes.data;
+
+          geocodeAddress(data.first_destination as string).then(coords => {
+            if (coords) {
+              destinationApi.update(dest.id, {
+                latitude: coords.lat,
+                longitude: coords.lng
+              }).catch(console.error);
+            }
+          });
+
+          // Create days for the destination
+          if (dest.arrival_date && dest.departure_date) {
+            autoCreateDaysForDestination({
+              tripId,
+              destinationId: dest.id,
+              destinationName: dest.name,
+              arrivalDate: dest.arrival_date,
+              departureDate: dest.departure_date,
+            }).catch(console.error);
+          }
+        }).catch(console.error);
+      }
     } catch (error) {
       console.error('Error creating trip:', error);
       alert('Failed to create trip');

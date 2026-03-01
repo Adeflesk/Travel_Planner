@@ -32,6 +32,10 @@ class TripTransport(Base):
     booked = Column(Boolean, nullable=False, default=False)
     overnight = Column(Boolean, nullable=False, default=False)
     sort_order = Column(Integer, nullable=False, default=0)
+    origin_latitude = Column(Float, nullable=True)
+    origin_longitude = Column(Float, nullable=True)
+    destination_latitude = Column(Float, nullable=True)
+    destination_longitude = Column(Float, nullable=True)
     extra = Column(
         JSON
     )  # type-specific metadata (flight_number, distance_km, frequency)
