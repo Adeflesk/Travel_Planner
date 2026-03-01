@@ -1,76 +1,90 @@
 """
-app/routers/activities.py - Activity endpoints router
+app/routers/activities.py - Unified activity endpoints
 
-CRUD and destination-scoped activity endpoints.
-All endpoints require authentication.
-
-Author: Travel Planner Team
+All CRUD for DayActivity (day-linked and/or destination-linked).
 """
 
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app import schemas, models
+from app import models, schemas
 from app.core.deps import get_current_user
 from database import get_db
 
-router = APIRouter()
+router = APIRouter(tags=["activities"])
 
 
-def check_trip_access_via_destination(
-    destination_id: int,
-    db: Session,
-    current_user: models.User,
-    require_owner: bool = False,
-) -> models.Destination:
-    """Check user has access to the trip via destination."""
-    destination = (
-        db.query(models.Destination)
-        .filter(models.Destination.id == destination_id)
+def _get_activity_or_404(activity_id: int, db: Session) -> models.DayActivity:
+    activity = (
+        db.query(models.DayActivity)
+        .filter(models.DayActivity.id == activity_id)
         .first()
     )
-    if not destination:
-        raise HTTPException(status_code=404, detail="Destination not found")
+    if not activity:
+        raise HTTPException(status_code=404, detail="Activity not found")
+    return activity
 
-    trip = db.query(models.Trip).filter(models.Trip.id == destination.trip_id).first()
+
+def _check_trip_access(
+    activity: models.DayActivity,
+    db: Session,
+    user: models.User,
+    require_owner: bool = False,
+) -> None:
+    """Verify the user can access the trip this activity belongs to."""
+    trip = None
+
+    if activity.day_id:
+        day = (
+            db.query(models.TripDay)
+            .filter(models.TripDay.id == activity.day_id)
+            .first()
+        )
+        if day:
+            trip = db.query(models.Trip).filter(models.Trip.id == day.trip_id).first()
+
+    if trip is None and activity.destination_id:
+        dest = (
+            db.query(models.Destination)
+            .filter(models.Destination.id == activity.destination_id)
+            .first()
+        )
+        if dest:
+            trip = db.query(models.Trip).filter(models.Trip.id == dest.trip_id).first()
+
     if not trip:
-        raise HTTPException(status_code=404, detail="Trip not found")
+        raise HTTPException(status_code=404, detail="Activity not found")
 
-    if trip.user_id == current_user.id:
-        return destination
+    if trip.user_id == user.id:
+        return
 
     if not require_owner:
         share = (
             db.query(models.TripShare)
             .filter(
                 models.TripShare.trip_id == trip.id,
-                models.TripShare.user_id == current_user.id,
+                models.TripShare.user_id == user.id,
             )
             .first()
         )
         if share:
-            return destination
+            return
 
-    raise HTTPException(status_code=404, detail="Destination not found")
+    raise HTTPException(status_code=404, detail="Activity not found")
 
 
 @router.post(
     "/activities/",
-    response_model=schemas.Activity,
-    status_code=201,
-    tags=["activities"],
+    response_model=schemas.DayActivityResponse,
+    status_code=status.HTTP_201_CREATED,
 )
 def create_activity(
-    activity: schemas.ActivityCreate,
+    activity: schemas.DayActivityCreate,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    check_trip_access_via_destination(
-        activity.destination_id, db, current_user, require_owner=True
-    )
-
-    db_activity = models.Activity(**activity.model_dump())
+    db_activity = models.DayActivity(**activity.model_dump())
     db.add(db_activity)
     db.commit()
     db.refresh(db_activity)
@@ -78,45 +92,93 @@ def create_activity(
 
 
 @router.get(
-    "/destinations/{destination_id}/activities/",
-    response_model=List[schemas.Activity],
-    tags=["activities"],
+    "/trips/{trip_id}/activities",
+    response_model=List[schemas.DayActivityResponse],
+)
+def get_trip_activities(
+    trip_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """All DayActivities for a trip (via day or via destination)."""
+    trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    via_day = (
+        db.query(models.DayActivity)
+        .join(models.TripDay, models.DayActivity.day_id == models.TripDay.id)
+        .filter(models.TripDay.trip_id == trip_id)
+        .all()
+    )
+    via_dest = (
+        db.query(models.DayActivity)
+        .join(
+            models.Destination,
+            models.DayActivity.destination_id == models.Destination.id,
+        )
+        .filter(models.Destination.trip_id == trip_id)
+        .filter(models.DayActivity.day_id.is_(None))
+        .all()
+    )
+    return via_day + via_dest
+
+
+@router.get(
+    "/trip-days/{day_id}/activities",
+    response_model=List[schemas.DayActivityResponse],
+)
+def get_day_activities(
+    day_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    return (
+        db.query(models.DayActivity)
+        .filter(models.DayActivity.day_id == day_id)
+        .order_by(models.DayActivity.start_time)
+        .all()
+    )
+
+
+@router.get(
+    "/destinations/{destination_id}/activities",
+    response_model=List[schemas.DayActivityResponse],
 )
 def get_destination_activities(
     destination_id: int,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    check_trip_access_via_destination(destination_id, db, current_user)
-    activities = (
-        db.query(models.Activity)
-        .filter(models.Activity.destination_id == destination_id)
-        .order_by(models.Activity.scheduled_date, models.Activity.scheduled_time)
+    dest = (
+        db.query(models.Destination)
+        .filter(models.Destination.id == destination_id)
+        .first()
+    )
+    if not dest:
+        raise HTTPException(status_code=404, detail="Destination not found")
+    return (
+        db.query(models.DayActivity)
+        .filter(models.DayActivity.destination_id == destination_id)
+        .order_by(models.DayActivity.sort_order, models.DayActivity.start_time)
         .all()
     )
-    return activities
 
 
-@router.put(
-    "/activities/{activity_id}", response_model=schemas.Activity, tags=["activities"]
+@router.patch(
+    "/activities/{activity_id}",
+    response_model=schemas.DayActivityResponse,
 )
 def update_activity(
     activity_id: int,
-    activity_update: schemas.ActivityUpdate,
+    update: schemas.DayActivityUpdate,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    activity = (
-        db.query(models.Activity).filter(models.Activity.id == activity_id).first()
-    )
-    if not activity:
-        raise HTTPException(status_code=404, detail="Activity not found")
+    activity = _get_activity_or_404(activity_id, db)
+    _check_trip_access(activity, db, current_user, require_owner=True)
 
-    check_trip_access_via_destination(
-        activity.destination_id, db, current_user, require_owner=True
-    )
-
-    for key, value in activity_update.model_dump(exclude_unset=True).items():
+    for key, value in update.model_dump(exclude_unset=True).items():
         setattr(activity, key, value)
 
     db.commit()
@@ -124,22 +186,13 @@ def update_activity(
     return activity
 
 
-@router.delete("/activities/{activity_id}", status_code=204, tags=["activities"])
+@router.delete("/activities/{activity_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_activity(
     activity_id: int,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    activity = (
-        db.query(models.Activity).filter(models.Activity.id == activity_id).first()
-    )
-    if not activity:
-        raise HTTPException(status_code=404, detail="Activity not found")
-
-    check_trip_access_via_destination(
-        activity.destination_id, db, current_user, require_owner=True
-    )
-
+    activity = _get_activity_or_404(activity_id, db)
+    _check_trip_access(activity, db, current_user, require_owner=True)
     db.delete(activity)
     db.commit()
-    return None
