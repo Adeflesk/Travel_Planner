@@ -111,7 +111,8 @@ test.describe('DestinationPicker — Day-Destination Linking', () => {
         await authenticatedPage.getByText('Berlin, Germany').click();
 
         // The Berlin row's check icon should not have the 'invisible' class
-        const berlinRow = authenticatedPage.getByRole('button', { name: /Berlin/ });
+        // Use .last() because the badge trigger button also matches /Berlin/
+        const berlinRow = authenticatedPage.getByRole('button', { name: /Berlin/ }).last();
         await expect(berlinRow).toBeVisible();
         await expect(berlinRow.locator('svg').first()).not.toHaveClass(/invisible/);
     });
@@ -142,7 +143,8 @@ test.describe('DestinationPicker — Day-Destination Linking', () => {
 
         // Re-open picker — Vienna should be in the list (optimistic update)
         await authenticatedPage.getByText('Vienna').click();
-        await expect(authenticatedPage.getByRole('button', { name: /Vienna/ })).toBeVisible();
+        // Use .last() because the badge trigger also matches /Vienna/
+        await expect(authenticatedPage.getByRole('button', { name: /Vienna/ }).last()).toBeVisible();
     });
 
     test('shows error banner when a save fails', async ({ authenticatedPage, authApiRequest }) => {
