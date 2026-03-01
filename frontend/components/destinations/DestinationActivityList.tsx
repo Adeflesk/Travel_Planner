@@ -34,7 +34,9 @@ export function DestinationActivityList({ destinationId }: DestinationActivityLi
     if (data.id) {
       await dayApi.updateActivity(data.id, data);
     } else {
-      await dayApi.createActivity({ ...data, destination_id: destinationId, title: data.title ?? '' });
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { day_id: _ignored, ...rest } = data;
+      await dayApi.createActivity({ ...rest, destination_id: destinationId, title: rest.title ?? '' });
     }
     reload();
   };
