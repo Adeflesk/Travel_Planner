@@ -58,7 +58,7 @@ test.describe('Activities Tab', () => {
     await authApiRequest('post', `${API_URL}/activities/`, { title: 'Montmartre', destination_id: destinationId });
 
     await openActivitiesTab(authenticatedPage);
-    await expect(authenticatedPage.getByText('Paris')).toBeVisible({ timeout: 10000 });
+    await expect(authenticatedPage.getByRole('heading', { name: 'Paris' })).toBeVisible({ timeout: 10000 });
     await expect(authenticatedPage.getByText('Louvre')).toBeVisible();
     await expect(authenticatedPage.getByText('Montmartre')).toBeVisible();
     await expect(authenticatedPage.getByText('2 activities')).toBeVisible();
