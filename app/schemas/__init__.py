@@ -8,7 +8,6 @@ Author: Travel Planner Team
 
 from .trip import *  # noqa: F401, F403
 from .destination import *  # noqa: F401, F403
-from .activity import *  # noqa: F401, F403
 from .expense import *  # noqa: F401, F403
 from .packing_item import *  # noqa: F401, F403
 from .aggregates import *  # noqa: F401, F403
