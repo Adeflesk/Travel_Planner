@@ -91,14 +91,14 @@ export const DestinationPicker = ({ day, tripId, onDestinationChanged }: Destina
         setError(null);
         setLocationWarning(null);
 
-        // Validate location before saving
-        const address = [newName.trim(), newCountry.trim()].filter(Boolean).join(', ');
-        const coords = await geocodeAddress(address);
-        if (!coords) {
-            setLocationWarning("We couldn't confirm this location — check the spelling if needed.");
-        }
-
         try {
+            // Validate location before saving
+            const address = [newName.trim(), newCountry.trim()].filter(Boolean).join(', ');
+            const coords = await geocodeAddress(address);
+            if (!coords) {
+                setLocationWarning("We couldn't confirm this location — check the spelling if needed.");
+            }
+
             const res = await destinationApi.create({
                 trip_id: tripId,
                 name: newName.trim(),
@@ -127,7 +127,6 @@ export const DestinationPicker = ({ day, tripId, onDestinationChanged }: Destina
             setNewCountry('');
             setShowCreateForm(false);
             setIsOpen(false);
-            setLocationWarning(null);
             onDestinationChanged();
         } catch (e) {
             console.error('Failed to create destination', e);
@@ -240,7 +239,7 @@ export const DestinationPicker = ({ day, tripId, onDestinationChanged }: Destina
                                         {isCreating ? 'Creating\u2026' : 'Create'}
                                     </button>
                                     <button
-                                        onClick={() => { setShowCreateForm(false); setNewName(''); setNewCountry(''); }}
+                                        onClick={() => { setShowCreateForm(false); setNewName(''); setNewCountry(''); setLocationWarning(null); }}
                                         className="px-3 py-1.5 text-sm text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
                                     >
                                         Cancel
