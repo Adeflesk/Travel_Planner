@@ -38,8 +38,8 @@ class Destination(Base):
     longitude = Column(Float, nullable=True)
 
     trip = relationship("Trip", back_populates="destinations")
-    activities = relationship(
-        "Activity", back_populates="destination", cascade="all, delete-orphan"
+    day_activities = relationship(
+        "DayActivity", back_populates="destination", cascade="all, delete-orphan"
     )
     expenses = relationship("Expense", back_populates="destination")
     days = relationship("TripDay", back_populates="destination")
