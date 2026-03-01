@@ -71,6 +71,7 @@ def migrate_unified_activities(engine: Engine) -> None:
 
     # Check whether destination_id is already present BEFORE opening the
     # transaction (inspector cannot be used inside engine.begin()).
+    # destination_id is the sentinel: SQLite can't ADD COLUMN with FK, so absence means rebuild needed.
     needs_rebuild = False
     if day_activities_exists:
         day_activity_columns = {
@@ -123,7 +124,7 @@ def migrate_unified_activities(engine: Engine) -> None:
             """
                 )
             )
-            conn.execute(text("DROP TABLE day_activities"))
+            conn.execute(text("DROP TABLE IF EXISTS day_activities"))
             conn.execute(
                 text("ALTER TABLE day_activities_new RENAME TO day_activities")
             )
