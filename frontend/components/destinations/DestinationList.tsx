@@ -26,6 +26,7 @@ export default function DestinationList({ tripId }: DestinationListProps) {
     formData,
     isEditing,
     locationWarning,
+    isSubmitting,
     handleSubmit,
     startEdit,
     resetForm,
@@ -50,6 +51,7 @@ export default function DestinationList({ tripId }: DestinationListProps) {
         formData={formData}
         isEditing={isEditing}
         locationWarning={locationWarning}
+        isSubmitting={isSubmitting}
         onSubmit={handleSubmit}
         onCancel={resetForm}
         updateField={updateField}

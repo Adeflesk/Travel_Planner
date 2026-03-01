@@ -31,6 +31,7 @@ export function useDestinationForm(
 ) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [locationWarning, setLocationWarning] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<DestinationFormData>(
     createInitialFormData(tripId, startDate, endDate, defaultTimezone)
   );
@@ -38,19 +39,23 @@ export function useDestinationForm(
   const resetForm = () => {
     setEditingId(null);
     setFormData(createInitialFormData(tripId, startDate, endDate, defaultTimezone));
+    setLocationWarning(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLocationWarning(null);
+    setIsSubmitting(true);
 
-    // Validate location (only for new destinations, not edits)
+    let preGeocodedCoords: { lat: number; lng: number } | null = null;
+
+    // Validate location for new destinations only
     if (!editingId) {
       const addressParts = [formData.name, formData.region, formData.country].filter(Boolean);
       const address = addressParts.join(', ');
       if (address) {
-        const coords = await geocodeAddress(address);
-        if (!coords) {
+        preGeocodedCoords = await geocodeAddress(address);
+        if (!preGeocodedCoords) {
           setLocationWarning("We couldn't confirm this location — check the spelling if needed.");
         }
       }
@@ -88,26 +93,19 @@ export function useDestinationForm(
       resetForm();
       onSuccess();
 
-      // Background geocoding for new destinations
-      if (isNew && destinationId) {
-        const addressParts = [formData.name, formData.region, formData.country].filter(Boolean);
-        const address = addressParts.join(', ');
-        if (address) {
-          geocodeAddress(address).then(coords => {
-            if (coords) {
-              destinationApi.update(destinationId, {
-                ...formData,
-                latitude: coords.lat,
-                longitude: coords.lng,
-              }).catch(err => console.error('Failed to save geocoded coordinates for destination:', err));
-            }
-          });
-        }
+      // Persist coordinates using the already-fetched result — no second Nominatim call
+      if (isNew && destinationId && preGeocodedCoords) {
+        destinationApi.update(destinationId, {
+          latitude: preGeocodedCoords.lat,
+          longitude: preGeocodedCoords.lng,
+        }).catch(err => console.error('Failed to save geocoded coordinates for destination:', err));
       }
 
     } catch (error) {
       console.error('Error saving destination:', error);
       alert('Failed to save destination');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -139,6 +137,7 @@ export function useDestinationForm(
     editingId,
     isEditing: editingId !== null,
     locationWarning,
+    isSubmitting,
     handleSubmit,
     startEdit,
     resetForm,
