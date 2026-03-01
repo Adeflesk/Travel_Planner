@@ -5,6 +5,7 @@ import { Input, Textarea } from '@/components/ui/Input';
 import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
 import { Button } from '@/components/ui/Button';
 import { getLocalTimezone, getSupportedTimezones } from '@/lib/timezone-utils';
+import { geocodeAddress } from '@/lib/geocode-utils';
 
 interface WizardData {
     // Step 1
@@ -12,6 +13,7 @@ interface WizardData {
     description: string;
     timezone: string;
     home_base: string;
+    first_destination: string;
     start_date: string;
     end_date: string;
     // Step 2
@@ -31,7 +33,7 @@ interface WizardData {
 }
 
 const defaults: WizardData = {
-    name: '', description: '', timezone: getLocalTimezone(), home_base: '', start_date: '', end_date: '',
+    name: '', description: '', timezone: getLocalTimezone(), home_base: '', first_destination: '', start_date: '', end_date: '',
     traveller_count: 1, split_costs: false,
     trip_type: 'single_city', vehicle: 'none', flight_type: 'none', overnight_flight: false,
     accommodation: 'unknown', pacing: 'balanced',
@@ -47,6 +49,7 @@ interface TripWizardProps {
         end_date: string;
         budget?: number;
         default_currency?: string;
+        first_destination?: string;
         context: TripContext;
     }) => void;
     onCancel: () => void;
@@ -57,6 +60,8 @@ export const TripWizard = ({ onSubmit, onCancel, loading }: TripWizardProps) => 
     const [step, setStep] = useState(1);
     const [data, setData] = useState<WizardData>(defaults);
     const set = (updates: Partial<WizardData>) => setData((d) => ({ ...d, ...updates }));
+    const [isValidating, setIsValidating] = useState(false);
+    const [locationWarnings, setLocationWarnings] = useState<{ home_base?: string; first_destination?: string }>({});
 
     const timezones = useMemo(() => getSupportedTimezones(), []);
 
@@ -100,8 +105,34 @@ export const TripWizard = ({ onSubmit, onCancel, loading }: TripWizardProps) => 
             end_date: data.end_date,
             budget: data.budget ? parseFloat(data.budget) : undefined,
             default_currency: data.budget_currency,
+            first_destination: data.first_destination.trim() || undefined,
             context,
         });
+    };
+
+    const handleNext = async () => {
+        if (step !== 1) {
+            setStep(step + 1);
+            return;
+        }
+        const warnings: { home_base?: string; first_destination?: string } = {};
+        const fieldsToCheck: Array<{ key: 'home_base' | 'first_destination'; value: string }> = [
+            { key: 'home_base', value: data.home_base.trim() },
+            { key: 'first_destination', value: data.first_destination.trim() },
+        ];
+        const nonEmpty = fieldsToCheck.filter(f => f.value !== '');
+        if (nonEmpty.length > 0) {
+            setIsValidating(true);
+            const results = await Promise.all(
+                nonEmpty.map(f => geocodeAddress(f.value).then(coords => ({ key: f.key, found: coords !== null })))
+            );
+            setIsValidating(false);
+            results.forEach(r => {
+                if (!r.found) warnings[r.key] = "We couldn't confirm this location — check the spelling if needed.";
+            });
+        }
+        setLocationWarnings(warnings);
+        setStep(step + 1);
     };
 
     const error = getValidationError();
@@ -165,9 +196,31 @@ export const TripWizard = ({ onSubmit, onCancel, loading }: TripWizardProps) => 
                     <Input
                         label="Departing from"
                         value={data.home_base}
-                        onChange={(e) => set({ home_base: e.target.value })}
+                        onChange={(e) => {
+                            set({ home_base: e.target.value });
+                            if (locationWarnings.home_base) setLocationWarnings(w => ({ ...w, home_base: undefined }));
+                        }}
                         placeholder="e.g., Sydney, Australia"
                     />
+                    {locationWarnings.home_base && (
+                        <p className="text-xs text-amber-600 -mt-4">
+                            {locationWarnings.home_base}
+                        </p>
+                    )}
+                    <Input
+                        label="First destination (optional)"
+                        value={data.first_destination}
+                        onChange={(e) => {
+                            set({ first_destination: e.target.value });
+                            if (locationWarnings.first_destination) setLocationWarnings(w => ({ ...w, first_destination: undefined }));
+                        }}
+                        placeholder="e.g., Paris, France"
+                    />
+                    {locationWarnings.first_destination && (
+                        <p className="text-xs text-amber-600 -mt-4">
+                            {locationWarnings.first_destination}
+                        </p>
+                    )}
                     <Textarea
                         label="Description (optional)"
                         value={data.description}
@@ -365,12 +418,12 @@ export const TripWizard = ({ onSubmit, onCancel, loading }: TripWizardProps) => 
                 </Button>
                 {step < 5 ? (
                     <Button
-                        disabled={!canNext()}
-                        onClick={() => setStep(step + 1)}
+                        disabled={!canNext() || isValidating}
+                        onClick={handleNext}
                         className="min-w-[120px]"
                         size="lg"
                     >
-                        Next Step →
+                        {isValidating ? 'Checking…' : 'Next Step →'}
                     </Button>
                 ) : (
                     <Button
