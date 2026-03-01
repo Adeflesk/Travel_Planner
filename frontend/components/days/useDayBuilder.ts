@@ -14,7 +14,12 @@ export const useDayBuilder = (day: TripDay, onRefresh: () => void) => {
             if (data.id) {
                 await dayApi.updateActivity(data.id, data);
             } else {
-                await dayApi.createActivity({ ...data, day_id: day.id } as DayActivityCreate);
+                await dayApi.createActivity({
+                    ...data,
+                    day_id: day.id,
+                    destination_id: day.destination_id ?? undefined,
+                    title: data.title ?? '',
+                } as DayActivityCreate);
             }
             onRefresh();
             setIsFormOpen(false);
