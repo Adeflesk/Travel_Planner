@@ -45,7 +45,7 @@ export function useTripActivities(tripId: number) {
   const toggleComplete = async (activity: DayActivity) => {
     try {
       await dayApi.updateActivity(activity.id, { is_completed: !activity.is_completed });
-      loadData();
+      await loadData();
     } catch (error) {
       console.error('Error updating activity:', error);
     }
@@ -54,7 +54,7 @@ export function useTripActivities(tripId: number) {
   const deleteActivity = async (id: number) => {
     try {
       await dayApi.deleteActivity(id);
-      loadData();
+      await loadData();
     } catch (error) {
       console.error('Error deleting activity:', error);
     }
