@@ -194,18 +194,36 @@ def get_activity_name_suggestions(
 ):
     """Get activity name suggestions from user's activity history."""
 
-    # Get activity names ordered by frequency
+    # Get activity title suggestions from user's trips
+    user_trip_ids = (
+        db.query(models.Trip.id)
+        .filter(models.Trip.user_id == current_user.id)
+        .subquery()
+    )
+    user_day_ids = (
+        db.query(models.TripDay.id)
+        .filter(models.TripDay.trip_id.in_(user_trip_ids))
+        .subquery()
+    )
+    user_dest_ids = (
+        db.query(models.Destination.id)
+        .filter(models.Destination.trip_id.in_(user_trip_ids))
+        .subquery()
+    )
     activities_query = (
-        db.query(models.Activity.name, func.count(models.Activity.id).label("count"))
-        .join(models.Destination)
-        .join(models.Trip)
-        .filter(
-            models.Trip.user_id == current_user.id,
-            models.Activity.name.isnot(None),
-            models.Activity.name != "",
+        db.query(
+            models.DayActivity.title, func.count(models.DayActivity.id).label("count")
         )
-        .group_by(models.Activity.name)
-        .order_by(func.count(models.Activity.id).desc())
+        .filter(
+            (models.DayActivity.day_id.in_(user_day_ids))
+            | (models.DayActivity.destination_id.in_(user_dest_ids))
+        )
+        .filter(
+            models.DayActivity.title.isnot(None),
+            models.DayActivity.title != "",
+        )
+        .group_by(models.DayActivity.title)
+        .order_by(func.count(models.DayActivity.id).desc())
         .limit(limit)
     )
 

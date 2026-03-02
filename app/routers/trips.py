@@ -357,16 +357,26 @@ def get_trip_stats(
     transport_cost = Decimal(str(transport_stats[1] or 0))
     booked_transports = transport_stats[2] or 0
 
-    # Get activity count (through destinations)
-    activity_count = (
-        db.query(func.count(models.Activity.id))
-        .join(
-            models.Destination, models.Activity.destination_id == models.Destination.id
-        )
-        .filter(models.Destination.trip_id == trip_id)
+    # Get activity count (via day or destination)
+    activity_count_via_day = (
+        db.query(func.count(models.DayActivity.id))
+        .join(models.TripDay, models.DayActivity.day_id == models.TripDay.id)
+        .filter(models.TripDay.trip_id == trip_id)
         .scalar()
         or 0
     )
+    activity_count_via_dest = (
+        db.query(func.count(models.DayActivity.id))
+        .join(
+            models.Destination,
+            models.DayActivity.destination_id == models.Destination.id,
+        )
+        .filter(models.Destination.trip_id == trip_id)
+        .filter(models.DayActivity.day_id.is_(None))
+        .scalar()
+        or 0
+    )
+    activity_count = activity_count_via_day + activity_count_via_dest
 
     # Count and sum expenses
     expense_stats = (
