@@ -72,23 +72,6 @@ export interface Destination {
   longitude?: number;
 }
 
-export interface Activity {
-  id: number;
-  destination_id?: number | null;
-  name: string;
-  description?: string;
-  activity_type?: string;
-  scheduled_date?: string;
-  scheduled_time?: string;
-  duration?: number;
-  cost?: number;
-  booking_reference?: string;
-  status: 'planned' | 'booked' | 'completed';
-  priority?: number;
-  is_todo: boolean;
-  is_completed: boolean;
-}
-
 export interface Expense {
   id: number;
   trip_id: number;
@@ -251,24 +234,6 @@ export interface PackingItemFormData {
   quantity?: number;
 }
 
-export interface ActivityFormData {
-  destination_id?: number | null;
-  name: string;
-  description?: string;
-  activity_type?: string;
-  scheduled_date?: string;
-  scheduled_time?: string;
-  duration?: number;
-  cost?: number;
-  booking_reference?: string;
-  notes?: string;
-  status?: string;
-  priority?: number;
-  is_todo?: boolean;
-  is_completed?: boolean;
-}
-
-
 // Summary Types
 export interface ExpenseSummary {
   total: number;
@@ -299,7 +264,7 @@ export interface TripProgress {
 
 export interface DestinationWithActivities {
   destination: Destination;
-  activities: Activity[];
+  activities: DayActivity[];
 }
 
 export interface DestinationAccommodation {
@@ -502,8 +467,9 @@ export interface TripDay {
 
 export interface DayActivity {
   id: number;
-  day_id: number;
-  start_time: string;
+  day_id?: number | null;
+  destination_id?: number | null;
+  start_time?: string;
   end_time?: string;
   title: string;
   category?: string;
@@ -513,11 +479,14 @@ export interface DayActivity {
   currency?: string;
   booked: boolean;
   sort_order: number;
+  is_todo: boolean;
+  is_completed: boolean;
 }
 
 export interface DayActivityCreate extends Partial<DayActivity> {
-  day_id: number;
   title: string;
+  day_id?: number | null;
+  destination_id?: number | null;
 }
 
 export interface TripDayCreate {

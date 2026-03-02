@@ -68,7 +68,7 @@ test.describe('Trip Day Activities Management', () => {
             start_time: '12:00',
             end_time: '13:00'
         };
-        const response = await authApiRequest('post', `${API_URL}/trip-days/activities`, activityData);
+        const response = await authApiRequest('post', `${API_URL}/activities/`, activityData);
         expect(response.ok()).toBeTruthy();
 
         // Refresh to see the activity
@@ -98,7 +98,7 @@ test.describe('Trip Day Activities Management', () => {
             title: 'Activity to Delete',
             start_time: '15:00'
         };
-        const response = await authApiRequest('post', `${API_URL}/trip-days/activities`, activityData);
+        const response = await authApiRequest('post', `${API_URL}/activities/`, activityData);
         expect(response.ok()).toBeTruthy();
 
         // Refresh to see the activity

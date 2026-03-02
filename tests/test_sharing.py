@@ -74,9 +74,9 @@ def clean_tables():
         for table in [
             "trip_shares",
             "packing_items",
+            "activity_expenses",
             "expenses",
             "day_activities",
-            "activities",
             "destinations",
             "trip_days",
             "trips",

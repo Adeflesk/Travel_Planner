@@ -124,7 +124,7 @@ def db_setup(db_engine, testing_session_local, setup_database):
         "transport_options",
         "trip_transports",
         "expenses",
-        "activities",
+        "activity_expenses",
         "destinations",
         "trip_days",
         "trips",

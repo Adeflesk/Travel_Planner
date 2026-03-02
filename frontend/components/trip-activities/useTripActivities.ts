@@ -1,32 +1,24 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Activity, TripProgress, DestinationWithActivities } from '@/lib/types';
-import { activityApi, tripApi } from '@/lib/api';
+import { DayActivity, Destination, DestinationWithActivities } from '@/lib/types';
+import { dayApi, destinationApi } from '@/lib/api';
 
 export type { DestinationWithActivities };
 
-const defaultProgress: TripProgress = {
-  total_activities: 0,
-  completed_activities: 0,
-  progress_percent: 0,
-};
-
 export function useTripActivities(tripId: number) {
-  const [destinationsWithActivities, setDestinationsWithActivities] = useState<
-    DestinationWithActivities[]
-  >([]);
-  const [progress, setProgress] = useState<TripProgress>(defaultProgress);
+  const [activities, setActivities] = useState<DayActivity[]>([]);
+  const [destinations, setDestinations] = useState<Destination[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const loadActivities = useCallback(async () => {
+  const loadData = useCallback(async () => {
     try {
-      const [dataRes, progressRes] = await Promise.all([
-        tripApi.getDestinationsWithActivities(tripId),
-        tripApi.getProgress(tripId),
+      const [actsRes, destsRes] = await Promise.all([
+        dayApi.getByTrip(tripId),
+        destinationApi.getByTripId(tripId),
       ]);
-      setDestinationsWithActivities(dataRes.data);
-      setProgress(progressRes.data);
+      setActivities(actsRes.data);
+      setDestinations(destsRes.data);
     } catch (error) {
       console.error('Error loading activities:', error);
     } finally {
@@ -35,15 +27,25 @@ export function useTripActivities(tripId: number) {
   }, [tripId]);
 
   useEffect(() => {
-    loadActivities();
-  }, [loadActivities]);
+    loadData();
+  }, [loadData]);
 
-  const toggleComplete = async (activity: Activity) => {
+  // Group activities by destination_id
+  const destinationsWithActivities: DestinationWithActivities[] = destinations.map((dest) => ({
+    destination: dest,
+    activities: activities.filter((a) => a.destination_id === dest.id),
+  }));
+
+  const totalActivities = activities.length;
+  const completedActivities = activities.filter((a) => a.is_completed).length;
+  const progressPercent = totalActivities > 0
+    ? Math.round((completedActivities / totalActivities) * 100)
+    : 0;
+
+  const toggleComplete = async (activity: DayActivity) => {
     try {
-      await activityApi.update(activity.id, {
-        is_completed: !activity.is_completed,
-      });
-      loadActivities();
+      await dayApi.updateActivity(activity.id, { is_completed: !activity.is_completed });
+      await loadData();
     } catch (error) {
       console.error('Error updating activity:', error);
     }
@@ -51,8 +53,8 @@ export function useTripActivities(tripId: number) {
 
   const deleteActivity = async (id: number) => {
     try {
-      await activityApi.delete(id);
-      loadActivities();
+      await dayApi.deleteActivity(id);
+      await loadData();
     } catch (error) {
       console.error('Error deleting activity:', error);
     }
@@ -61,9 +63,9 @@ export function useTripActivities(tripId: number) {
   return {
     destinationsWithActivities,
     loading,
-    totalActivities: progress.total_activities,
-    completedActivities: progress.completed_activities,
-    progressPercent: progress.progress_percent,
+    totalActivities,
+    completedActivities,
+    progressPercent,
     toggleComplete,
     deleteActivity,
   };

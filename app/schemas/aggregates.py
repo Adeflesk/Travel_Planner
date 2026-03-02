@@ -1,10 +1,5 @@
 """
 app/schemas/aggregates.py - Aggregate and summary schemas
-
-Defines higher-level aggregate schemas used by endpoints: trip progress,
-timeline items, destination-with-activities, and destination accommodation.
-
-Author: Travel Planner Team
 """
 
 from pydantic import BaseModel
@@ -12,36 +7,28 @@ from typing import Optional
 from datetime import datetime
 
 from .destination import Destination
-from .activity import Activity
+from .day_activity import DayActivityResponse
 from .expense import Expense
 
 
 class TripProgress(BaseModel):
-    """Activity progress summary for a trip"""
-
     total_activities: int
     completed_activities: int
     progress_percent: int
 
 
 class DestinationWithActivities(BaseModel):
-    """Destination with nested activities list"""
-
     destination: Destination
-    activities: list[Activity]
+    activities: list[DayActivityResponse]
 
 
 class TimelineDestinationItem(BaseModel):
-    """Destination item for timeline"""
-
     type: str = "destination"
     sort_date: Optional[datetime] = None
     data: Destination
 
 
 class DestinationAccommodation(BaseModel):
-    """Accommodation expenses for a destination"""
-
     destination: Destination
     expenses: list[Expense]
     total: float

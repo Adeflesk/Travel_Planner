@@ -13,7 +13,6 @@ from .trip_share import TripShare
 from .trip_day import TripDay
 from .user_settings import UserSettings
 from .destination import Destination
-from .activity import Activity
 from .expense import Expense
 from .packing_item import PackingItem
 from .day_activity import DayActivity
@@ -27,7 +26,6 @@ __all__ = [
     "Trip",
     "TripShare",
     "Destination",
-    "Activity",
     "Expense",
     "PackingItem",
     "TripDay",

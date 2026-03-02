@@ -61,7 +61,7 @@ export default function TripActivityList({ tripId }: TripActivityListProps) {
       </div>
 
       <p className="text-sm text-gray-500 mt-4 text-center">
-        To add activities, go to the Destinations tab and add them to each destination.
+        Add activities from the day builder or directly under each destination.
       </p>
     </div>
   );

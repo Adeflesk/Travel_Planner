@@ -210,13 +210,15 @@ def test_trip_progress_with_activities(client, test_user, db_session):
     dest = make_destination(db_session, trip.id, "Paris")
 
     activities = [
-        models.Activity(destination_id=dest.id, name="Eiffel Tower", is_completed=True),
-        models.Activity(destination_id=dest.id, name="Louvre", is_completed=True),
-        models.Activity(
-            destination_id=dest.id, name="Seine Cruise", is_completed=False
+        models.DayActivity(
+            destination_id=dest.id, title="Eiffel Tower", is_completed=True
         ),
-        models.Activity(
-            destination_id=dest.id, name="Arc de Triomphe", is_completed=False
+        models.DayActivity(destination_id=dest.id, title="Louvre", is_completed=True),
+        models.DayActivity(
+            destination_id=dest.id, title="Seine Cruise", is_completed=False
+        ),
+        models.DayActivity(
+            destination_id=dest.id, title="Arc de Triomphe", is_completed=False
         ),
     ]
     db_session.add_all(activities)
@@ -261,9 +263,9 @@ def test_destinations_with_activities(client, test_user, db_session):
     )
 
     acts = [
-        models.Activity(destination_id=dest1.id, name="Eiffel Tower"),
-        models.Activity(destination_id=dest1.id, name="Louvre"),
-        models.Activity(destination_id=dest2.id, name="Big Ben"),
+        models.DayActivity(destination_id=dest1.id, title="Eiffel Tower"),
+        models.DayActivity(destination_id=dest1.id, title="Louvre"),
+        models.DayActivity(destination_id=dest2.id, title="Big Ben"),
     ]
     db_session.add_all(acts)
     db_session.commit()
@@ -276,9 +278,9 @@ def test_destinations_with_activities(client, test_user, db_session):
     paris = next(d for d in data if d["destination"]["name"] == "Paris")
     london = next(d for d in data if d["destination"]["name"] == "London")
     assert len(paris["activities"]) == 2
-    assert {a["name"] for a in paris["activities"]} == {"Eiffel Tower", "Louvre"}
+    assert {a["title"] for a in paris["activities"]} == {"Eiffel Tower", "Louvre"}
     assert len(london["activities"]) == 1
-    assert london["activities"][0]["name"] == "Big Ben"
+    assert london["activities"][0]["title"] == "Big Ben"
 
 
 def test_destinations_with_activities_not_found(client, test_user):

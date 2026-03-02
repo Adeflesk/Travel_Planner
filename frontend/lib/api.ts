@@ -2,18 +2,14 @@ import axios from 'axios';
 import {
   Trip,
   Destination,
-  Activity,
   Expense,
   PackingItem,
   TripFormData,
   DestinationFormData,
   ExpenseFormData,
   PackingItemFormData,
-  ActivityFormData,
   ExpenseSummary,
   PackingSummary,
-  TripProgress,
-  DestinationWithActivities,
   DestinationAccommodation,
   TripStats,
   BudgetStatusResponse,
@@ -75,12 +71,6 @@ export const tripApi = {
   update: (id: number, data: Partial<TripFormData>) =>
     api.put<Trip>(`/trips/${id}`, data),
   delete: (id: number) => api.delete(`/trips/${id}`),
-  getProgress: (tripId: number) =>
-    api.get<TripProgress>(`/trips/${tripId}/progress/`),
-  getDestinationsWithActivities: (tripId: number) =>
-    api.get<DestinationWithActivities[]>(
-      `/trips/${tripId}/destinations-with-activities/`
-    ),
   getAccommodationExpenses: (tripId: number) =>
     api.get<DestinationAccommodation[]>(
       `/trips/${tripId}/accommodation-expenses/`
@@ -104,7 +94,6 @@ export const dayApi = {
   updateDay: (dayId: number, data: Partial<Omit<TripDayCreate, 'trip_id'>>) =>
     api.patch<TripDay>(`/trip-days/${dayId}`, data),
   deleteDay: (dayId: number) => api.delete(`/trip-days/${dayId}`),
-  getActivities: (dayId: number) => api.get<DayActivity[]>(`/trip-days/${dayId}/activities`),
   createActivity: (data: DayActivityCreate) => {
     const cleanedData: Record<string, unknown> = {};
     (Object.keys(data) as Array<keyof typeof data>).forEach((key) => {
@@ -113,21 +102,31 @@ export const dayApi = {
         cleanedData[key] = value;
       }
     });
-    console.log('Creating day activity with payload:', cleanedData);
-    return api.post<DayActivity>('/trip-days/activities', cleanedData);
+    return api.post<DayActivity>('/activities/', cleanedData);
   },
   updateActivity: (id: number, data: Partial<DayActivity>) => {
     const cleanedData: Record<string, unknown> = {};
     (Object.keys(data) as Array<keyof typeof data>).forEach((key) => {
       const value = data[key as keyof typeof data];
       if (key === 'day_id' || key === 'id') return;
+      // Allow explicit null for nullable FK fields
+      if (value === null && key === 'destination_id') {
+        cleanedData[key] = null;
+        return;
+      }
       if (value !== '' && value !== undefined && value !== null && !Number.isNaN(value)) {
         cleanedData[key] = value;
       }
     });
-    return api.patch<DayActivity>(`/trip-days/activities/${id}`, cleanedData);
+    return api.patch<DayActivity>(`/activities/${id}`, cleanedData);
   },
-  deleteActivity: (id: number) => api.delete(`/trip-days/activities/${id}`),
+  deleteActivity: (id: number) => api.delete(`/activities/${id}`),
+  getActivities: (dayId: number) =>
+    api.get<DayActivity[]>(`/trip-days/${dayId}/activities`),
+  getByTrip: (tripId: number) =>
+    api.get<DayActivity[]>(`/trips/${tripId}/activities`),
+  getByDestination: (destinationId: number) =>
+    api.get<DayActivity[]>(`/destinations/${destinationId}/activities`),
 };
 
 // Destination API
@@ -162,35 +161,6 @@ export const destinationApi = {
 export const weatherApi = {
   getByDestinationId: (destinationId: number) =>
     api.get<WeatherForecast>(`/destinations/${destinationId}/weather`),
-};
-
-// Activity API
-export const activityApi = {
-  getByDestinationId: (destinationId: number) =>
-    api.get<Activity[]>(`/destinations/${destinationId}/activities/`),
-
-  create: (data: ActivityFormData) => {
-    const cleanedData: Partial<ActivityFormData> = {};
-    (Object.keys(data) as Array<keyof ActivityFormData>).forEach((key) => {
-      const value = data[key];
-      if (value !== '' && value !== undefined && value !== null) {
-        cleanedData[key] = value as never;
-      }
-    });
-    return api.post<Activity>('/activities/', cleanedData);
-  },
-  update: (id: number, data: Partial<ActivityFormData>) => {
-    const cleanedData: Partial<ActivityFormData> = {};
-    (Object.keys(data) as Array<keyof ActivityFormData>).forEach((key) => {
-      const value = data[key];
-      if (key === 'destination_id') return; // Don't update these
-      if (value !== '' && value !== undefined && value !== null) {
-        cleanedData[key] = value as never;
-      }
-    });
-    return api.put<Activity>(`/activities/${id}`, cleanedData);
-  },
-  delete: (id: number) => api.delete(`/activities/${id}`),
 };
 
 // Expense API
