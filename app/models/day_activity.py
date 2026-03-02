@@ -25,6 +25,8 @@ class DayActivity(Base):
     sort_order = Column(Integer, nullable=False, default=0)
     is_todo = Column(Boolean, nullable=False, default=False)
     is_completed = Column(Boolean, nullable=False, default=False)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
 
     day = relationship("TripDay", back_populates="activities")
     destination = relationship("Destination", back_populates="day_activities")

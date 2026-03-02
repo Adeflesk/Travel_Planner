@@ -3,6 +3,7 @@ import { DayActivity } from '@/lib/types';
 interface ActivityBlockProps {
     activity: DayActivity;
     onClick: () => void;
+    highlighted?: boolean;
 }
 
 // Left border hex color per category
@@ -26,7 +27,7 @@ const CATEGORY_ICONS: Record<string, string> = {
     other: '📌',
 };
 
-export const ActivityBlock = ({ activity, onClick }: ActivityBlockProps) => {
+export const ActivityBlock = ({ activity, onClick, highlighted }: ActivityBlockProps) => {
     const [startHour, startMin] = (activity.start_time ?? '00:00').split(':').map(Number);
     const totalStartMins = startHour * 60 + startMin;
     const dayStartMins = 7 * 60; // 7am
@@ -49,7 +50,7 @@ export const ActivityBlock = ({ activity, onClick }: ActivityBlockProps) => {
     return (
         <div
             onClick={onClick}
-            className="absolute left-0 right-0 bg-white rounded-r-lg shadow-sm border border-slate-100 hover:shadow-md hover:border-slate-200 cursor-pointer overflow-hidden group transition-all"
+            className={`absolute left-0 right-0 bg-white rounded-r-lg shadow-sm border cursor-pointer overflow-hidden group transition-all hover:shadow-md hover:border-slate-200 ${highlighted ? 'ring-2 ring-red-500 ring-offset-1 border-red-200 shadow-md' : 'border-slate-100'}`}
             style={{
                 top: `${topRem}rem`,
                 height: `${heightRem}rem`,

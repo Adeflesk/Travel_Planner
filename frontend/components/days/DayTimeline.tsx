@@ -9,6 +9,7 @@ interface DayTimelineProps {
     transportItems?: TripTransport[];
     currentDayId?: number;
     onEditTransport?: (t: TripTransport) => void;
+    highlightedActivityId?: number;
 }
 
 const HOURS = Array.from({ length: 17 }, (_, i) => i + 7); // 7am to 11pm (23:00)
@@ -20,6 +21,7 @@ export const DayTimeline = ({
     transportItems = [],
     currentDayId,
     onEditTransport,
+    highlightedActivityId,
 }: DayTimelineProps) => {
     return (
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden p-6 relative">
@@ -51,6 +53,7 @@ export const DayTimeline = ({
                             key={activity.id}
                             activity={activity}
                             onClick={() => onEditActivity(activity)}
+                            highlighted={highlightedActivityId === activity.id}
                         />
                     ))}
                     {currentDayId != null && transportItems.map(t => {

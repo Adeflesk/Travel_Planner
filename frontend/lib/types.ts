@@ -481,6 +481,8 @@ export interface DayActivity {
   sort_order: number;
   is_todo: boolean;
   is_completed: boolean;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface DayActivityCreate extends Partial<DayActivity> {

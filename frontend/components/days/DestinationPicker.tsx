@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { MapPin, ChevronDown, Check, Plus, X, AlertCircle } from 'lucide-react';
+import { MapPin, MapPinOff, ChevronDown, Check, Plus, X, AlertCircle } from 'lucide-react';
 import { TripDay, Destination } from '@/lib/types';
 import { destinationApi, dayApi } from '@/lib/api';
 import { geocodeAddress } from '@/lib/geocode-utils';
@@ -147,7 +147,14 @@ export const DestinationPicker = ({ day, tripId, onDestinationChanged }: Destina
                 <MapPin className="w-3.5 h-3.5 text-slate-400" />
                 {currentDestination
                     ? <span>{currentDestination.name}{currentDestination.country ? `, ${currentDestination.country}` : ''}</span>
-                    : <span className="text-slate-400">No destination</span>
+                    : day.location
+                        ? <>
+                            <span className="text-slate-500">{day.location}</span>
+                            <span title="Not linked to a destination — click to link for map features">
+                                <MapPinOff className="w-3 h-3 text-slate-300" />
+                            </span>
+                          </>
+                        : <span className="text-slate-400">No destination</span>
                 }
                 <ChevronDown className="w-3 h-3 text-slate-400" />
             </button>

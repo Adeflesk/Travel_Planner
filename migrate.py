@@ -17,7 +17,6 @@ from app.core.migrations import run_migrations  # noqa: E402
 from app.models.user import User  # noqa: E402, F401
 from app.models.trip import Trip  # noqa: E402, F401
 from app.models.destination import Destination  # noqa: E402, F401
-from app.models.activity import Activity  # noqa: E402, F401
 from app.models.expense import Expense  # noqa: E402, F401
 from app.models.packing_item import PackingItem  # noqa: E402, F401
 from app.models.trip_share import TripShare  # noqa: E402, F401

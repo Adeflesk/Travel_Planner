@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { TripDay, TripTransport, TripTransportCreate, TripTransportUpdate, Destination } from '@/lib/types';
-import { X } from 'lucide-react';
+import { X, Map, ChevronDown, ChevronUp } from 'lucide-react';
 import {
     ActivityForm,
     DayForm,
@@ -11,6 +12,21 @@ import {
 import { Button } from '@/components/ui/Button';
 import { TransportForm, TransportItem, useTransport } from '@/components/transport';
 import { tripApi, destinationApi } from '@/lib/api';
+import { useTripContext } from '@/lib/trip-context';
+
+const DayMap = dynamic(() => import('@/components/map/DayMap'), {
+    ssr: false,
+    loading: () => (
+        <div className="h-full w-full flex items-center justify-center bg-slate-50 rounded-lg animate-pulse">
+            <div className="flex flex-col items-center gap-2 text-slate-400">
+                <div className="w-8 h-8 rounded-full bg-slate-200" />
+                <div className="h-2.5 w-20 bg-slate-200 rounded" />
+            </div>
+        </div>
+    ),
+});
+
+const MAP_OPEN_KEY = 'daymap_expanded';
 
 interface DayBuilderProps {
     day: TripDay;
@@ -45,6 +61,21 @@ export const DayBuilder = ({ day, tripId, onRefresh }: DayBuilderProps) => {
     const [isTransportFormOpen, setIsTransportFormOpen] = useState(false);
     const [selectedTransport, setSelectedTransport] = useState<TripTransport | null>(null);
     const [isTransportSubmitting, setIsTransportSubmitting] = useState(false);
+
+    // Map state
+    const tripCtx = useTripContext();
+    const [mapExpanded, setMapExpanded] = useState(() => {
+        try { return localStorage.getItem(MAP_OPEN_KEY) === 'true'; } catch { return false; }
+    });
+    const [highlightedActivityId, setHighlightedActivityId] = useState<number | undefined>();
+
+    const toggleMap = useCallback(() => {
+        setMapExpanded(prev => {
+            const next = !prev;
+            try { localStorage.setItem(MAP_OPEN_KEY, String(next)); } catch { /* ignore */ }
+            return next;
+        });
+    }, []);
 
     // Load all trip days and destinations for the transport form
     useEffect(() => {
@@ -91,44 +122,103 @@ export const DayBuilder = ({ day, tripId, onRefresh }: DayBuilderProps) => {
     };
 
     return (
-        <div className="max-w-3xl mx-auto pb-24">
-            <DayHeader
-                day={day}
-                tripId={tripId}
-                onEditDay={() => setShowEditDayModal(true)}
-                onAddActivity={openCreateForm}
-                onAddTransport={() => {
-                    setSelectedTransport(null);
-                    setIsTransportFormOpen(true);
-                }}
-                onDestinationChanged={onRefresh}
-            />
+        <div className="pb-24">
+            {/* Two-column grid on lg+: timeline left, sticky map right */}
+            <div className="max-w-5xl mx-auto lg:grid lg:grid-cols-[1fr_360px] lg:gap-5 lg:items-start">
 
-            <DayTimeline
-                scheduled={scheduled}
-                unscheduled={unscheduled}
-                onEditActivity={openEditForm}
-                transportItems={transportItems}
-                currentDayId={day.id}
-                onEditTransport={openTransportEdit}
-            />
+                {/* ── Left column ─────────────────────────────────────── */}
+                <div className="max-w-3xl mx-auto lg:mx-0 lg:max-w-none">
+                    <DayHeader
+                        day={day}
+                        tripId={tripId}
+                        onEditDay={() => setShowEditDayModal(true)}
+                        onAddActivity={openCreateForm}
+                        onAddTransport={() => {
+                            setSelectedTransport(null);
+                            setIsTransportFormOpen(true);
+                        }}
+                        onDestinationChanged={onRefresh}
+                    />
 
-            {/* Transport cards below timeline (full detail view) */}
-            {transportItems.length > 0 && (
-                <div className="mt-6 space-y-3">
-                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Transport</h3>
-                    {transportItems.map(t => (
-                        <TransportItem
-                            key={t.id}
-                            transport={t}
-                            currentDayId={day.id}
-                            onEdit={openTransportEdit}
-                            onDelete={deleteTransport}
-                            onReload={reloadTransport}
-                        />
-                    ))}
+                    {/* Mobile-only collapsible map (hidden on lg+) */}
+                    <div className="mt-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden lg:hidden">
+                        <button
+                            onClick={toggleMap}
+                            className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-sm font-medium text-slate-700 dark:text-slate-300"
+                        >
+                            <span className="flex items-center gap-2">
+                                <Map className="w-4 h-4 text-blue-500" />
+                                Day Map
+                            </span>
+                            {mapExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        </button>
+                        {mapExpanded && (
+                            <div className="h-72 isolate">
+                                <DayMap
+                                    day={day}
+                                    destinations={destinations}
+                                    activities={activities}
+                                    transports={transportItems}
+                                    tripContext={tripCtx?.tripContext}
+                                    onActivityClick={setHighlightedActivityId}
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    <DayTimeline
+                        scheduled={scheduled}
+                        unscheduled={unscheduled}
+                        onEditActivity={openEditForm}
+                        transportItems={transportItems}
+                        currentDayId={day.id}
+                        onEditTransport={openTransportEdit}
+                        highlightedActivityId={highlightedActivityId}
+                    />
+
+                    {/* Transport cards below timeline */}
+                    {transportItems.length > 0 && (
+                        <div className="mt-6 space-y-3">
+                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Transport</h3>
+                            {transportItems.map(t => (
+                                <TransportItem
+                                    key={t.id}
+                                    transport={t}
+                                    currentDayId={day.id}
+                                    onEdit={openTransportEdit}
+                                    onDelete={deleteTransport}
+                                    onReload={reloadTransport}
+                                />
+                            ))}
+                        </div>
+                    )}
                 </div>
-            )}
+
+                {/* ── Right column: sticky map (desktop only) ──────────── */}
+                <aside className="hidden lg:block">
+                    <div
+                        className="sticky top-4 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden isolate"
+                        style={{ height: 'calc(100vh - 6rem)' }}
+                    >
+                        <div className="flex items-center gap-2 px-4 py-3 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+                            <Map className="w-4 h-4 text-blue-500" />
+                            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Day Map</span>
+                        </div>
+                        <div className="h-[calc(100%-45px)]">
+                            <DayMap
+                                day={day}
+                                destinations={destinations}
+                                activities={activities}
+                                transports={transportItems}
+                                tripContext={tripCtx?.tripContext}
+                                onActivityClick={setHighlightedActivityId}
+                            />
+                        </div>
+                    </div>
+                </aside>
+            </div>
+
+            {/* ── Modals ───────────────────────────────────────────────── */}
 
             {/* Activity Form Modal */}
             {isFormOpen && (

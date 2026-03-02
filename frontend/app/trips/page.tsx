@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { Trip } from '@/lib/types';
 import type { TripContext } from '@/lib/trip-context';
 import { tripApi, destinationApi } from '@/lib/api';
-import { geocodeAddress } from '@/lib/geocode-utils';
+import { geocodeAddress, Coordinates } from '@/lib/geocode-utils';
 import { autoCreateDaysForDestination } from '@/lib/destination-day-utils';
 import { TripCard, TripWizard } from '@/components/trips';
 import { Plus, X } from 'lucide-react';
@@ -47,6 +47,8 @@ function TripsContent() {
     budget?: number;
     default_currency?: string;
     first_destination?: string;
+    home_base_coords?: Coordinates;
+    first_destination_coords?: Coordinates;
     context: TripContext;
   }) => {
     setCreating(true);
@@ -58,7 +60,11 @@ function TripsContent() {
       setShowForm(false);
 
       if (tripId && data.context?.home_base) {
-        geocodeAddress(data.context.home_base).then(coords => {
+        // Use pre-validated coords if available, otherwise geocode now
+        const homeCoords = data.home_base_coords
+          ? Promise.resolve(data.home_base_coords)
+          : geocodeAddress(data.context.home_base);
+        homeCoords.then(coords => {
           if (coords) {
             tripApi.update(tripId, {
               context: {
@@ -81,7 +87,11 @@ function TripsContent() {
         }).then(destRes => {
           const dest = destRes.data;
 
-          geocodeAddress(data.first_destination as string).then(coords => {
+          // Use pre-validated coords if available, otherwise geocode now
+          const destCoords = data.first_destination_coords
+            ? Promise.resolve(data.first_destination_coords)
+            : geocodeAddress(data.first_destination as string);
+          destCoords.then(coords => {
             if (coords) {
               destinationApi.update(dest.id, {
                 latitude: coords.lat,

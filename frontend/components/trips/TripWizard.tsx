@@ -5,7 +5,7 @@ import { Input, Textarea } from '@/components/ui/Input';
 import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
 import { Button } from '@/components/ui/Button';
 import { getLocalTimezone, getSupportedTimezones } from '@/lib/timezone-utils';
-import { geocodeAddress } from '@/lib/geocode-utils';
+import { geocodeAddress, Coordinates } from '@/lib/geocode-utils';
 
 interface WizardData {
     // Step 1
@@ -50,6 +50,8 @@ interface TripWizardProps {
         budget?: number;
         default_currency?: string;
         first_destination?: string;
+        home_base_coords?: Coordinates;
+        first_destination_coords?: Coordinates;
         context: TripContext;
     }) => void;
     onCancel: () => void;
@@ -63,6 +65,7 @@ export const TripWizard = ({ onSubmit, onCancel, loading }: TripWizardProps) => 
     const [isValidating, setIsValidating] = useState(false);
     const [locationWarnings, setLocationWarnings] = useState<{ home_base?: string; first_destination?: string }>({});
     const lastValidated = useRef<{ home_base: string; first_destination: string } | null>(null);
+    const validatedCoords = useRef<{ home_base?: Coordinates | null; first_destination?: Coordinates | null }>({});
 
     const timezones = useMemo(() => getSupportedTimezones(), []);
 
@@ -107,6 +110,8 @@ export const TripWizard = ({ onSubmit, onCancel, loading }: TripWizardProps) => 
             budget: data.budget ? parseFloat(data.budget) : undefined,
             default_currency: data.budget_currency,
             first_destination: data.first_destination.trim() || undefined,
+            home_base_coords: validatedCoords.current.home_base ?? undefined,
+            first_destination_coords: validatedCoords.current.first_destination ?? undefined,
             context,
         });
     };
@@ -131,9 +136,10 @@ export const TripWizard = ({ onSubmit, onCancel, loading }: TripWizardProps) => 
             setIsValidating(true);
             try {
                 const results = await Promise.all(
-                    nonEmpty.map(f => geocodeAddress(f.value).then(coords => ({ key: f.key, found: coords !== null })))
+                    nonEmpty.map(f => geocodeAddress(f.value).then(coords => ({ key: f.key, coords, found: coords !== null })))
                 );
                 results.forEach(r => {
+                    validatedCoords.current[r.key] = r.coords;
                     if (!r.found) warnings[r.key] = "We couldn't confirm this location — check the spelling if needed.";
                 });
             } finally {

@@ -1,14 +1,26 @@
 # Implementation Plan: Day Map with Leaflet
 
 **Date:** 2026-02-28  
-**Status:** Draft  
-**Depends on:** [Destination ↔ Day Link](./2026-02-28-destination-day-link.md)
+**Status:** Revised 2026-02-28
+**Depends on:** [Destination ↔ Day Link](./2026-02-28-destination-day-link.md) (which adds lat/lng to destinations and builds `geocode-utils.ts`)
 
 ---
 
 ## Context
 
-Add an interactive map to the DayBuilder page showing activity locations as pins with a route polyline connecting them in time order. Uses Leaflet.js (free, lightweight, OpenStreetMap tiles) with Nominatim geocoding (free, no API key).
+Add an interactive map to the DayBuilder page showing activity locations as pins with a route polyline connecting them in time order. Uses Leaflet.js (free, lightweight, OpenStreetMap tiles) with Nominatim geocoding (already built in Phase 1).
+
+### What Phase 1 Already Provides
+- ✅ `latitude`/`longitude` columns on `Destination` model
+- ✅ `geocodeAddress()` utility in `frontend/lib/geocode-utils.ts`
+- ✅ Nominatim integration with rate-limiting and graceful degradation
+- ✅ `home_base_latitude`/`home_base_longitude` in `TripContext` JSON (geocoded from the wizard's "Departing from" field)
+- ✅ `origin_latitude`/`longitude` + `destination_latitude`/`longitude` on `TripTransport` (geocoded on save, or copied from linked day destination)
+
+### What This Plan Adds
+- lat/lng columns on `DayActivity` only (day-level coordinates come from the linked `Destination` via Phase 1's `destination_id` FK — no separate `TripDay.lat/lng` needed)
+- Leaflet map component rendered on the DayBuilder page
+- Auto-geocoding for activity locations on save
 
 ### Library Choice: Leaflet.js + react-leaflet
 
@@ -25,28 +37,29 @@ Add an interactive map to the DayBuilder page showing activity locations as pins
 
 ## Tasks
 
-### Task 1: Backend — Add Coordinate Columns
+### Task 1: Backend — Add Coordinates to DayActivity
 
-**Models to update:**
+`TripDay` coordinates are intentionally omitted — the linked `Destination` (Phase 1) already provides map center coordinates via `destination_id`. `DayActivity` needs its own lat/lng for pinning individual activities.
 
-| Model | New Columns |
-|---|---|
-| `Destination` | `latitude Float nullable`, `longitude Float nullable` |
-| `DayActivity` | `latitude Float nullable`, `longitude Float nullable` |
-| `TripDay`     | `latitude Float nullable`, `longitude Float nullable` |
+**Model to update:** `app/models/day_activity.py`
 
-**Migration:** `migrations/add_coordinates.py`
-- Add 6 columns across 3 tables
-- No backfill needed (all null initially; geocoded on save going forward)
+```python
+latitude = Column(Float, nullable=True)
+longitude = Column(Float, nullable=True)
+```
 
-**Schema updates:**
-- Add `latitude: Optional[float] = None`, `longitude: Optional[float] = None` to all relevant Base/Create/Update/Response schemas in:
-  - `app/schemas/destination.py`
-  - `app/schemas/day_activity.py`
-  - `app/schemas/trip_day.py`
+**Migration:** `migrations/add_coordinates_to_activities.py`
+```sql
+ALTER TABLE day_activities ADD COLUMN latitude FLOAT;
+ALTER TABLE day_activities ADD COLUMN longitude FLOAT;
+```
+No backfill needed (null initially; geocoded on save going forward).
+
+**Schema updates** — `app/schemas/day_activity.py`:
+- Add `latitude: float | None = None`, `longitude: float | None = None` to `DayActivityBase`, `DayActivityUpdate`, `DayActivityResponse`
 
 **File:** `app/core/migrations.py`
-- Register `latitude`, `longitude` in column lists for all 3 tables
+- Register `latitude`, `longitude` in the `day_activity_columns` list
 
 ### Task 2: Install Frontend Dependencies
 
@@ -54,23 +67,13 @@ Add an interactive map to the DayBuilder page showing activity locations as pins
 cd frontend && npm install leaflet react-leaflet @types/leaflet
 ```
 
-### Task 3: Frontend Types Update
+### Task 3: Frontend — Types Update
 
 **File:** `frontend/lib/types.ts`
-- Add `latitude?: number`, `longitude?: number` to `TripDay`, `DayActivity`, and `Destination` interfaces
+- Add `latitude?: number`, `longitude?: number` to `DayActivity` interface only
+- `TripDay` does not need these fields — map uses destination coordinates via `destination_id`
 
-### Task 4: Geocoding Utilities
-
-**New file:** `frontend/lib/geocode-utils.ts`
-
-```typescript
-export async function geocodeAddress(address: string): Promise<{lat: number, lng: number} | null>
-```
-
-- Uses Nominatim API: `https://nominatim.openstreetmap.org/search`
-- Includes `User-Agent` header (Nominatim TOS requirement)
-- Called after saving an entity with a location field
-- Result stored in the backend (lat/lng columns) — no re-geocoding on each render
+### Task 4: Frontend — Geocoding Hook (for reactive use in map)
 
 **New file:** `frontend/lib/useGeocode.ts`
 
@@ -82,42 +85,54 @@ export function useGeocode(address: string | undefined): {
 }
 ```
 
-- React hook wrapper for reactive geocoding
-- Debounced (1000ms) to respect Nominatim rate limits (1 req/sec)
-- Caches results in a `Map<string, GeocodeResult>` ref
+- React hook wrapper around `geocodeAddress()` from Phase 1
+- Caches results in a module-level `Map<string, GeocodeResult>` (shared across hook instances)
+- **Rate-limit safety:** uses a module-level request queue that spaces Nominatim calls 1100ms apart — prevents parallel hook instances (one per activity) from hammering the API simultaneously
+- Used by the map as a fallback for activities that have a `location` string but no stored `latitude`/`longitude` yet (i.e., activities created before geocoding was added)
 
-### Task 5: Map Components
+### Task 5: Frontend — Map Components
 
 **Directory:** `frontend/components/map/`
 
 #### `DayMap.tsx` — Main Day Map Component
-- Renders a Leaflet map showing:
-  - Day's main location pin (from `TripDay.latitude/longitude`)
-  - Activity pins (from `DayActivity.latitude/longitude`)
-  - Route polyline connecting activities in time order
-- Custom markers: numbered circles matching activity order
-- Popup on click: activity title, time, category
-- Auto-fits bounds to show all pins
-- **Must be dynamically imported** (Leaflet uses `window`/`document`):
-  ```tsx
-  const DayMap = dynamic(() => import('@/components/map/DayMap'), { ssr: false });
-  ```
 
-#### `MapMarker.tsx` — Custom Styled Markers
-- Day location: large pin with destination name
-- Activity: numbered circle (1, 2, 3...) with category-based color
+Markers and polylines are rendered as JSX directly inside `<MapContainer>` — no separate `MapMarker.tsx` or `RoutePolyline.tsx` files needed.
 
-#### `RoutePolyline.tsx` — Activity Route Lines
-- Dashed polyline connecting consecutive activities
-- Color-coded by time gap (tight = red, relaxed = green)
+Props:
+```typescript
+interface DayMapProps {
+  day: TripDay;
+  destinations: Destination[];   // already loaded by DayBuilder (from picker work)
+  activities: DayActivity[];
+  transports: TripTransport[];
+  tripContext?: TripContext;      // for home_base fallback center
+}
+```
+
+Renders:
+- **Destination pin** — from `destinations.find(d => d.id === day.destination_id)?.latitude/longitude`; large named marker
+- **Activity pins** — from `DayActivity.latitude/longitude`; numbered circles in time order. Falls back to `useGeocode(activity.location)` if coords not yet stored
+- **Route polyline** — dashed line connecting activities in chronological order
+- **Transport routes** — dashed lines from `TripTransport.origin_latitude/longitude` → `destination_latitude/longitude` for transports on this day
+- **Popup on click** — activity title, time, category
+
+Auto-fits bounds to all pins. **Fallback center priority:**
+1. Linked destination coordinates
+2. `TripContext.home_base_latitude` / `home_base_longitude`
+3. World-level view
+
+**Must be dynamically imported** (Leaflet uses `window`/`document`):
+```tsx
+const DayMap = dynamic(() => import('@/components/map/DayMap'), { ssr: false });
+```
 
 #### `index.ts` — Barrel export
 
 #### Leaflet CSS
-- Import `leaflet/dist/leaflet.css` in the map components
-- Custom marker styles via a small `map.css` file
+- Import `leaflet/dist/leaflet.css` in `DayMap.tsx`
+- Override default marker icons (Leaflet's default icon path breaks in Next.js — use `L.divIcon` for custom markers instead)
 
-### Task 6: Integrate Map into DayBuilder
+### Task 6: Frontend — Integrate Map into DayBuilder
 
 **File:** `frontend/components/days/DayBuilder.tsx`
 
@@ -144,30 +159,22 @@ Add a collapsible map panel above the timeline:
 - Click a timeline item → pan map to that marker
 - Map collapsed by default, toggle to expand (remembers preference in localStorage)
 
-### Task 7: Geocode-on-Save
+### Task 7: Frontend — Geocode Activities + Days on Save
 
-**Files:** `ActivityForm.tsx`, `DestinationForm.tsx`, `DayForm.tsx`
+**Files:** `ActivityForm.tsx`, `DayForm.tsx`
 
-Geocoding flow:
+Uses `geocodeAddress()` from Phase 1 (already built). Same pattern as destination geocoding:
+
 ```
-User types location in form
-         ↓
-    Form saves entity (POST/PUT)
-         ↓
-    Client calls geocodeAddress(location)
-         ↓
-    If result found → PATCH entity with lat/lng
-         ↓
-    DayMap re-renders with new pin
+User saves activity with location → POST succeeds → geocodeAddress() → PATCH with lat/lng
 ```
-
-Best practice: geocode **after save**, not during form editing. Avoids hammering Nominatim with every keystroke.
 
 ### Task 8: Map Styling + Polish
 - Custom tile layer styling
 - Responsive map height
 - Loading skeleton while map initializes
-- "No locations geocoded yet" empty state
+- "No locations geocoded yet" empty state — if `home_base` coordinates exist, still show the map centered on departure city with a subtle home marker and a prompt: _"Add locations to your activities to see them on the map"_
+- If no coordinates at all (no home_base, no activities), show an illustrated empty state
 
 ### Task 9: Manual Testing
 - Create activities with locations → verify pins appear
@@ -175,6 +182,7 @@ Best practice: geocode **after save**, not during form editing. Avoids hammering
 - Test map on mobile viewport
 - Test with 0 geocoded activities (empty state)
 - Test with 10+ activities (bounds fitting)
+- Verify destination pin appears from Phase 1 coordinates
 
 ---
 
@@ -183,9 +191,8 @@ Best practice: geocode **after save**, not during form editing. Avoids hammering
 ### New Files
 | File | Purpose |
 |---|---|
-| `migrations/add_coordinates.py` | Migration: lat/lng columns |
-| `frontend/lib/useGeocode.ts` | Nominatim geocoding hook |
-| `frontend/lib/geocode-utils.ts` | Geocode-on-save utility |
+| `migrations/add_coordinates_to_activities_and_days.py` | Migration: lat/lng for DayActivity + TripDay |
+| `frontend/lib/useGeocode.ts` | Reactive geocoding hook for map |
 | `frontend/components/map/DayMap.tsx` | Leaflet day map |
 | `frontend/components/map/MapMarker.tsx` | Custom markers |
 | `frontend/components/map/RoutePolyline.tsx` | Activity route lines |
@@ -194,17 +201,15 @@ Best practice: geocode **after save**, not during form editing. Avoids hammering
 ### Modified Files
 | File | Changes |
 |---|---|
-| `app/models/destination.py` | Add `latitude`, `longitude` |
 | `app/models/day_activity.py` | Add `latitude`, `longitude` |
 | `app/models/trip_day.py` | Add `latitude`, `longitude` |
-| `app/schemas/destination.py` | Add `latitude`, `longitude` |
 | `app/schemas/day_activity.py` | Add `latitude`, `longitude` |
 | `app/schemas/trip_day.py` | Add `latitude`, `longitude` |
 | `app/core/migrations.py` | Register new columns |
-| `frontend/lib/types.ts` | Add `latitude`, `longitude` to types |
+| `frontend/lib/types.ts` | Add `latitude`, `longitude` to DayActivity + TripDay |
 | `frontend/components/days/DayBuilder.tsx` | Map panel integration |
 | `frontend/components/days/ActivityForm.tsx` | Geocode on save |
-| `frontend/components/destinations/DestinationForm.tsx` | Geocode on save |
+| `frontend/components/days/DayForm.tsx` | Geocode on save |
 | `frontend/package.json` | Add leaflet, react-leaflet, @types/leaflet |
 
 ---
@@ -215,9 +220,9 @@ Best practice: geocode **after save**, not during form editing. Avoids hammering
 |---|---|---|
 | 1 | Leaflet.js + react-leaflet | Free, lightweight (~44kb), OSS, no API key |
 | 2 | OpenStreetMap tiles | Free, no billing, good global coverage |
-| 3 | Nominatim for geocoding | Free, no API key, sufficient accuracy for travel planning |
-| 4 | Store lat/lng on backend | Best practice — fast map loads, no re-geocoding every render |
-| 5 | Geocode after save | Respects Nominatim rate limits (1 req/sec) |
+| 3 | Reuse `geocodeAddress()` from Phase 1 | Already built for destinations; same utility works for activities |
+| 4 | Add `useGeocode` hook for reactive fallback | Map can geocode on-the-fly for activities missing stored coordinates |
+| 5 | Store lat/lng on backend | Best practice — fast map loads, no re-geocoding every render |
 | 6 | Dynamic import for map | Leaflet uses `window`/`document` — incompatible with Next.js SSR |
 | 7 | Collapsible map panel | Don't force map on users who don't need it; save viewport space on mobile |
 
@@ -226,7 +231,7 @@ Best practice: geocode **after save**, not during form editing. Avoids hammering
 ## Future: Trip Overview Map (Phase 3)
 
 Once the Day Map is working, a natural next step is a full **Trip Overview Map**:
-- All destinations as major markers
+- All destinations as major markers (coordinates from Phase 1)
 - Transport routes drawn between destinations (flight arcs, road polylines)
 - Day-by-day animation slider
 - New tab on the trip detail page

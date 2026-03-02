@@ -15,6 +15,8 @@ class DayActivityBase(BaseModel):
     sort_order: int = 0
     is_todo: bool = False
     is_completed: bool = False
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 
 class DayActivityCreate(DayActivityBase):
@@ -42,6 +44,8 @@ class DayActivityUpdate(BaseModel):
     is_todo: Optional[bool] = None
     is_completed: Optional[bool] = None
     destination_id: Optional[int] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 
 class DayActivityResponse(DayActivityBase):

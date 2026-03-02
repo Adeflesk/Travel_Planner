@@ -8,16 +8,24 @@ export interface Coordinates {
     lng: number;
 }
 
-/**
- * Geocodes an address string to latitude and longitude using Nominatim.
- * Nominatim requires a User-Agent, so we provide one identifying the app.
- *
- * @param address The address string to geocode (e.g. "Paris, France" or "JFK Airport")
- * @returns {lat, lng} or null if geocoding fails or no results found
- */
-export async function geocodeAddress(address: string): Promise<Coordinates | null> {
-    if (!address || !address.trim()) return null;
+// Nominatim enforces a strict 1 req/s usage policy.
+// All geocodeAddress calls are serialised through this promise chain
+// with a 1.1s gap between requests.
+let _geocodeQueue: Promise<unknown> = Promise.resolve();
 
+export function geocodeAddress(address: string): Promise<Coordinates | null> {
+    if (!address || !address.trim()) return Promise.resolve(null);
+
+    const request = _geocodeQueue.then(() => _doGeocode(address));
+    // Advance the queue tail regardless of success or failure
+    _geocodeQueue = request.then(
+        () => new Promise(r => setTimeout(r, 1100)),
+        () => new Promise(r => setTimeout(r, 1100)),
+    );
+    return request;
+}
+
+async function _doGeocode(address: string): Promise<Coordinates | null> {
     try {
         const url = new URL('https://nominatim.openstreetmap.org/search');
         url.searchParams.append('q', address);

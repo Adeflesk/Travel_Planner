@@ -81,7 +81,7 @@ def migrate_unified_activities(engine: Engine) -> None:
 
     with engine.begin() as conn:
         if activities_exists:
-            conn.execute(text("DROP TABLE IF EXISTS activities"))
+            conn.execute(text("DROP TABLE IF EXISTS activities CASCADE"))
             logger.info("Dropped legacy activities table")
 
         if day_activities_exists and needs_rebuild:
@@ -100,10 +100,10 @@ def migrate_unified_activities(engine: Engine) -> None:
                     notes TEXT,
                     cost FLOAT,
                     currency VARCHAR(3),
-                    booked BOOLEAN NOT NULL DEFAULT 0,
+                    booked BOOLEAN NOT NULL DEFAULT FALSE,
                     sort_order INTEGER NOT NULL DEFAULT 0,
-                    is_todo BOOLEAN NOT NULL DEFAULT 0,
-                    is_completed BOOLEAN NOT NULL DEFAULT 0
+                    is_todo BOOLEAN NOT NULL DEFAULT FALSE,
+                    is_completed BOOLEAN NOT NULL DEFAULT FALSE
                 )
             """
                 )
@@ -119,7 +119,7 @@ def migrate_unified_activities(engine: Engine) -> None:
                 SELECT
                     id, day_id, start_time, end_time, title, category,
                     location, notes, cost, currency, booked, sort_order,
-                    0, 0
+                    FALSE, FALSE
                 FROM day_activities
             """
                 )
@@ -158,6 +158,11 @@ def run_migrations(engine: Engine) -> None:
         ("destination_longitude", "FLOAT", "NULL"),
     ]
 
+    day_activity_columns = [
+        ("latitude", "FLOAT", "NULL"),
+        ("longitude", "FLOAT", "NULL"),
+    ]
+
     applied_migrations: list[str] = []
 
     # Trip budget threshold columns (Feature 018)
@@ -193,6 +198,12 @@ def run_migrations(engine: Engine) -> None:
             engine, "trip_transports", col_name, col_type, default
         ):
             applied_migrations.append(f"trip_transports.{col_name}")
+
+    for col_name, col_type, default in day_activity_columns:
+        if add_column_if_not_exists(
+            engine, "day_activities", col_name, col_type, default
+        ):
+            applied_migrations.append(f"day_activities.{col_name}")
 
     migrations_run = len(applied_migrations)
     if migrations_run > 0:

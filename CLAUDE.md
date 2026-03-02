@@ -43,6 +43,10 @@ When editing string literals in JSX/TSX or template strings, double-check quote 
 
 Always run `npm run lint` and `npx tsc --noEmit` after modifying TypeScript/React files. Fix any errors before considering the task complete.
 
+## Pre-commit Hook Behaviour
+
+This project uses `pre-commit`. The hook **stashes untracked files** before running checks, so brand-new files that haven't been `git add`-ed will be silently excluded from the commit even if the commit succeeds. Always `git add` new files before committing, and verify with `git status` that they are staged (not `??` untracked).
+
 ## Frontend / Styling
 
 When fixing CSS/styling bugs (especially dark mode), inspect the full CSS variable/token chain from root to component. Don't just override at the component level — find the actual source of the incorrect value.
@@ -100,7 +104,9 @@ Travel_Planner/
 │   ├── lib/               # Utilities, API client, types
 │   └── e2e/               # Playwright tests
 ├── docs/                  # Documentation
-│   └── features/          # Feature specifications
+│   ├── plans/             # Active implementation plans (tasks + steps)
+│   └── features/          # Feature ideas and longer-term specs
+├── migrations/            # Standalone DB migration scripts (run via migrate.py)
 └── travel_planner.db      # SQLite database
 ```
 
@@ -182,4 +188,5 @@ cd frontend && NEXT_PUBLIC_API_URL=http://localhost:8000 npm run test:e2e
 
 ## Feature Documentation
 
-Feature specs are documented in `docs/features/`. Each file has requirements, approach, and acceptance criteria.
+- `docs/plans/` — Active implementation plans with tasks and steps. Use these during development sessions.
+- `docs/features/` — Feature ideas and longer-term specs with requirements and acceptance criteria.
