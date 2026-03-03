@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "postinstall": "node -e \"const f='node_modules/@types/mapbox__point-geometry/index.d.ts';require('fs').existsSync(f)||require('fs').writeFileSync(f,'export {};\\n')\"",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
