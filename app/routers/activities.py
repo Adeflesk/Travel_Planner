@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app import models, schemas
 from app.core.deps import get_current_user
+from app.services.geocoding import geocode
 from database import get_db
 
 router = APIRouter(tags=["activities"])
@@ -104,6 +105,12 @@ def create_activity(
     current_user: models.User = Depends(get_current_user),
 ):
     db_activity = models.DayActivity(**activity.model_dump())
+
+    # Geocode location if no coordinates were provided by the client
+    if db_activity.location and db_activity.latitude is None:
+        coords = geocode(db_activity.location)
+        if coords:
+            db_activity.latitude, db_activity.longitude = coords
 
     # Resolve trip_id for authorization
     trip_id_for_auth: int | None = None
@@ -229,6 +236,12 @@ def update_activity(
 
     for key, value in update.model_dump(exclude_unset=True).items():
         setattr(activity, key, value)
+
+    # Re-geocode if location changed and latitude is now None
+    if update.location and update.latitude is None:
+        coords = geocode(update.location)
+        if coords:
+            activity.latitude, activity.longitude = coords
 
     db.commit()
     db.refresh(activity)
