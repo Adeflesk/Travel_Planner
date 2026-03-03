@@ -131,6 +131,52 @@ def migrate_unified_activities(engine: Engine) -> None:
             logger.info("Migrated day_activities to unified schema")
 
 
+def fix_day_activities_id_sequence(engine: Engine) -> None:
+    """Fix missing autoincrement sequence on day_activities.id for Postgres.
+
+    When migrate_unified_activities rebuilt the table it used raw SQL with
+    'id INTEGER PRIMARY KEY'. In SQLite that implies autoincrement; in Postgres
+    it does not — so INSERTs fail with NotNullViolation on the id column.
+    This migration detects the missing sequence and attaches one.
+    """
+    if engine.dialect.name != "postgresql":
+        return
+
+    try:
+        with engine.connect() as conn:
+            row = conn.execute(
+                text(
+                    """
+                    SELECT column_default
+                    FROM information_schema.columns
+                    WHERE table_name = 'day_activities' AND column_name = 'id'
+                    """
+                )
+            ).fetchone()
+
+            if row is None or row[0] is not None:
+                # Table doesn't exist yet, or sequence already attached
+                return
+
+            conn.execute(text("CREATE SEQUENCE IF NOT EXISTS day_activities_id_seq"))
+            conn.execute(
+                text(
+                    "SELECT setval('day_activities_id_seq',"
+                    " COALESCE((SELECT MAX(id) FROM day_activities), 0) + 1, false)"
+                )
+            )
+            conn.execute(
+                text(
+                    "ALTER TABLE day_activities"
+                    " ALTER COLUMN id SET DEFAULT nextval('day_activities_id_seq')"
+                )
+            )
+            conn.commit()
+            logger.info("Fixed day_activities.id sequence for Postgres")
+    except Exception as e:
+        logger.warning(f"Could not fix day_activities id sequence: {e}")
+
+
 def run_migrations(engine: Engine) -> None:
     """Run all pending migrations."""
     logger.info("Running database migrations...")
@@ -214,6 +260,8 @@ def run_migrations(engine: Engine) -> None:
         logger.info("No migrations needed")
 
     migrate_unified_activities(engine)
+
+    fix_day_activities_id_sequence(engine)
 
     # Create/Update trip_summary view
     create_trip_summary_view(engine)
