@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from app import schemas, models
 from app.core.deps import get_current_user
 from app.services import weather_service
+from app.services.geocoding import geocode
 from database import get_db
 
 router = APIRouter()
@@ -59,6 +60,15 @@ def create_destination(
     get_trip_for_destination(destination.trip_id, db, current_user, require_owner=True)
 
     db_destination = models.Destination(**destination.model_dump())
+
+    # Geocode name if no coordinates were provided
+    if db_destination.latitude is None:
+        query = ", ".join(filter(None, [db_destination.name, db_destination.country]))
+        if query:
+            coords = geocode(query)
+            if coords:
+                db_destination.latitude, db_destination.longitude = coords
+
     db.add(db_destination)
     db.commit()
     db.refresh(db_destination)
@@ -130,6 +140,13 @@ def update_destination(
 
     for key, value in destination_update.model_dump(exclude_unset=True).items():
         setattr(destination, key, value)
+
+    # Re-geocode if latitude is now None (e.g. name changed, coords cleared)
+    if destination.latitude is None and destination.name:
+        query = ", ".join(filter(None, [destination.name, destination.country]))
+        coords = geocode(query)
+        if coords:
+            destination.latitude, destination.longitude = coords
 
     db.commit()
     db.refresh(destination)

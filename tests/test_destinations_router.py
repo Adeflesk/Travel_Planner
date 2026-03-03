@@ -598,3 +598,103 @@ def test_get_destination_weather_service_unavailable(
     assert resp.status_code == 503
     data = resp.json()
     assert "temporarily unavailable" in data["detail"].lower()
+
+
+# --- Geocoding ---
+
+
+def _make_geo_trip(db, user_id):
+    trip = models.Trip(
+        name="GeoTrip",
+        start_date=date(2030, 1, 1),
+        end_date=date(2030, 1, 10),
+        status="planning",
+        user_id=user_id,
+    )
+    db.add(trip)
+    db.commit()
+    db.refresh(trip)
+    return trip
+
+
+def test_create_destination_geocodes_name(client, test_user, db_session):
+    """Destination without coords gets geocoded on create."""
+    trip = _make_geo_trip(db_session, test_user["user"].id)
+
+    with patch(
+        "app.routers.destinations.geocode", return_value=(48.8566, 2.3522)
+    ) as mock_geo:
+        resp = client.post(
+            "/destinations/",
+            json={"name": "Paris", "country": "France", "trip_id": trip.id},
+        )
+
+    assert resp.status_code == 201
+    data = resp.json()
+    assert data["latitude"] == 48.8566
+    assert data["longitude"] == 2.3522
+    mock_geo.assert_called_once_with("Paris, France")
+
+
+def test_create_destination_skips_geocode_when_coords_provided(
+    client, test_user, db_session
+):
+    """Destination with explicit coords skips geocoding."""
+    trip = _make_geo_trip(db_session, test_user["user"].id)
+
+    with patch("app.routers.destinations.geocode") as mock_geo:
+        resp = client.post(
+            "/destinations/",
+            json={
+                "name": "Paris",
+                "country": "France",
+                "trip_id": trip.id,
+                "latitude": 48.8566,
+                "longitude": 2.3522,
+            },
+        )
+
+    assert resp.status_code == 201
+    mock_geo.assert_not_called()
+
+
+def test_create_destination_geocodes_name_only_when_no_country(
+    client, test_user, db_session
+):
+    """Destination without country geocodes name alone."""
+    trip = _make_geo_trip(db_session, test_user["user"].id)
+
+    with patch(
+        "app.routers.destinations.geocode", return_value=(35.6762, 139.6503)
+    ) as mock_geo:
+        resp = client.post(
+            "/destinations/",
+            json={"name": "Tokyo", "trip_id": trip.id},
+        )
+
+    assert resp.status_code == 201
+    mock_geo.assert_called_once_with("Tokyo")
+
+
+def test_update_destination_geocodes_when_lat_cleared(client, test_user, db_session):
+    """Updating destination name with null latitude triggers re-geocoding."""
+    trip = _make_geo_trip(db_session, test_user["user"].id)
+    dest = models.Destination(
+        name="Old City", trip_id=trip.id, latitude=1.0, longitude=1.0
+    )
+    db_session.add(dest)
+    db_session.commit()
+    db_session.refresh(dest)
+
+    with patch(
+        "app.routers.destinations.geocode", return_value=(48.8566, 2.3522)
+    ) as mock_geo:
+        resp = client.put(
+            f"/destinations/{dest.id}",
+            json={"name": "Paris", "latitude": None, "longitude": None},
+        )
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["latitude"] == 48.8566
+    mock_geo.assert_called_once()
