@@ -14,7 +14,9 @@ A full-stack travel planning application built with FastAPI and Next.js. Organis
 ### Day Builder
 - **Trip Days** — create one day per date for a trip; each day has a title, location, and notes
 - **Day Timeline** — vertical chronological view of a day's activities and transport
-- **Activities** — add timed activities (start + optional end time) to a day, with category, location, cost, and booked status
+- **Day Map** — interactive Leaflet map (OpenStreetMap) alongside the timeline; numbered activity markers, destination pin, route polyline, and transport overlays; sticky on desktop, collapsible on mobile
+- **Destination-Day Linking** — link each day to a trip destination via `DestinationPicker`; inline destination creation supported; clicking an activity in the timeline highlights its pin on the map
+- **Activities** — add timed activities (start + optional end time) to a day, with category, location, cost, booked status, and optional lat/lng for map placement
 - **Transport on Day Pages** — transport items appear in the day timeline alongside activities; overnight legs appear on both departure and arrival days
 
 ### Transport
@@ -56,6 +58,7 @@ A full-stack travel planning application built with FastAPI and Next.js. Organis
 - **react-hook-form** + **zod** for form validation
 - **date-fns** / **date-fns-tz** for datetime arithmetic
 - **Lucide React** icons
+- **Leaflet** + **react-leaflet** for interactive maps
 - **Axios** for API calls
 - **Vitest** + **Testing Library** for unit tests
 - **Playwright** for end-to-end tests
@@ -76,11 +79,10 @@ Travel_Planner/
 │   ├── models/                   # SQLAlchemy models
 │   │   ├── trip.py               # Trip (+ context JSON column)
 │   │   ├── trip_day.py           # TripDay (one per calendar date)
-│   │   ├── day_activity.py       # DayActivity (timed activity on a day)
+│   │   ├── day_activity.py       # DayActivity (unified activity model; lat/lng for map)
 │   │   ├── trip_transport.py     # TripTransport (flight/train/drive/etc.)
 │   │   ├── transport_option.py   # TransportOption (compare alternatives)
 │   │   ├── destination.py        # Destination
-│   │   ├── activity.py           # Activity (destination-level)
 │   │   ├── expense.py            # Expense
 │   │   ├── packing_item.py       # PackingItem
 │   │   ├── user.py               # User
@@ -98,7 +100,8 @@ Travel_Planner/
 │   │   ├── settings/             # User settings
 │   │   └── help/                 # Help center
 │   ├── components/
-│   │   ├── days/                 # DayBuilder, DayTimeline, ActivityForm, TransportBlock
+│   │   ├── days/                 # DayBuilder, DayTimeline, ActivityForm, DestinationPicker, TransportBlock
+│   │   ├── map/                  # DayMap (Leaflet, SSR-disabled)
 │   │   ├── transport/            # TransportForm, TransportItem, TransportOptionList
 │   │   ├── trips/                # TripWizard, TripSettings, TripSidebar, TripCard
 │   │   ├── dashboard/            # Dashboard components
@@ -110,6 +113,8 @@ Travel_Planner/
 │   │   ├── api.ts                # Typed API client (Axios)
 │   │   ├── types.ts              # TypeScript interfaces
 │   │   ├── transport-config.ts   # TRANSPORT_CONFIG (adaptive form driver)
+│   │   ├── useGeocode.ts         # Rate-limited Nominatim geocoding hook
+│   │   ├── geocode-utils.ts      # geocodeAddress helper
 │   │   └── datetime-utils.ts     # Date helpers (date-fns wrappers)
 │   └── e2e/                      # Playwright end-to-end tests
 ├── migrations/                   # One-shot SQL migration scripts
@@ -242,6 +247,8 @@ Schema changes are applied via scripts in `migrations/`. On startup, `app/core/m
 - **Day-first transport** — transport is anchored to `TripDay` records (one per calendar date). A `TripTransport` record has a `departure_day_id` and optionally an `arrival_day_id` for overnight legs. Cross-day trips appear on both day timelines.
 - **TRANSPORT_CONFIG** — a single TypeScript object at `frontend/lib/transport-config.ts` drives all field visibility, labels, and placeholders in `TransportForm`. No per-type conditional logic scattered through JSX.
 - **TransportOption** — each `TripTransport` can have child `TransportOption` records for comparing alternatives before committing to one.
+- **Day Map** — `DayMap` is dynamically imported with `ssr: false` (Leaflet requires `window`). It uses CSS `isolation: isolate` to keep Leaflet's high z-indices from bleeding above modals. Activity markers are auto-geocoded via a rate-limited Nominatim queue in `useGeocode.ts`.
+- **Destination-Day Linking** — `DestinationPicker` patches `trip_days.destination_id` on the backend; the map uses this to place the destination pin and generate the route polyline. Transport form uses the linked destination to auto-fill the origin field.
 
 ---
 
