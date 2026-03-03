@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { DayActivity } from '@/lib/types';
 import { Button } from '@/components/ui/Button';
+import { LocationSearchBox } from '@/components/shared/LocationSearchBox';
 
 interface ActivityFormProps {
     activity?: Partial<DayActivity>;
@@ -12,8 +13,7 @@ interface ActivityFormProps {
 }
 
 export const ActivityForm = ({ activity, dayId, onSave, onClose, onDelete }: ActivityFormProps) => {
-    console.log('Rendering ActivityForm for dayId:', dayId);
-    const { register, handleSubmit } = useForm<Partial<DayActivity>>({
+    const { register, handleSubmit, setValue, watch } = useForm<Partial<DayActivity>>({
         defaultValues: {
             title: activity?.title || '',
             category: activity?.category || 'other',
@@ -23,9 +23,12 @@ export const ActivityForm = ({ activity, dayId, onSave, onClose, onDelete }: Act
             notes: activity?.notes || '',
             cost: activity?.cost || undefined,
             booked: activity?.booked || false,
+            latitude: activity?.latitude ?? undefined,
+            longitude: activity?.longitude ?? undefined,
         }
     });
 
+    const locationValue = watch('location') ?? '';
     const [loading, setLoading] = useState(false);
 
     const onSubmit = async (data: Partial<DayActivity>) => {
@@ -90,8 +93,17 @@ export const ActivityForm = ({ activity, dayId, onSave, onClose, onDelete }: Act
                     </div>
 
                     <div>
-                        <label htmlFor="activity-location" className="block text-sm font-semibold text-slate-700 mb-1">Location</label>
-                        <input id="activity-location" {...register('location')} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" placeholder="Address or area" />
+                        <label className="block text-sm font-semibold text-slate-700 mb-1">Location</label>
+                        <LocationSearchBox
+                            value={locationValue}
+                            placeholder="Address or area"
+                            onTextChange={(text) => setValue('location', text)}
+                            onRetrieve={({ text, lat, lng }) => {
+                                setValue('location', text);
+                                setValue('latitude', lat);
+                                setValue('longitude', lng);
+                            }}
+                        />
                     </div>
 
                     <div>
