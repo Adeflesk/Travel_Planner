@@ -163,6 +163,23 @@ SQLite database at `travel_planner.db`. To add schema changes:
 2. Run `python migrate.py` to apply all pending migrations
 3. Test SQLite (local) and Postgres (production) compatibility before committing
 
+## Database Migrations
+
+Production uses **Postgres (Neon)**. Local dev uses **SQLite**. Never use SQLite-specific SQL in migrations — it will silently work locally but break in production.
+
+Key rules:
+- **Never use `INTEGER PRIMARY KEY` without a sequence in raw SQL** — SQLite auto-increments it, Postgres does not. Use `SERIAL PRIMARY KEY` or ensure SQLAlchemy handles it.
+- **Boolean defaults**: Use `DEFAULT TRUE`/`DEFAULT FALSE`, not `DEFAULT 1`/`DEFAULT 0` — Postgres rejects integer defaults on boolean columns.
+- **DROP TABLE with dependents**: Use `DROP TABLE ... CASCADE` in Postgres when other tables reference it.
+- **Always write migrations for both dialects**, or use `engine.dialect.name` to branch Postgres-specific logic.
+- After any migration change, verify against the production Neon DB: `fly ssh console --app <app> --command "bash -c 'cd /app && python -c \"from database import engine; from sqlalchemy import inspect; ...\"'"`.
+
+## Environment
+
+- **Virtual environment**: Always activate `.venv/` before running backend commands. Verify with `which python` — it should point inside `.venv/`.
+- **Port conflicts**: Backend runs on `8000`, frontend on `3000`. Kill stale processes before starting: `lsof -ti:8000 | xargs kill -9`.
+- **Do NOT store this project in iCloud Drive** — iCloud sync corrupts git pack files and the git index. Keep the project under `~/Development/` or another non-synced path.
+
 ## Testing & Linting
 
 **Backend tests:**
