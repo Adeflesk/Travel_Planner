@@ -1,6 +1,13 @@
 'use client';
 
-import { SearchBox } from '@mapbox/search-js-react';
+import dynamic from 'next/dynamic';
+import type { SearchBoxRetrieveResponse } from '@mapbox/search-js-core';
+
+// SearchBox accesses `document` at module load time — must be client-only
+const SearchBox = dynamic(
+  () => import('@mapbox/search-js-react').then((m) => ({ default: m.SearchBox })),
+  { ssr: false }
+);
 
 export interface LocationSearchResult {
   text: string;
@@ -30,7 +37,7 @@ export function LocationSearchBox({
       value={value}
       placeholder={placeholder}
       onChange={(newValue: string) => onTextChange(newValue)}
-      onRetrieve={(res) => {
+      onRetrieve={(res: SearchBoxRetrieveResponse) => {
         const feature = res.features[0];
         if (!feature) return;
 
