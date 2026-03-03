@@ -1,11 +1,12 @@
 'use client';
 
 import { DestinationFormData } from '@/lib/types';
+import { LocationSearchBox } from '@/components/shared/LocationSearchBox';
+import type { LocationSearchResult } from '@/components/shared/LocationSearchBox';
 
 interface DestinationFormProps {
   formData: DestinationFormData;
   isEditing: boolean;
-  locationWarning?: string | null;
   isSubmitting?: boolean;
   onSubmit: (e: React.FormEvent) => void;
   onCancel: () => void;
@@ -13,16 +14,17 @@ interface DestinationFormProps {
     field: K,
     value: DestinationFormData[K]
   ) => void;
+  onLocationRetrieve: (result: LocationSearchResult) => void;
 }
 
 export function DestinationForm({
   formData,
   isEditing,
-  locationWarning,
   isSubmitting = false,
   onSubmit,
   onCancel,
   updateField,
+  onLocationRetrieve,
 }: DestinationFormProps) {
   return (
     <form onSubmit={onSubmit} className="bg-gray-50 p-4 rounded-lg mb-4">
@@ -32,13 +34,11 @@ export function DestinationForm({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-700">City/Place</label>
-          <input
-            type="text"
+          <LocationSearchBox
             value={formData.name}
-            onChange={(e) => updateField('name', e.target.value)}
             placeholder="e.g., Paris, Tokyo"
-            required
-            className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
+            onTextChange={(text) => updateField('name', text)}
+            onRetrieve={onLocationRetrieve}
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -96,11 +96,6 @@ export function DestinationForm({
           />
         </div>
       </div>
-      {locationWarning && (
-        <p className="text-xs text-amber-600 mt-2">
-          {locationWarning}
-        </p>
-      )}
       <div className="mt-3 flex gap-2">
         <button
           type="submit"
