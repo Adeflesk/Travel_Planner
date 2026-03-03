@@ -77,7 +77,6 @@ test.describe('DestinationPicker — Day-Destination Linking', () => {
             date: '2030-06-02',
             title: 'Madrid Day',
             destination_id: destId,
-            location: 'Madrid',
         });
         const linkedDayId = (await linkedDayRes.json()).id;
 
