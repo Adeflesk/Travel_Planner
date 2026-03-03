@@ -159,12 +159,21 @@ export default function DayMap({
   tripContext,
   onActivityClick,
 }: DayMapProps) {
-  // Destination pin
+  // Destination pin — use stored coords; geocode name as fallback
   const linkedDestination = destinations.find((d) => d.id === day.destination_id);
-  const destCoords: LatLng | null =
+  const storedDestCoords: LatLng | null =
     linkedDestination?.latitude != null && linkedDestination.longitude != null
       ? { lat: linkedDestination.latitude, lng: linkedDestination.longitude }
       : null;
+
+  const destGeoQuery =
+    !storedDestCoords && linkedDestination
+      ? [linkedDestination.name, linkedDestination.country].filter(Boolean).join(', ')
+      : undefined;
+  const { result: destGeoResult } = useGeocode(destGeoQuery);
+
+  const destCoords: LatLng | null =
+    storedDestCoords ?? (destGeoResult ? { lat: destGeoResult.lat, lng: destGeoResult.lng } : null);
 
   // Sorted activities
   const sortedActivities = useMemo(
@@ -187,10 +196,12 @@ export default function DayMap({
   );
   const hasHomeBase =
     tripContext?.home_base_latitude != null && tripContext.home_base_longitude != null;
+  // A linked destination is pending geocoding — don't fall back to home base yet
+  const destPendingGeocode = !!linkedDestination && !destCoords;
   const hasAnyCoords = destCoords != null || hasActivityCoords;
 
-  // No coordinates anywhere — illustrated empty state
-  if (!hasAnyCoords && !hasHomeBase) {
+  // No coordinates anywhere — illustrated empty state (suppress while geocoding pending)
+  if (!hasAnyCoords && !hasHomeBase && !destPendingGeocode) {
     return (
       <div className="h-full w-full flex flex-col items-center justify-center gap-3 bg-slate-50 text-slate-400 rounded-lg">
         <MapPin className="w-10 h-10 text-slate-300" strokeWidth={1.5} />
@@ -202,12 +213,12 @@ export default function DayMap({
     );
   }
 
-  // Fallback center: destination → home_base → world
-  const fallbackCenter: LatLng = destCoords ?? {
-    lat: tripContext!.home_base_latitude!,
-    lng: tripContext!.home_base_longitude!,
-  };
-  const fallbackZoom = destCoords ? 12 : 10;
+  // Fallback center: destination → home_base (only if no dest linked) → world
+  const fallbackCenter: LatLng = destCoords
+    ?? (!destPendingGeocode && hasHomeBase
+        ? { lat: tripContext!.home_base_latitude!, lng: tripContext!.home_base_longitude! }
+        : { lat: 20, lng: 0 });
+  const fallbackZoom = destCoords ? 12 : destPendingGeocode ? 2 : 10;
 
   return (
     <div className="relative h-full w-full">
