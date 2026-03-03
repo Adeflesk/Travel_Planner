@@ -142,3 +142,96 @@ def test_delete_activity(client, test_user, db_session):
 def test_delete_activity_not_found(client, test_user):
     resp = client.delete("/activities/99999")
     assert resp.status_code == 404
+
+
+# --- Geocoding ---
+
+
+from unittest.mock import patch  # noqa: E402
+
+
+def test_create_activity_geocodes_location(client, test_user, db_session):
+    """Activity with location but no coords gets geocoded on create."""
+    trip, dest = _make_trip_with_dest(db_session, test_user["user"].id)
+    day = _make_day(db_session, trip.id)
+
+    with patch(
+        "app.routers.activities.geocode", return_value=(48.8566, 2.3522)
+    ) as mock_geo:
+        resp = client.post(
+            "/activities/",
+            json={
+                "title": "Eiffel Tower",
+                "day_id": day.id,
+                "location": "Eiffel Tower, Paris",
+            },
+        )
+
+    assert resp.status_code == 201
+    data = resp.json()
+    assert data["latitude"] == 48.8566
+    assert data["longitude"] == 2.3522
+    mock_geo.assert_called_once_with("Eiffel Tower, Paris")
+
+
+def test_create_activity_skips_geocode_when_coords_provided(
+    client, test_user, db_session
+):
+    """Activity with explicit coords skips geocoding."""
+    trip, dest = _make_trip_with_dest(db_session, test_user["user"].id)
+    day = _make_day(db_session, trip.id)
+
+    with patch("app.routers.activities.geocode") as mock_geo:
+        resp = client.post(
+            "/activities/",
+            json={
+                "title": "Eiffel Tower",
+                "day_id": day.id,
+                "location": "Paris",
+                "latitude": 48.8566,
+                "longitude": 2.3522,
+            },
+        )
+
+    assert resp.status_code == 201
+    mock_geo.assert_not_called()
+
+
+def test_create_activity_succeeds_when_geocode_fails(client, test_user, db_session):
+    """Geocoding failure does not fail the save."""
+    trip, dest = _make_trip_with_dest(db_session, test_user["user"].id)
+    day = _make_day(db_session, trip.id)
+
+    with patch("app.routers.activities.geocode", return_value=None):
+        resp = client.post(
+            "/activities/",
+            json={"title": "Mystery Place", "day_id": day.id, "location": "Nowhere"},
+        )
+
+    assert resp.status_code == 201
+    data = resp.json()
+    assert data["latitude"] is None
+    assert data["longitude"] is None
+
+
+def test_update_activity_geocodes_new_location(client, test_user, db_session):
+    """Updating location with no coords triggers re-geocoding."""
+    trip, dest = _make_trip_with_dest(db_session, test_user["user"].id)
+    day = _make_day(db_session, trip.id)
+
+    # Create activity without coords
+    resp = client.post("/activities/", json={"title": "A", "day_id": day.id})
+    activity_id = resp.json()["id"]
+
+    with patch(
+        "app.routers.activities.geocode", return_value=(51.5074, -0.1278)
+    ) as mock_geo:
+        resp = client.patch(
+            f"/activities/{activity_id}",
+            json={"location": "London"},
+        )
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["latitude"] == 51.5074
+    mock_geo.assert_called_once_with("London")

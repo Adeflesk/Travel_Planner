@@ -47,6 +47,9 @@ fly secrets set FRONTEND_URL=https://your-app.vercel.app
 
 # Optional: Weather API
 fly secrets set OPENWEATHER_API_KEY=your-key-here
+
+# Optional: Mapbox geocoding
+fly secrets set MAPBOX_TOKEN=pk.your-token-here
 ```
 
 ### 4. Deploy
@@ -167,6 +170,7 @@ fly secrets set FRONTEND_URL=https://your-actual-app.vercel.app
 | `FRONTEND_URL` | Yes | Your Vercel frontend URL (for CORS) |
 | `ENVIRONMENT` | No | Set to `production` in fly.toml |
 | `OPENWEATHER_API_KEY` | No | For weather forecasts |
+| `MAPBOX_TOKEN` | No | Mapbox public token for server-side geocoding |
 | `WEATHER_CACHE_TTL` | No | Cache duration in seconds (default: 21600) |
 | `CORS_ORIGINS` | No | Additional CORS origins (comma-separated) |
 
