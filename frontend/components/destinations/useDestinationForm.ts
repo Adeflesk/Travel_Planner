@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { Destination, DestinationFormData } from '@/lib/types';
 import { getLocalTimezone } from '@/lib/timezone-utils';
 import { destinationApi } from '@/lib/api';
-import { geocodeAddress } from '@/lib/geocode-utils';
 import { autoCreateDaysForDestination } from '@/lib/destination-day-utils';
+import type { LocationSearchResult } from '@/components/shared/LocationSearchBox';
 
 const createInitialFormData = (
   tripId: number,
@@ -20,6 +20,8 @@ const createInitialFormData = (
   timezone: defaultTimezone || getLocalTimezone(),
   arrival_date: startDate || '',
   departure_date: endDate || '',
+  latitude: undefined,
+  longitude: undefined,
 });
 
 export function useDestinationForm(
@@ -30,7 +32,6 @@ export function useDestinationForm(
   defaultTimezone?: string
 ) {
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [locationWarning, setLocationWarning] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<DestinationFormData>(
     createInitialFormData(tripId, startDate, endDate, defaultTimezone)
@@ -39,27 +40,21 @@ export function useDestinationForm(
   const resetForm = () => {
     setEditingId(null);
     setFormData(createInitialFormData(tripId, startDate, endDate, defaultTimezone));
-    setLocationWarning(null);
+  };
+
+  const handleLocationRetrieve = (result: LocationSearchResult) => {
+    setFormData((prev) => ({
+      ...prev,
+      name: result.text,
+      country: result.country ?? prev.country,
+      latitude: result.lat,
+      longitude: result.lng,
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLocationWarning(null);
     setIsSubmitting(true);
-
-    let preGeocodedCoords: { lat: number; lng: number } | null = null;
-
-    // Validate location for new destinations only
-    if (!editingId) {
-      const addressParts = [formData.name, formData.region, formData.country].filter(Boolean);
-      const address = addressParts.join(', ');
-      if (address) {
-        preGeocodedCoords = await geocodeAddress(address);
-        if (!preGeocodedCoords) {
-          setLocationWarning("We couldn't confirm this location — check the spelling if needed.");
-        }
-      }
-    }
 
     try {
       let savedDest: ReturnType<typeof destinationApi.update> | ReturnType<typeof destinationApi.create>;
@@ -93,14 +88,6 @@ export function useDestinationForm(
       resetForm();
       onSuccess();
 
-      // Persist coordinates using the already-fetched result — no second Nominatim call
-      if (isNew && destinationId && preGeocodedCoords) {
-        destinationApi.update(destinationId, {
-          latitude: preGeocodedCoords.lat,
-          longitude: preGeocodedCoords.lng,
-        }).catch(err => console.error('Failed to save geocoded coordinates for destination:', err));
-      }
-
     } catch (error) {
       console.error('Error saving destination:', error);
       alert('Failed to save destination');
@@ -111,7 +98,6 @@ export function useDestinationForm(
 
   const startEdit = (dest: Destination) => {
     setEditingId(dest.id);
-    setLocationWarning(null);
     setFormData({
       trip_id: tripId,
       name: dest.name,
@@ -120,6 +106,8 @@ export function useDestinationForm(
       timezone: dest.timezone || defaultTimezone || getLocalTimezone(),
       arrival_date: dest.arrival_date || '',
       departure_date: dest.departure_date || '',
+      latitude: dest.latitude,
+      longitude: dest.longitude,
     });
   };
 
@@ -128,18 +116,15 @@ export function useDestinationForm(
     value: DestinationFormData[K]
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    if (['name', 'region', 'country'].includes(field as string) && locationWarning) {
-      setLocationWarning(null);
-    }
   };
 
   return {
     formData,
     editingId,
     isEditing: editingId !== null,
-    locationWarning,
     isSubmitting,
     handleSubmit,
+    handleLocationRetrieve,
     startEdit,
     resetForm,
     updateField,

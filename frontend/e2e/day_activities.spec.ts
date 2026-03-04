@@ -45,7 +45,7 @@ test.describe('Trip Day Activities Management', () => {
 
         // Fill in activity details
         await authenticatedPage.locator('#activity-title').fill('Morning Coffee');
-        await authenticatedPage.locator('#activity-location').fill('Local Cafe');
+        await authenticatedPage.getByPlaceholder('Address or area').fill('Local Cafe');
         await authenticatedPage.locator('#activity-notes').fill('Best coffee in town');
         await authenticatedPage.locator('#activity-start-time').fill('08:00');
         await authenticatedPage.locator('#activity-end-time').fill('09:00');
@@ -80,7 +80,7 @@ test.describe('Trip Day Activities Management', () => {
 
         // Update details
         await authenticatedPage.locator('#activity-title').fill('Updated Activity Name');
-        await authenticatedPage.locator('#activity-location').fill('New Location');
+        await authenticatedPage.getByPlaceholder('Address or area').fill('New Location');
 
         // Save changes
         await authenticatedPage.getByRole('button', { name: /Save Activity/i }).click();
