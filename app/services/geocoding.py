@@ -23,7 +23,7 @@ def geocode(query: str) -> tuple[float, float] | None:
     Returns (lat, lng) on success, None on any failure.
     Never raises — callers should proceed with null coords if this returns None.
     """
-    token = os.getenv("MAPBOX_TOKEN")
+    token = (os.getenv("MAPBOX_TOKEN") or "").strip()
     if not token:
         logger.warning("MAPBOX_TOKEN not set — geocoding skipped")
         return None

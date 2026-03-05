@@ -23,7 +23,7 @@ interface LocationSearchBoxProps {
   onTextChange: (text: string) => void;
 }
 
-const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? '';
+const token = (process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? '').trim();
 
 export function LocationSearchBox({
   value,
