@@ -9,6 +9,16 @@ import type { DayActivity, Destination, TripDay, TripTransport } from '@/lib/typ
 import type { TripContext } from '@/lib/trip-context';
 import { useGeocode } from '@/lib/useGeocode';
 
+const MAPBOX_TOKEN = (process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? '').trim();
+// Mapbox Raster Tiles via Styles API — billed per tile request, not per map load.
+// Free tier covers ~4.5M tiles/month before any charges.
+const TILE_URL = MAPBOX_TOKEN
+  ? `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/{z}/{x}/{y}@2x?access_token=${MAPBOX_TOKEN}`
+  : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'; // fallback if token missing
+const TILE_ATTRIBUTION = MAPBOX_TOKEN
+  ? '© <a href="https://www.mapbox.com/about/maps/">Mapbox</a> © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+  : '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -216,8 +226,8 @@ export default function DayMap({
   // Fallback center: destination → home_base (only if no dest linked) → world
   const fallbackCenter: LatLng = destCoords
     ?? (!destPendingGeocode && hasHomeBase
-        ? { lat: tripContext!.home_base_latitude!, lng: tripContext!.home_base_longitude! }
-        : { lat: 20, lng: 0 });
+      ? { lat: tripContext!.home_base_latitude!, lng: tripContext!.home_base_longitude! }
+      : { lat: 20, lng: 0 });
   const fallbackZoom = destCoords ? 12 : destPendingGeocode ? 2 : 10;
 
   return (
@@ -229,8 +239,10 @@ export default function DayMap({
         scrollWheelZoom={false}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution={TILE_ATTRIBUTION}
+          url={TILE_URL}
+          tileSize={256}
+          zoomOffset={0}
         />
 
         {/* Home base marker — shown when no real activity/destination pins yet */}
