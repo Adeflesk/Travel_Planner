@@ -13,10 +13,6 @@ class Accommodation(Base):
     trip_id = Column(
         Integer, ForeignKey("trips.id", ondelete="CASCADE"), nullable=False
     )
-    expense_id = Column(
-        Integer, ForeignKey("expenses.id", ondelete="SET NULL"), nullable=True
-    )
-
     name = Column(String(200), nullable=False)
     address = Column(Text, nullable=True)
     check_in_date = Column(Date, nullable=False)
@@ -34,4 +30,8 @@ class Accommodation(Base):
 
     destination = relationship("Destination", back_populates="accommodations")
     trip = relationship("Trip", back_populates="accommodations")
-    expense = relationship("Expense", foreign_keys=[expense_id])
+    expenses = relationship(
+        "Expense",
+        foreign_keys="Expense.accommodation_id",
+        back_populates="accommodation",
+    )
