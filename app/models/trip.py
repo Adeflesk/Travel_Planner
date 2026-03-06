@@ -70,3 +70,6 @@ class Trip(Base):
     transports = relationship(
         "TripTransport", back_populates="trip", cascade="all, delete-orphan"
     )
+    accommodations = relationship(
+        "Accommodation", back_populates="trip", cascade="all, delete-orphan"
+    )
