@@ -1,34 +1,18 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Destination, Expense, DestinationAccommodation } from '@/lib/types';
-import { destinationApi, tripApi } from '@/lib/api';
+import { Destination } from '@/lib/types';
+import { destinationApi } from '@/lib/api';
 
 export function useDestinations(tripId: number) {
   const [destinations, setDestinations] = useState<Destination[]>([]);
-  const [accommodationMap, setAccommodationMap] = useState<
-    Map<number, { expenses: Expense[]; total: number }>
-  >(new Map());
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   const reload = useCallback(async () => {
     try {
-      const [destResponse, accommResponse] = await Promise.all([
-        destinationApi.getByTripId(tripId),
-        tripApi.getAccommodationExpenses(tripId),
-      ]);
+      const destResponse = await destinationApi.getByTripId(tripId);
       setDestinations(destResponse.data);
-
-      // Build accommodation map for quick lookup
-      const map = new Map<number, { expenses: Expense[]; total: number }>();
-      accommResponse.data.forEach((item: DestinationAccommodation) => {
-        map.set(item.destination.id, {
-          expenses: item.expenses,
-          total: item.total,
-        });
-      });
-      setAccommodationMap(map);
     } catch (error) {
       console.error('Error loading destinations:', error);
     } finally {
@@ -49,13 +33,6 @@ export function useDestinations(tripId: number) {
     }
   };
 
-  const getAccommodationExpenses = useCallback(
-    (dest: Destination) => {
-      return accommodationMap.get(dest.id)?.expenses || [];
-    },
-    [accommodationMap]
-  );
-
   const toggleExpanded = (id: number) => {
     setExpandedId(expandedId === id ? null : id);
   };
@@ -66,7 +43,6 @@ export function useDestinations(tripId: number) {
     expandedId,
     reload,
     deleteDestination,
-    getAccommodationExpenses,
     toggleExpanded,
   };
 }

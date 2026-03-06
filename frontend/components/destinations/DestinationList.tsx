@@ -18,7 +18,6 @@ export default function DestinationList({ tripId }: DestinationListProps) {
     expandedId,
     reload,
     deleteDestination,
-    getAccommodationExpenses,
     toggleExpanded,
   } = useDestinations(tripId);
 
@@ -67,7 +66,6 @@ export default function DestinationList({ tripId }: DestinationListProps) {
             <DestinationItem
               key={dest.id}
               destination={dest}
-              accommodationExpenses={getAccommodationExpenses(dest)}
               isExpanded={expandedId === dest.id}
               onEdit={startEdit}
               onDelete={handleDelete}
