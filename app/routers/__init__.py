@@ -20,6 +20,7 @@ from .packing import router as packing_router
 from .suggestions import router as suggestions_router
 from .trip_transports import router as trip_transports_router
 from .transport_options import router as transport_options_router
+from .accommodations import router as accommodations_router
 
 __all__ = [
     "health_router",
@@ -36,4 +37,5 @@ __all__ = [
     "settings_router",
     "trip_transports_router",
     "transport_options_router",
+    "accommodations_router",
 ]
