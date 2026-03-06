@@ -43,3 +43,6 @@ class Destination(Base):
     )
     expenses = relationship("Expense", back_populates="destination")
     days = relationship("TripDay", back_populates="destination")
+    accommodations = relationship(
+        "Accommodation", back_populates="destination", cascade="all, delete-orphan"
+    )

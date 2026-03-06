@@ -42,6 +42,9 @@ class Expense(Base):
     destination_id = Column(Integer, ForeignKey("destinations.id"), nullable=True)
     activity_id = Column(Integer, ForeignKey("day_activities.id"), nullable=True)
     transport_id = Column(Integer, ForeignKey("trip_transports.id"), nullable=True)
+    accommodation_id = Column(
+        Integer, ForeignKey("accommodations.id", ondelete="SET NULL"), nullable=True
+    )
 
     category = Column(String(50), nullable=False)
     amount = Column(Numeric(10, 2), nullable=False)
@@ -59,6 +62,9 @@ class Expense(Base):
     )
     transport = relationship(
         "TripTransport", foreign_keys=[transport_id], back_populates="expenses"
+    )
+    accommodation = relationship(
+        "Accommodation", foreign_keys=[accommodation_id], back_populates="expenses"
     )
     linked_activities = relationship(
         "DayActivity",

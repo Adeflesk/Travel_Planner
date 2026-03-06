@@ -27,6 +27,9 @@ import {
   TransportOption,
   TransportOptionCreate,
   TransportOptionUpdate,
+  Accommodation,
+  AccommodationCreate,
+  AccommodationUpdate,
 } from './types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -377,6 +380,35 @@ export const suggestionApi = {
 
     return api.get<SuggestionResponse>(url);
   },
+};
+
+// Accommodation API
+export const accommodationApi = {
+  getByDestination: (tripId: number, destinationId: number) =>
+    api.get<Accommodation[]>(
+      `/trips/${tripId}/destinations/${destinationId}/accommodations`
+    ),
+  getByTrip: (tripId: number) =>
+    api.get<Accommodation[]>(`/trips/${tripId}/accommodations`),
+  create: (tripId: number, destinationId: number, data: AccommodationCreate) =>
+    api.post<Accommodation>(
+      `/trips/${tripId}/destinations/${destinationId}/accommodations`,
+      data
+    ),
+  update: (
+    tripId: number,
+    destinationId: number,
+    id: number,
+    data: AccommodationUpdate
+  ) =>
+    api.put<Accommodation>(
+      `/trips/${tripId}/destinations/${destinationId}/accommodations/${id}`,
+      data
+    ),
+  delete: (tripId: number, destinationId: number, id: number) =>
+    api.delete(
+      `/trips/${tripId}/destinations/${destinationId}/accommodations/${id}`
+    ),
 };
 
 export default api;

@@ -7,6 +7,7 @@ import { format, addDays } from 'date-fns';
 import { X } from 'lucide-react';
 import { parseSafeDate } from '@/lib/datetime-utils';
 import { DayForm } from './DayForm';
+import { useTripAccommodations, AccommodationDayBadge } from '@/components/accommodations';
 
 interface DayListProps {
     days: TripDay[];
@@ -18,6 +19,7 @@ interface DayListProps {
 export const DayList = ({ days, tripId, tripStartDate, onRefresh }: DayListProps) => {
     const [showModal, setShowModal] = useState(false);
     const [adding, setAdding] = useState(false);
+    const { getBadgeType } = useTripAccommodations(tripId);
 
     const defaultNextDate = useMemo(() => {
         const lastDayStr = days.length > 0
@@ -106,6 +108,12 @@ export const DayList = ({ days, tripId, tripStartDate, onRefresh }: DayListProps
                                     {day.activities?.length || 0}
                                 </span>
                             </div>
+                            {(() => {
+                                const badge = getBadgeType(day.date);
+                                return badge ? (
+                                    <AccommodationDayBadge type={badge.type} name={badge.accommodation.name} />
+                                ) : null;
+                            })()}
                             <p className="text-xs text-slate-400 line-clamp-2 pl-14">
                                 {day.notes || <span className="italic">No notes added</span>}
                             </p>

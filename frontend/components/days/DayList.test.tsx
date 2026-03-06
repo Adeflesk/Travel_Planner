@@ -11,6 +11,9 @@ vi.mock('@/lib/api', () => ({
     dayApi: {
         createDay: vi.fn(),
     },
+    accommodationApi: {
+        getByTrip: vi.fn().mockResolvedValue({ data: [] }),
+    },
 }));
 
 // next/link renders a plain <a> tag in test environment

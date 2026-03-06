@@ -1,15 +1,14 @@
 'use client';
 
-import { Destination, Expense } from '@/lib/types';
+import { Destination } from '@/lib/types';
 import { format } from 'date-fns';
 import { MapPin, Trash2, Edit2, ChevronDown, ChevronRight } from 'lucide-react';
-import { AccommodationInfo } from './AccommodationInfo';
+import { AccommodationList } from '@/components/accommodations';
 import { DestinationActivityList } from './DestinationActivityList';
 import { WeatherBadge, useWeather } from '../weather';
 
 interface DestinationItemProps {
   destination: Destination;
-  accommodationExpenses: Expense[];
   isExpanded: boolean;
   onEdit: (destination: Destination) => void;
   onDelete: (id: number) => void;
@@ -18,7 +17,6 @@ interface DestinationItemProps {
 
 export function DestinationItem({
   destination,
-  accommodationExpenses,
   isExpanded,
   onEdit,
   onDelete,
@@ -44,7 +42,7 @@ export function DestinationItem({
               {format(new Date(destination.departure_date), 'MMM dd')}
             </p>
           )}
-          <AccommodationInfo expenses={accommodationExpenses} />
+          <AccommodationList tripId={destination.trip_id} destinationId={destination.id} />
           {!loading && weather && (
             <WeatherBadge
               forecast={weather}

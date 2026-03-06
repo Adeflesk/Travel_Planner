@@ -18,6 +18,7 @@ from .packing_item import PackingItem
 from .day_activity import DayActivity
 from .trip_transport import TripTransport
 from .transport_option import TransportOption
+from .accommodation import Accommodation
 
 __all__ = [
     "Base",
@@ -33,4 +34,5 @@ __all__ = [
     "UserSettings",
     "TripTransport",
     "TransportOption",
+    "Accommodation",
 ]
