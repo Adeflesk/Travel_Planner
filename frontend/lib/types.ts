@@ -273,6 +273,47 @@ export interface DestinationAccommodation {
   total: number;
 }
 
+export interface Accommodation {
+  id: number;
+  destination_id: number;
+  trip_id: number;
+  name: string;
+  address?: string;
+  check_in_date: string;
+  check_out_date: string;
+  cost?: number;
+  currency?: string;
+  confirmation_number?: string;
+  booking_url?: string;
+  contact_phone?: string;
+  cancellation_policy?: string;
+  cancel_by_date?: string;
+  booked: boolean;
+  paid: boolean;
+  notes?: string;
+}
+
+export interface AccommodationCreate {
+  destination_id: number;
+  trip_id: number;
+  name: string;
+  address?: string;
+  check_in_date: string;
+  check_out_date: string;
+  cost?: number;
+  currency?: string;
+  confirmation_number?: string;
+  booking_url?: string;
+  contact_phone?: string;
+  cancellation_policy?: string;
+  cancel_by_date?: string;
+  booked?: boolean;
+  paid?: boolean;
+  notes?: string;
+}
+
+export type AccommodationUpdate = Partial<AccommodationCreate>;
+
 // Auth Types
 export interface User {
   id: number;
