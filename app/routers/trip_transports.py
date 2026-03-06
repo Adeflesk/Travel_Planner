@@ -1,3 +1,6 @@
+import datetime
+from decimal import Decimal
+from typing import Optional
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import or_
@@ -13,6 +16,72 @@ from app.schemas.trip_transport import (
 from database import get_db
 
 router = APIRouter()
+
+
+def _sync_transport_expense(
+    transport: models.TripTransport,
+    db: Session,
+) -> None:
+    """
+    Keep the Expense table in sync with the transport's cost field.
+
+    - cost > 0  → upsert a linked Expense row (transport_id FK used for lookup)
+    - cost is None / 0 → delete any existing linked Expense row
+
+    The expense category is the transport_type (e.g. "flight", "train").
+    The date comes from the departure day; falls back to today.
+    """
+    has_cost = transport.cost is not None and transport.cost > 0
+
+    existing: Optional[models.Expense] = (
+        db.query(models.Expense)
+        .filter(models.Expense.transport_id == transport.id)
+        .first()
+    )
+
+    if has_cost:
+        trip = db.query(models.Trip).filter(models.Trip.id == transport.trip_id).first()
+        currency = (
+            transport.currency or (trip.default_currency if trip else None) or "USD"
+        )
+
+        # Use departure day's date if available
+        expense_date: datetime.date = datetime.date.today()
+        if transport.departure_day_id:
+            dep_day = (
+                db.query(models.TripDay)
+                .filter(models.TripDay.id == transport.departure_day_id)
+                .first()
+            )
+            if dep_day:
+                expense_date = dep_day.date
+
+        description = f"{transport.origin} → {transport.destination}"
+        if transport.carrier:
+            description = f"{transport.carrier}: {description}"
+
+        if existing:
+            existing.amount = Decimal(str(transport.cost))
+            existing.currency = currency
+            existing.category = transport.transport_type
+            existing.description = description
+            existing.booked = transport.booked
+            existing.date = expense_date
+        else:
+            new_expense = models.Expense(
+                trip_id=transport.trip_id,
+                transport_id=transport.id,
+                category=transport.transport_type,
+                amount=Decimal(str(transport.cost)),
+                currency=currency,
+                description=description,
+                date=expense_date,
+                booked=transport.booked,
+            )
+            db.add(new_expense)
+    else:
+        if existing:
+            db.delete(existing)
 
 
 def _check_trip_access(
@@ -91,6 +160,12 @@ def create_transport(
     db.add(item)
     db.commit()
     db.refresh(item)
+
+    # Sync expense for the new transport's cost
+    if item.cost:
+        _sync_transport_expense(item, db)
+        db.commit()
+
     # Reload with options
     return (
         db.query(models.TripTransport)
@@ -154,6 +229,11 @@ def update_transport(
         setattr(item, field, value)
     db.commit()
     db.refresh(item)
+
+    # Sync expense: cost/booked/route may have changed
+    _sync_transport_expense(item, db)
+    db.commit()
+
     return (
         db.query(models.TripTransport)
         .options(selectinload(models.TripTransport.options))

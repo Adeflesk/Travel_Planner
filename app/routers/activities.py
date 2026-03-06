@@ -4,7 +4,9 @@ app/routers/activities.py - Unified activity endpoints
 All CRUD for DayActivity (day-linked and/or destination-linked).
 """
 
-from typing import List
+import datetime
+from decimal import Decimal
+from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -75,6 +77,93 @@ def _check_trip_access(
     raise HTTPException(status_code=404, detail="Activity not found")
 
 
+def _sync_activity_expense(
+    activity: models.DayActivity,
+    db: Session,
+    trip_id: int,
+    activity_date: Optional[datetime.date],
+) -> None:
+    """
+    Keep the Expense table in sync with the activity's cost field.
+
+    - cost > 0  → upsert a linked Expense row
+    - cost is None / 0 → delete any existing linked Expense row
+
+    The expense is stored in the `activity` category so it shows up
+    correctly in budget breakdowns. The currency falls back to the
+    trip's default_currency, then USD.
+    """
+    has_cost = activity.cost is not None and activity.cost > 0
+
+    # Find any existing expense already linked to this activity
+    existing: Optional[models.Expense] = (
+        db.query(models.Expense)
+        .filter(models.Expense.activity_id == activity.id)
+        .first()
+    )
+
+    if has_cost:
+        trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
+        currency = (
+            activity.currency or (trip.default_currency if trip else None) or "USD"
+        )
+        expense_date = activity_date or datetime.date.today()
+        expense_category = activity.category or "activity"
+
+        if existing:
+            # Update in place
+            existing.amount = Decimal(str(activity.cost))
+            existing.currency = currency
+            existing.category = expense_category
+            existing.description = activity.title
+            existing.booked = activity.booked
+            if activity_date:
+                existing.date = activity_date
+        else:
+            new_expense = models.Expense(
+                trip_id=trip_id,
+                activity_id=activity.id,
+                category=expense_category,
+                amount=Decimal(str(activity.cost)),
+                currency=currency,
+                description=activity.title,
+                date=expense_date,
+                booked=activity.booked,
+            )
+            db.add(new_expense)
+    else:
+        # No cost — remove stale expense if one exists
+        if existing:
+            db.delete(existing)
+
+
+def _resolve_trip_and_date(
+    activity: models.DayActivity,
+    db: Session,
+) -> tuple[Optional[int], Optional[datetime.date]]:
+    """
+    Walk the day → trip or destination → trip chain and return
+    (trip_id, date_for_expense).
+    """
+    if activity.day_id:
+        day = (
+            db.query(models.TripDay)
+            .filter(models.TripDay.id == activity.day_id)
+            .first()
+        )
+        if day:
+            return day.trip_id, day.date
+    if activity.destination_id:
+        dest = (
+            db.query(models.Destination)
+            .filter(models.Destination.id == activity.destination_id)
+            .first()
+        )
+        if dest:
+            return dest.trip_id, None
+    return None, None
+
+
 def _require_trip_access(trip_id: int, db: Session, user: models.User) -> None:
     """Raise 404 if user cannot access this trip (not owner and not shared)."""
     trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
@@ -141,6 +230,14 @@ def create_activity(
     db.add(db_activity)
     db.commit()
     db.refresh(db_activity)
+
+    # Sync expense for the new activity's cost
+    if db_activity.cost:
+        trip_id_sync, activity_date = _resolve_trip_and_date(db_activity, db)
+        if trip_id_sync:
+            _sync_activity_expense(db_activity, db, trip_id_sync, activity_date)
+            db.commit()
+
     return db_activity
 
 
@@ -245,6 +342,14 @@ def update_activity(
 
     db.commit()
     db.refresh(activity)
+
+    # Sync expense: cost may have changed, been added, or been removed
+    trip_id_sync, activity_date = _resolve_trip_and_date(activity, db)
+    if trip_id_sync:
+        _sync_activity_expense(activity, db, trip_id_sync, activity_date)
+        db.commit()
+        db.refresh(activity)
+
     return activity
 
 

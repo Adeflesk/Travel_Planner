@@ -52,3 +52,6 @@ class TripTransport(Base):
     options = relationship(
         "TransportOption", back_populates="transport", cascade="all, delete-orphan"
     )
+    expenses = relationship(
+        "Expense", foreign_keys="Expense.transport_id", back_populates="transport"
+    )

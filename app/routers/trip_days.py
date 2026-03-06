@@ -19,6 +19,10 @@ def read_trip_days(
     trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found")
+    if trip.user_id != current_user.id:
+        raise HTTPException(
+            status_code=403, detail="Not authorised to view this trip's days"
+        )
     days = (
         db.query(models.TripDay)
         .filter(models.TripDay.trip_id == trip_id)
@@ -36,10 +40,14 @@ def create_trip_day(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    # Verify the trip exists
+    # Verify the trip exists and belongs to the current user
     trip = db.query(models.Trip).filter(models.Trip.id == day.trip_id).first()
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found")
+    if trip.user_id != current_user.id:
+        raise HTTPException(
+            status_code=403, detail="Not authorised to add days to this trip"
+        )
 
     # ---- New validation: ensure destination (if provided) belongs to this trip ----
     if day.destination_id is not None:
@@ -79,6 +87,9 @@ def delete_trip_day(
     db_day = db.query(models.TripDay).filter(models.TripDay.id == day_id).first()
     if not db_day:
         raise HTTPException(status_code=404, detail="Trip day not found")
+    trip = db.query(models.Trip).filter(models.Trip.id == db_day.trip_id).first()
+    if not trip or trip.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorised to delete this day")
     db.delete(db_day)
     db.commit()
 
@@ -93,6 +104,9 @@ def update_trip_day(
     db_day = db.query(models.TripDay).filter(models.TripDay.id == day_id).first()
     if not db_day:
         raise HTTPException(status_code=404, detail="Trip day not found")
+    trip = db.query(models.Trip).filter(models.Trip.id == db_day.trip_id).first()
+    if not trip or trip.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorised to update this day")
 
     # ---- New validation: ensure destination (if provided) belongs to the same trip ----
     if day_update.destination_id is not None:
