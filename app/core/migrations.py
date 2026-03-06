@@ -210,6 +210,7 @@ def run_migrations(engine: Engine) -> None:
     ]
 
     expense_columns = [
+        ("transport_id", "INTEGER", "NULL"),
         ("accommodation_id", "INTEGER", "NULL"),
     ]
 
