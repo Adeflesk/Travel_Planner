@@ -209,6 +209,10 @@ def run_migrations(engine: Engine) -> None:
         ("longitude", "FLOAT", "NULL"),
     ]
 
+    expense_columns = [
+        ("accommodation_id", "INTEGER", "NULL"),
+    ]
+
     applied_migrations: list[str] = []
 
     # Trip budget threshold columns (Feature 018)
@@ -250,6 +254,10 @@ def run_migrations(engine: Engine) -> None:
             engine, "day_activities", col_name, col_type, default
         ):
             applied_migrations.append(f"day_activities.{col_name}")
+
+    for col_name, col_type, default in expense_columns:
+        if add_column_if_not_exists(engine, "expenses", col_name, col_type, default):
+            applied_migrations.append(f"expenses.{col_name}")
 
     migrations_run = len(applied_migrations)
     if migrations_run > 0:
