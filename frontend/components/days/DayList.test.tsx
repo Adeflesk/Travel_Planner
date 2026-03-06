@@ -84,9 +84,9 @@ describe('DayList', () => {
 
     it('opens the Add Day modal when the button is clicked', () => {
         render(<DayList {...defaultProps} />);
-        expect(screen.queryByRole('heading', { name: 'Add Day', exact: true })).toBeNull();
+        expect(screen.queryByRole('heading', { name: /^Add Day$/i })).toBeNull();
         fireEvent.click(screen.getByRole('button', { name: /\+ Add Day/i }));
-        expect(screen.getByRole('heading', { name: 'Add Day', exact: true })).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: /^Add Day$/i })).toBeInTheDocument();
     });
 
     it('closes the modal when the X button is clicked', () => {
@@ -95,7 +95,7 @@ describe('DayList', () => {
         // Close via the × button (aria-label not set, so find the SVG wrapper)
         const closeBtn = screen.getByRole('button', { name: '' }); // the X icon button
         fireEvent.click(closeBtn);
-        expect(screen.queryByRole('heading', { name: 'Add Day', exact: true })).toBeNull();
+        expect(screen.queryByRole('heading', { name: /^Add Day$/i })).toBeNull();
     });
 
     // ── defaultNextDate memo ────────────────────────────────────────────────
@@ -129,7 +129,7 @@ describe('DayList', () => {
         fireEvent.change(screen.getByPlaceholderText(/e.g. Arrival in Tokyo/i), { target: { value: 'Paris Day' } });
         fireEvent.change(screen.getByPlaceholderText(/e.g. Tokyo, Japan/i), { target: { value: 'Paris' } });
 
-        fireEvent.click(screen.getByRole('button', { name: 'Add Day', exact: true }));
+        fireEvent.click(screen.getByRole('button', { name: /^Add Day$/i }));
 
         await waitFor(() => {
             expect(dayApi.createDay).toHaveBeenCalledWith(
@@ -143,7 +143,7 @@ describe('DayList', () => {
         });
         expect(defaultProps.onRefresh).toHaveBeenCalled();
         // Modal should be closed after success
-        expect(screen.queryByRole('heading', { name: 'Add Day', exact: true })).toBeNull();
+        expect(screen.queryByRole('heading', { name: /^Add Day$/i })).toBeNull();
     });
 
     it('shows an alert and keeps modal open when createDay fails', async () => {
@@ -151,12 +151,12 @@ describe('DayList', () => {
         render(<DayList {...defaultProps} />);
         fireEvent.click(screen.getByRole('button', { name: /\+ Add Day/i }));
 
-        fireEvent.click(screen.getByRole('button', { name: 'Add Day', exact: true }));
+        fireEvent.click(screen.getByRole('button', { name: /^Add Day$/i }));
 
         await waitFor(() => {
             expect(global.alert).toHaveBeenCalled();
         });
         // Modal should still be open
-        expect(screen.getByRole('heading', { name: 'Add Day', exact: true })).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: /^Add Day$/i })).toBeInTheDocument();
     });
 });
