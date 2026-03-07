@@ -5,6 +5,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { useSettings } from '@/lib/settings-context';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { authApi } from '@/lib/api';
 
 function SettingsContent() {
     const { settings, isLoading, error, updateSettings, refreshSettings } = useSettings();
@@ -25,6 +26,51 @@ function SettingsContent() {
             });
         }
     }, [settings]);
+
+    const [pwForm, setPwForm] = useState({
+        current_password: '',
+        new_password: '',
+        confirm_password: '',
+    });
+    const [pwError, setPwError] = useState('');
+    const [pwSuccess, setPwSuccess] = useState(false);
+    const [pwSaving, setPwSaving] = useState(false);
+
+    const handlePasswordChange = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setPwError('');
+        setPwSuccess(false);
+
+        if (pwForm.new_password.length < 8) {
+            setPwError('New password must be at least 8 characters.');
+            return;
+        }
+        if (pwForm.new_password !== pwForm.confirm_password) {
+            setPwError('New passwords do not match.');
+            return;
+        }
+
+        setPwSaving(true);
+        try {
+            await authApi.changePassword({
+                current_password: pwForm.current_password,
+                new_password: pwForm.new_password,
+            });
+            setPwSuccess(true);
+            setPwForm({ current_password: '', new_password: '', confirm_password: '' });
+        } catch (err: unknown) {
+            const status = (err as { response?: { status?: number } })?.response?.status;
+            if (status === 400) {
+                setPwError('Current password is incorrect.');
+            } else if (status === 429) {
+                setPwError('Too many attempts. Please wait a moment and try again.');
+            } else {
+                setPwError('An error occurred. Please try again.');
+            }
+        } finally {
+            setPwSaving(false);
+        }
+    };
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -141,6 +187,61 @@ function SettingsContent() {
                             {saving ? 'Saving...' : 'Save Settings'}
                         </Button>
                     </div>
+                </form>
+            </Card>
+
+            <Card padding="lg">
+                <form onSubmit={handlePasswordChange} className="space-y-6">
+                    <div className="space-y-4">
+                        <h2 className="text-xl font-medium text-slate-800">Security</h2>
+                        <div className="space-y-3">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                    Current Password
+                                </label>
+                                <input
+                                    type="password"
+                                    value={pwForm.current_password}
+                                    onChange={e => setPwForm(p => ({ ...p, current_password: e.target.value }))}
+                                    required
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                    New Password
+                                </label>
+                                <input
+                                    type="password"
+                                    value={pwForm.new_password}
+                                    onChange={e => setPwForm(p => ({ ...p, new_password: e.target.value }))}
+                                    required
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                    Confirm New Password
+                                </label>
+                                <input
+                                    type="password"
+                                    value={pwForm.confirm_password}
+                                    onChange={e => setPwForm(p => ({ ...p, confirm_password: e.target.value }))}
+                                    required
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                        </div>
+                        {pwError && (
+                            <p className="text-sm text-red-600">{pwError}</p>
+                        )}
+                        {pwSuccess && (
+                            <p className="text-sm text-green-600">Password updated successfully.</p>
+                        )}
+                    </div>
+                    <Button type="submit" disabled={pwSaving}>
+                        {pwSaving ? 'Updating...' : 'Update Password'}
+                    </Button>
                 </form>
             </Card>
         </div>
