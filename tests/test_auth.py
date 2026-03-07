@@ -270,3 +270,76 @@ class TestAuthEndpoints:
         )
         assert response.status_code == 400
         assert "Current password is incorrect" in response.json()["detail"]
+
+    def test_forgot_password_unknown_email_returns_200(self, client):
+        """Forgot password always returns 200 regardless of email existence."""
+        response = client.post(
+            "/auth/forgot-password",
+            json={"email": "nobody@example.com"},
+        )
+        assert response.status_code == 200
+        assert "reset link" in response.json()["message"]
+
+    def test_forgot_password_known_email_creates_token(self, client):
+        """Forgot password creates a reset token for a registered user."""
+        client.post(
+            "/auth/register",
+            json={"email": "user@example.com", "password": "password123"},
+        )
+        response = client.post(
+            "/auth/forgot-password",
+            json={"email": "user@example.com"},
+        )
+        assert response.status_code == 200
+
+    def test_reset_password_invalid_token_returns_400(self, client):
+        """Reset with a bad token returns 400."""
+        response = client.post(
+            "/auth/reset-password",
+            json={"token": "badtoken", "new_password": "newpassword123"},
+        )
+        assert response.status_code == 400
+
+    def test_reset_password_valid_token_updates_password(self, client):
+        """Reset with a valid token updates the password and marks token used."""
+        import hashlib
+        import secrets
+        from datetime import datetime, timedelta
+        from app.models.password_reset_token import PasswordResetToken
+        from app.models import User
+
+        # Register user
+        client.post(
+            "/auth/register",
+            json={"email": "user@example.com", "password": "oldpassword"},
+        )
+
+        # Manually create a valid reset token in the test DB
+        raw = secrets.token_urlsafe(32)
+        token_hash = hashlib.sha256(raw.encode()).hexdigest()
+
+        # Get the test DB session
+        db = next(override_get_db())
+        user = db.query(User).filter(User.email == "user@example.com").first()
+        token = PasswordResetToken(
+            user_id=user.id,
+            token_hash=token_hash,
+            expires_at=datetime.utcnow() + timedelta(hours=1),
+        )
+        db.add(token)
+        db.commit()
+        db.close()
+
+        # Reset password
+        response = client.post(
+            "/auth/reset-password",
+            json={"token": raw, "new_password": "newpassword123"},
+        )
+        assert response.status_code == 204
+
+        # Verify new password works
+        login_response = client.post(
+            "/auth/login",
+            json={"email": "user@example.com", "password": "newpassword123"},
+        )
+        assert login_response.status_code == 200
