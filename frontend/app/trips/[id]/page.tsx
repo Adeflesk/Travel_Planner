@@ -22,6 +22,7 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { TripOverviewDashboard } from '@/components/trips/TripOverviewDashboard';
 import { TripSettings } from '@/components/trips/TripSettings';
+import { BudgetCard } from '@/components/budget';
 
 function TripDetailContent() {
   const { isAuthenticated } = useAuth();
@@ -202,7 +203,12 @@ function TripDetailContent() {
               )}
               {activeTab === 'destinations' && <DestinationList tripId={tripId} />}
               {activeTab === 'timeline' && <TripTimeline tripId={tripId} />}
-              {activeTab === 'expenses' && <ExpenseList tripId={tripId} />}
+              {activeTab === 'expenses' && (
+                <div className="space-y-4">
+                  <BudgetCard tripId={tripId} />
+                  <ExpenseList tripId={tripId} />
+                </div>
+              )}
               {activeTab === 'activities' && <TripActivityList tripId={tripId} />}
               {activeTab === 'packing' && <PackingList tripId={tripId} />}
             </Card>
