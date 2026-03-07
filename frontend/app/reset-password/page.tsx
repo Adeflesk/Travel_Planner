@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { authApi } from '@/lib/api';
@@ -15,6 +15,12 @@ function ResetPasswordForm() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!success) return;
+    const id = setTimeout(() => router.push('/login'), 2000);
+    return () => clearTimeout(id);
+  }, [success, router]);
 
   if (!token) {
     return (
@@ -44,7 +50,6 @@ function ResetPasswordForm() {
     try {
       await authApi.resetPassword(token, newPassword);
       setSuccess(true);
-      setTimeout(() => router.push('/login'), 2000);
     } catch {
       setError('This reset link is invalid or has expired. Please request a new one.');
     } finally {
