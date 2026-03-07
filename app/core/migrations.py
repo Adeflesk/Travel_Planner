@@ -177,6 +177,46 @@ def fix_day_activities_id_sequence(engine: Engine) -> None:
         logger.warning(f"Could not fix day_activities id sequence: {e}")
 
 
+def create_password_reset_tokens_table(engine: Engine) -> None:
+    """Create password_reset_tokens table if it doesn't exist."""
+    dialect = engine.dialect.name
+    if dialect == "postgresql":
+        create_sql = """
+            CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                token_hash VARCHAR(64) NOT NULL,
+                expires_at TIMESTAMP NOT NULL,
+                used BOOLEAN NOT NULL DEFAULT FALSE,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+        """
+    else:
+        create_sql = """
+            CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                token_hash VARCHAR(64) NOT NULL,
+                expires_at TIMESTAMP NOT NULL,
+                used INTEGER NOT NULL DEFAULT 0,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """
+    index_sql = """
+        CREATE INDEX IF NOT EXISTS ix_password_reset_tokens_token_hash
+        ON password_reset_tokens (token_hash)
+    """
+    try:
+        with engine.begin() as conn:
+            conn.execute(text(create_sql))
+            conn.execute(text(index_sql))
+        logger.info("Ensured password_reset_tokens table exists")
+    except Exception as e:
+        logger.error(
+            f"Failed to create password_reset_tokens table: {type(e).__name__}: {e}"
+        )
+
+
 def run_migrations(engine: Engine) -> None:
     """Run all pending migrations."""
     logger.info("Running database migrations...")
@@ -271,6 +311,8 @@ def run_migrations(engine: Engine) -> None:
     migrate_unified_activities(engine)
 
     fix_day_activities_id_sequence(engine)
+
+    create_password_reset_tokens_table(engine)
 
     # Create/Update trip_summary view
     create_trip_summary_view(engine)
