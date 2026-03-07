@@ -25,8 +25,14 @@ A full-stack travel planning application built with FastAPI and Next.js. Organis
 - **Overnight toggle** — opt-in overnight flag with auto-detect nudge when arrival time precedes departure time
 - **Transport options** — compare alternatives (e.g. bus vs train) on a single leg before committing
 
+### Accommodations
+- **Accommodation records** — attach hotel, hostel, Airbnb, or other stays to a destination with check-in/out dates, confirmation number, address, and cost
+- **Expense sync** — creating an accommodation automatically creates a linked expense; updating the cost or deleting the record keeps the expense in sync
+- **Day Builder badges** — accommodation badge appears on each day that falls within a stay's check-in/check-out window
+- **Destination panel** — accommodation list is embedded in the destination view alongside activities
+
 ### Expenses & Budget
-- **Expense tracking** — log costs by category with payment status, currency, and booking reference
+- **Expense tracking** — log costs by category with payment status, currency, and booking reference; expenses can be linked to a transport or accommodation record
 - **Budget alerts** — configurable warning and danger thresholds on the trip budget
 - **Multi-currency** — each expense stores its own currency; trip budget is denominated in the trip's `budget_currency`
 
@@ -83,7 +89,8 @@ Travel_Planner/
 │   │   ├── trip_transport.py     # TripTransport (flight/train/drive/etc.)
 │   │   ├── transport_option.py   # TransportOption (compare alternatives)
 │   │   ├── destination.py        # Destination
-│   │   ├── expense.py            # Expense
+│   │   ├── accommodation.py      # Accommodation (linked to destination; syncs expense)
+│   │   ├── expense.py            # Expense (transport_id / accommodation_id FK)
 │   │   ├── packing_item.py       # PackingItem
 │   │   ├── user.py               # User
 │   │   ├── user_settings.py      # UserSettings
@@ -106,6 +113,7 @@ Travel_Planner/
 │   │   ├── trips/                # TripWizard, TripSettings, TripSidebar, TripCard
 │   │   ├── dashboard/            # Dashboard components
 │   │   ├── expenses/             # Expense list and forms
+│   │   ├── accommodations/       # AccommodationCard, AccommodationForm, AccommodationList, AccommodationDayBadge
 │   │   ├── packing/              # Packing list components
 │   │   ├── destinations/         # Destination components
 │   │   └── ui/                   # Shared UI primitives
@@ -177,6 +185,7 @@ App available at **http://localhost:3000**
 | Transport Options | `GET/POST /trip-transports/{id}/options`, `PUT/DELETE /transport-options/{id}` |
 | Destinations | `GET/POST /trips/{id}/destinations`, `PUT/DELETE /destinations/{id}` |
 | Activities | `GET/POST /destinations/{id}/activities`, `PUT/DELETE /activities/{id}` |
+| Accommodations | `GET/POST /trips/{id}/destinations/{destId}/accommodations`, `PUT/DELETE .../accommodations/{id}`, `GET /trips/{id}/accommodations` |
 | Expenses | `GET/POST /trips/{id}/expenses`, `PUT/DELETE /expenses/{id}` |
 | Packing | `GET/POST /trips/{id}/packing`, `PUT/DELETE /packing/{id}` |
 | Settings | `GET/PUT /settings` |
