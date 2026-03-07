@@ -157,3 +157,12 @@ class AdminUserCreate(BaseModel):
         if v not in ["admin", "user"]:
             raise ValueError("Role must be admin or user")
         return v
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
