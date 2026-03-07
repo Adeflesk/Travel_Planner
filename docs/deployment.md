@@ -173,6 +173,11 @@ fly secrets set FRONTEND_URL=https://your-actual-app.vercel.app
 | `MAPBOX_TOKEN` | No | Mapbox public token for server-side geocoding |
 | `WEATHER_CACHE_TTL` | No | Cache duration in seconds (default: 21600) |
 | `CORS_ORIGINS` | No | Additional CORS origins (comma-separated) |
+| `SMTP_HOST` | No* | SMTP server hostname (e.g. smtp.gmail.com). Required for password reset emails. |
+| `SMTP_PORT` | No | SMTP port. Defaults to 587. |
+| `SMTP_USER` | No* | SMTP username / email. Required for password reset emails. |
+| `SMTP_PASS` | No* | SMTP password or app password. Required for password reset emails. |
+| `SMTP_FROM` | No | From address for outbound emails. Defaults to SMTP_USER. |
 
 ### Frontend (Vercel env vars)
 
