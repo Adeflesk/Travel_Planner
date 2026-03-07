@@ -58,8 +58,15 @@ function SettingsContent() {
             });
             setPwSuccess(true);
             setPwForm({ current_password: '', new_password: '', confirm_password: '' });
-        } catch {
-            setPwError('Current password is incorrect.');
+        } catch (err: unknown) {
+            const status = (err as { response?: { status?: number } })?.response?.status;
+            if (status === 400) {
+                setPwError('Current password is incorrect.');
+            } else if (status === 429) {
+                setPwError('Too many attempts. Please wait a moment and try again.');
+            } else {
+                setPwError('An error occurred. Please try again.');
+            }
         } finally {
             setPwSaving(false);
         }
