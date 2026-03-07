@@ -16,6 +16,7 @@ Rate limits:
 """
 
 import hashlib
+import logging
 import os
 import secrets
 from datetime import datetime, timedelta
@@ -47,6 +48,8 @@ from app.schemas.auth import (
 )
 from app.services.email_service import send_email
 from database import get_db
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
@@ -280,17 +283,21 @@ def forgot_password(
     frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
     reset_link = f"{frontend_url}/reset-password?token={raw_token}"
 
-    send_email(
-        to=user.email,
-        subject="Reset your Travel Planner password",
-        body=(
-            f"Hi {user.email},\n\n"
-            f"Click the link below to reset your password. "
-            f"This link expires in 1 hour.\n\n"
-            f"{reset_link}\n\n"
-            f"If you didn't request this, ignore this email.\n"
-        ),
-    )
+    try:
+        send_email(
+            to=user.email,
+            subject="Reset your Travel Planner password",
+            body=(
+                f"Hi {user.email},\n\n"
+                f"Click the link below to reset your password. "
+                f"This link expires in 1 hour.\n\n"
+                f"{reset_link}\n\n"
+                f"If you didn't request this, ignore this email.\n"
+            ),
+        )
+    except Exception as e:
+        logger.error("Failed to send password reset email: %s", e)
+        # Still return 200 to prevent user enumeration
 
     return {"message": "If that email is registered, a reset link has been sent."}
 

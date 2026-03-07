@@ -292,6 +292,23 @@ class TestAuthEndpoints:
         )
         assert response.status_code == 200
 
+        # Verify a token was actually created in the DB
+        from app.models.password_reset_token import PasswordResetToken
+        from app.models import User
+
+        db = next(override_get_db())
+        user = db.query(User).filter(User.email == "user@example.com").first()
+        token_count = (
+            db.query(PasswordResetToken)
+            .filter(
+                PasswordResetToken.user_id == user.id,
+                PasswordResetToken.used == False,  # noqa: E712
+            )
+            .count()
+        )
+        db.close()
+        assert token_count == 1
+
     def test_reset_password_invalid_token_returns_400(self, client):
         """Reset with a bad token returns 400."""
         response = client.post(
@@ -336,6 +353,13 @@ class TestAuthEndpoints:
             json={"token": raw, "new_password": "newpassword123"},
         )
         assert response.status_code == 204
+
+        # Verify old password no longer works
+        old_login_response = client.post(
+            "/auth/login",
+            json={"email": "user@example.com", "password": "oldpassword"},
+        )
+        assert old_login_response.status_code == 401
 
         # Verify new password works
         login_response = client.post(
