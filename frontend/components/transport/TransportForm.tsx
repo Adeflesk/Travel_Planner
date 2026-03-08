@@ -228,8 +228,8 @@ export function TransportForm({
             </div>
           </div>
 
-          {/* Departure day + time */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Departure day + departure time + arrival time */}
+          <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Departure day</label>
               <select
@@ -270,6 +270,10 @@ export function TransportForm({
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Departure time</label>
               <input className={inputCls} type="time" value={depTime} onChange={e => setDepTime(e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">Arrival time</label>
+              <input className={inputCls} type="time" value={arrTime} onChange={e => setArrTime(e.target.value)} />
             </div>
           </div>
 
@@ -330,28 +334,14 @@ export function TransportForm({
 
           {/* Arrival day picker — only when overnight is on */}
           {overnight && cfg.overnightSupported && (
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Arrival day</label>
-                <select className={inputCls} value={arrDayId} onChange={e => setArrDayId(e.target.value)}>
-                  <option value="">— none —</option>
-                  {tripDays.map(d => (
-                    <option key={d.id} value={d.id}>{formatDayLabel(d)}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Arrival time</label>
-                <input className={inputCls} type="time" value={arrTime} onChange={e => setArrTime(e.target.value)} />
-              </div>
-            </div>
-          )}
-
-          {/* Drive: always show arrival time inline */}
-          {!cfg.overnightSupported && (
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Arrival time</label>
-              <input className={inputCls} type="time" value={arrTime} onChange={e => setArrTime(e.target.value)} />
+              <label className="block text-xs font-medium text-slate-600 mb-1">Arrival day</label>
+              <select className={inputCls} value={arrDayId} onChange={e => setArrDayId(e.target.value)}>
+                <option value="">— none —</option>
+                {tripDays.map(d => (
+                  <option key={d.id} value={d.id}>{formatDayLabel(d)}</option>
+                ))}
+              </select>
             </div>
           )}
 
