@@ -29,6 +29,12 @@ const TRANSPORT_TYPES: { value: TransportType; label: string; icon: string }[] =
   { value: 'other', label: 'Other', icon: '🚀' },
 ];
 
+const TRAVEL_CLASS_OPTIONS: Partial<Record<TransportType, string[]>> = {
+  train: ['2nd Class', '1st Class', 'Business'],
+  bus: ['Standard', 'Comfort', 'Premium'],
+  ferry: ['Deck', 'Cabin', 'Business'],
+};
+
 function formatDayLabel(day: TripDay): string {
   const d = new Date(day.date + 'T00:00:00');
   const label = day.title || day.location || '';
@@ -93,12 +99,6 @@ export function TransportForm({
   const [seatClass, setSeatClass] = useState<string>(
     (initialData?.extra?.seat_class as string) ?? 'economy'
   );
-
-  const TRAVEL_CLASS_OPTIONS: Partial<Record<TransportType, string[]>> = {
-    train: ['2nd Class', '1st Class', 'Business'],
-    bus: ['Standard', 'Comfort', 'Premium'],
-    ferry: ['Deck', 'Cabin', 'Business'],
-  };
 
   const [travelClass, setTravelClass] = useState<string>(
     (initialData?.extra?.travel_class as string) ?? ''
