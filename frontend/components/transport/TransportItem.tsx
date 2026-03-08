@@ -3,6 +3,7 @@
 import { TripTransport, TransportType } from '@/lib/types';
 import { Pencil, Trash2, Check } from 'lucide-react';
 import { TransportOptionList } from './TransportOptionList';
+import { calculateFlightDuration, formatDuration } from '@/lib/timezone-utils';
 
 const TYPE_ICON: Record<TransportType, string> = {
   flight: '✈',
@@ -24,6 +25,19 @@ interface TransportItemProps {
 export function TransportItem({ transport, currentDayId, onEdit, onDelete, onReload }: TransportItemProps) {
   const isDeparture = transport.departure_day_id === currentDayId;
   const icon = TYPE_ICON[transport.transport_type] ?? '🚀';
+
+  const duration: number | null = (() => {
+    if (!transport.departure_time || !transport.arrival_time) return null;
+    const mins = calculateFlightDuration(
+      transport.departure_time,
+      transport.arrival_time,
+      transport.origin_timezone ?? undefined,
+      transport.destination_timezone ?? undefined
+    );
+    return mins > 0 ? mins : null;
+  })();
+
+  const seatClass = transport.extra?.seat_class as string | undefined;
 
   if (!isDeparture) {
     // Arrival-only compact block
@@ -67,6 +81,14 @@ export function TransportItem({ transport, currentDayId, onEdit, onDelete, onRel
             {transport.departure_time && <span>{transport.departure_time}</span>}
             {transport.arrival_time && transport.arrival_day_id === currentDayId && (
               <span>→ {transport.arrival_time}</span>
+            )}
+            {duration !== null && (
+              <span className="text-slate-400">· {formatDuration(duration)}</span>
+            )}
+            {seatClass && transport.transport_type === 'flight' && (
+              <span className="capitalize text-sky-600 text-xs font-medium bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded">
+                {seatClass}
+              </span>
             )}
             {transport.carrier && <span>{transport.carrier}</span>}
             {transport.reference && (
