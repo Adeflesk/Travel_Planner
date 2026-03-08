@@ -5,6 +5,9 @@ import { X } from 'lucide-react';
 import { TripTransport, TripTransportCreate, TripTransportUpdate, TransportType, TripDay, Destination } from '@/lib/types';
 import { useTripCurrency } from '@/lib/trip-context';
 import { TRANSPORT_CONFIG } from '@/lib/transport-config';
+import { TransportLocationSearch } from './TransportLocationSearch';
+import type { TransportLocation } from './TransportLocationSearch';
+import { calculateFlightDuration, formatDuration } from '@/lib/timezone-utils';
 
 interface TransportFormProps {
   tripDays: TripDay[];
@@ -81,8 +84,23 @@ export function TransportForm({
       : null
   );
   const [prefilledOrigin, setPrefilledOrigin] = useState<string | null>(null);
+  const [originTimezone, setOriginTimezone] = useState<string | null>(
+    initialData?.origin_timezone ?? null
+  );
+  const [destTimezone, setDestTimezone] = useState<string | null>(
+    initialData?.destination_timezone ?? null
+  );
+  const [seatClass, setSeatClass] = useState<string>(
+    (initialData?.extra?.seat_class as string) ?? 'economy'
+  );
 
   const cfg = TRANSPORT_CONFIG[type] ?? TRANSPORT_CONFIG['other'];
+
+  const duration: number | null = (() => {
+    if (!depTime || !arrTime) return null;
+    const mins = calculateFlightDuration(depTime, arrTime, originTimezone ?? undefined, destTimezone ?? undefined);
+    return mins > 0 ? mins : null;
+  })();
 
   const advanceArrToNextDay = (fromDayId: string) => {
     if (!fromDayId) return;
@@ -99,6 +117,7 @@ export function TransportForm({
     if (cfg.showDistance && distanceKm) extra.distance_km = parseFloat(distanceKm);
     if (cfg.showFrequency && frequency) extra.frequency = frequency;
     if (cfg.showTolls) extra.tolls = tolls;
+    if (type === 'flight' && seatClass) extra.seat_class = seatClass;
 
     const data: TripTransportCreate = {
       transport_type: type,
@@ -119,6 +138,8 @@ export function TransportForm({
       origin_longitude: originCoords?.lng,
       destination_latitude: destCoords?.lat,
       destination_longitude: destCoords?.lng,
+      origin_timezone: originTimezone ?? undefined,
+      destination_timezone: destTimezone ?? undefined,
       extra: Object.keys(extra).length ? extra : undefined,
     };
     onSave(data);
@@ -163,18 +184,24 @@ export function TransportForm({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">From *</label>
-              <input
-                className={inputCls}
+              <TransportLocationSearch
+                transportType={type}
                 value={origin}
-                onChange={e => {
-                  setOrigin(e.target.value);
-                  if (e.target.value !== prefilledOrigin) {
+                placeholder="e.g. London Heathrow"
+                required
+                onChange={(val) => {
+                  setOrigin(val);
+                  if (val !== prefilledOrigin) {
                     setOriginCoords(null);
+                    setOriginTimezone(null);
                     setPrefilledOrigin(null);
                   }
                 }}
-                required
-                placeholder="e.g. Sydney (SYD)"
+                onSelect={(loc: TransportLocation) => {
+                  setOrigin(loc.name);
+                  setOriginCoords({ lat: loc.lat, lng: loc.lng });
+                  setOriginTimezone(loc.timezone);
+                }}
               />
               {prefilledOrigin && origin === prefilledOrigin && (
                 <p className="text-xs text-sky-600 mt-1">Auto-filled from linked destination</p>
@@ -182,15 +209,21 @@ export function TransportForm({
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">To *</label>
-              <input
-                className={inputCls}
+              <TransportLocationSearch
+                transportType={type}
                 value={destination}
-                onChange={e => {
-                  setDestination(e.target.value);
-                  setDestCoords(null);
-                }}
+                placeholder="e.g. New York JFK"
                 required
-                placeholder="e.g. London (LHR)"
+                onChange={(val) => {
+                  setDestination(val);
+                  setDestCoords(null);
+                  setDestTimezone(null);
+                }}
+                onSelect={(loc: TransportLocation) => {
+                  setDestination(loc.name);
+                  setDestCoords({ lat: loc.lat, lng: loc.lng });
+                  setDestTimezone(loc.timezone);
+                }}
               />
             </div>
           </div>
@@ -239,6 +272,17 @@ export function TransportForm({
               <input className={inputCls} type="time" value={depTime} onChange={e => setDepTime(e.target.value)} />
             </div>
           </div>
+
+          {/* Duration badge — shown when times + timezones are known */}
+          {duration !== null && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-sky-50 border border-sky-200 rounded-lg text-sm text-sky-700">
+              <span>🕐</span>
+              <span className="font-semibold">Duration: {formatDuration(duration)}</span>
+              {originTimezone && destTimezone && originTimezone !== destTimezone && (
+                <span className="text-xs text-sky-500 ml-1">(timezone-adjusted)</span>
+              )}
+            </div>
+          )}
 
           {/* Auto-detect overnight nudge */}
           {cfg.overnightSupported && !overnight && depTime && arrTime && arrTime < depTime && (
@@ -388,6 +432,29 @@ export function TransportForm({
                 onChange={e => setFrequency(e.target.value)}
                 placeholder="e.g. every 2 hours, 3× daily"
               />
+            </div>
+          )}
+
+          {/* Seat class — flights only */}
+          {type === 'flight' && (
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-2">Seat class</label>
+              <div className="flex flex-wrap gap-2">
+                {(['economy', 'premium economy', 'business', 'first'] as const).map((cls) => (
+                  <button
+                    key={cls}
+                    type="button"
+                    onClick={() => setSeatClass(cls)}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-lg border capitalize transition-colors ${
+                      seatClass === cls
+                        ? 'bg-sky-600 text-white border-sky-600'
+                        : 'bg-white text-slate-700 border-slate-200 hover:border-sky-300'
+                    }`}
+                  >
+                    {cls}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 

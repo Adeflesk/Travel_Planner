@@ -36,6 +36,8 @@ class TripTransport(Base):
     origin_longitude = Column(Float, nullable=True)
     destination_latitude = Column(Float, nullable=True)
     destination_longitude = Column(Float, nullable=True)
+    origin_timezone = Column(String(50), nullable=True)
+    destination_timezone = Column(String(50), nullable=True)
     extra = Column(
         JSON
     )  # type-specific metadata (flight_number, distance_km, frequency)

@@ -44,6 +44,8 @@ class TripTransportBase(BaseModel):
     origin_longitude: float | None = None
     destination_latitude: float | None = None
     destination_longitude: float | None = None
+    origin_timezone: str | None = None
+    destination_timezone: str | None = None
     extra: dict[str, Any] | None = None
 
 
@@ -71,6 +73,8 @@ class TripTransportUpdate(BaseModel):
     origin_longitude: float | None = None
     destination_latitude: float | None = None
     destination_longitude: float | None = None
+    origin_timezone: str | None = None
+    destination_timezone: str | None = None
     extra: dict[str, Any] | None = None
 
 

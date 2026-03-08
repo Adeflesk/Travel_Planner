@@ -28,6 +28,9 @@ pytest==9.0.2
 pytest-cov==6.1.0
 httpx==0.28.1
 
+# Timezone lookup (offline, no API key required)
+timezonefinder>=6.2.0
+
 # Development
 flake8==7.1.1
 black==24.10.0

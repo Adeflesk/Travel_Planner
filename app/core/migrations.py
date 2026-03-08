@@ -272,6 +272,8 @@ def run_migrations(engine: Engine) -> None:
         ("origin_longitude", "FLOAT", "NULL"),
         ("destination_latitude", "FLOAT", "NULL"),
         ("destination_longitude", "FLOAT", "NULL"),
+        ("origin_timezone", "VARCHAR(50)", "NULL"),
+        ("destination_timezone", "VARCHAR(50)", "NULL"),
     ]
 
     day_activity_columns = [
