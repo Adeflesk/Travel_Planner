@@ -6,7 +6,7 @@ Defines request and response models for auth endpoints.
 
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, EmailStr, ConfigDict, field_validator
+from pydantic import BaseModel, EmailStr, ConfigDict, Field, field_validator
 
 
 class UserCreate(BaseModel):
@@ -157,3 +157,12 @@ class AdminUserCreate(BaseModel):
         if v not in ["admin", "user"]:
             raise ValueError("Role must be admin or user")
         return v
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str = Field(..., min_length=8)

@@ -19,6 +19,7 @@ from .day_activity import DayActivity
 from .trip_transport import TripTransport
 from .transport_option import TransportOption
 from .accommodation import Accommodation
+from .password_reset_token import PasswordResetToken
 
 __all__ = [
     "Base",
@@ -35,4 +36,5 @@ __all__ = [
     "TripTransport",
     "TransportOption",
     "Accommodation",
+    "PasswordResetToken",
 ]

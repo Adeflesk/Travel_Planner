@@ -411,9 +411,14 @@ export const accommodationApi = {
     ),
 };
 
+// Auth API
 export const authApi = {
   changePassword: (data: { current_password: string; new_password: string }) =>
     api.post('/auth/change-password', data),
+  forgotPassword: (email: string) =>
+    api.post('/auth/forgot-password', { email }),
+  resetPassword: (token: string, new_password: string) =>
+    api.post('/auth/reset-password', { token, new_password }),
 };
 
 export default api;
