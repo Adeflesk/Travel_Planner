@@ -94,6 +94,16 @@ export function TransportForm({
     (initialData?.extra?.seat_class as string) ?? 'economy'
   );
 
+  const TRAVEL_CLASS_OPTIONS: Partial<Record<TransportType, string[]>> = {
+    train: ['2nd Class', '1st Class', 'Business'],
+    bus: ['Standard', 'Comfort', 'Premium'],
+    ferry: ['Deck', 'Cabin', 'Business'],
+  };
+
+  const [travelClass, setTravelClass] = useState<string>(
+    (initialData?.extra?.travel_class as string) ?? ''
+  );
+
   const cfg = TRANSPORT_CONFIG[type] ?? TRANSPORT_CONFIG['other'];
 
   const duration: number | null = (() => {
@@ -118,6 +128,10 @@ export function TransportForm({
     if (cfg.showFrequency && frequency) extra.frequency = frequency;
     if (cfg.showTolls) extra.tolls = tolls;
     if (type === 'flight' && seatClass) extra.seat_class = seatClass;
+    const travelClassOptions = TRAVEL_CLASS_OPTIONS[type];
+    if (travelClassOptions) {
+      extra.travel_class = travelClass || travelClassOptions[0];
+    }
 
     const data: TripTransportCreate = {
       transport_type: type,
@@ -168,7 +182,10 @@ export function TransportForm({
                 <button
                   key={t.value}
                   type="button"
-                  onClick={() => setType(t.value)}
+                  onClick={() => {
+                    setType(t.value);
+                    setTravelClass('');
+                  }}
                   className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border transition-colors ${type === t.value
                       ? 'bg-sky-600 text-white border-sky-600'
                       : 'bg-white text-slate-700 border-slate-200 hover:border-sky-300'
@@ -446,6 +463,32 @@ export function TransportForm({
                     {cls}
                   </button>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Travel class — train, bus, ferry */}
+          {TRAVEL_CLASS_OPTIONS[type] && (
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-2">Travel class</label>
+              <div className="flex flex-wrap gap-2">
+                {TRAVEL_CLASS_OPTIONS[type]!.map((cls) => {
+                  const active = (travelClass || TRAVEL_CLASS_OPTIONS[type]![0]) === cls;
+                  return (
+                    <button
+                      key={cls}
+                      type="button"
+                      onClick={() => setTravelClass(cls)}
+                      className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+                        active
+                          ? 'bg-sky-600 text-white border-sky-600'
+                          : 'bg-white text-slate-700 border-slate-200 hover:border-sky-300'
+                      }`}
+                    >
+                      {cls}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
