@@ -228,45 +228,47 @@ export function TransportForm({
             </div>
           </div>
 
-          {/* Departure day + departure time + arrival time */}
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Departure day</label>
-              <select
-                className={inputCls}
-                value={depDayId}
-                onChange={e => {
-                  const newDepId = e.target.value;
-                  setDepDayId(newDepId);
-                  if (overnight && newDepId) {
-                    advanceArrToNextDay(newDepId);
-                  }
+          {/* Departure day */}
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Departure day</label>
+            <select
+              className={inputCls}
+              value={depDayId}
+              onChange={e => {
+                const newDepId = e.target.value;
+                setDepDayId(newDepId);
+                if (overnight && newDepId) {
+                  advanceArrToNextDay(newDepId);
+                }
 
-                  // Smart pre-fill origin from linked destination
-                  if (newDepId && destinations) {
-                    const depDay = tripDays.find(d => d.id === parseInt(newDepId, 10));
-                    if (depDay?.destination_id) {
-                      const dest = destinations.find(d => d.id === depDay.destination_id);
-                      if (dest) {
-                        const label = dest.name + (dest.country ? `, ${dest.country}` : '');
-                        setOrigin(label);
-                        setPrefilledOrigin(label);
-                        if (dest.latitude != null && dest.longitude != null) {
-                          setOriginCoords({ lat: dest.latitude, lng: dest.longitude });
-                        } else {
-                          setOriginCoords(null);
-                        }
+                // Smart pre-fill origin from linked destination
+                if (newDepId && destinations) {
+                  const depDay = tripDays.find(d => d.id === parseInt(newDepId, 10));
+                  if (depDay?.destination_id) {
+                    const dest = destinations.find(d => d.id === depDay.destination_id);
+                    if (dest) {
+                      const label = dest.name + (dest.country ? `, ${dest.country}` : '');
+                      setOrigin(label);
+                      setPrefilledOrigin(label);
+                      if (dest.latitude != null && dest.longitude != null) {
+                        setOriginCoords({ lat: dest.latitude, lng: dest.longitude });
+                      } else {
+                        setOriginCoords(null);
                       }
                     }
                   }
-                }}
-              >
-                <option value="">— none —</option>
-                {tripDays.map(d => (
-                  <option key={d.id} value={d.id}>{formatDayLabel(d)}</option>
-                ))}
-              </select>
-            </div>
+                }
+              }}
+            >
+              <option value="">— none —</option>
+              {tripDays.map(d => (
+                <option key={d.id} value={d.id}>{formatDayLabel(d)}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Departure time + Arrival time */}
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Departure time</label>
               <input className={inputCls} type="time" value={depTime} onChange={e => setDepTime(e.target.value)} />
