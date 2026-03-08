@@ -421,4 +421,9 @@ export const authApi = {
     api.post('/auth/reset-password', { token, new_password }),
 };
 
+export const timezoneApi = {
+  lookup: (lat: number, lng: number) =>
+    api.get<{ timezone: string | null }>(`/timezone?lat=${lat}&lng=${lng}`),
+};
+
 export default api;

@@ -139,6 +139,8 @@ export interface TripTransport {
   origin_longitude?: number;
   destination_latitude?: number;
   destination_longitude?: number;
+  origin_timezone?: string | null;
+  destination_timezone?: string | null;
   extra?: Record<string, unknown>;
   options?: TransportOption[];
 }
@@ -163,6 +165,8 @@ export interface TripTransportCreate {
   origin_longitude?: number;
   destination_latitude?: number;
   destination_longitude?: number;
+  origin_timezone?: string | null;
+  destination_timezone?: string | null;
   extra?: Record<string, unknown>;
 }
 
