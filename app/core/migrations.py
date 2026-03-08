@@ -218,6 +218,35 @@ def create_password_reset_tokens_table(engine: Engine) -> None:
         )
 
 
+def create_expense_link_tables(engine: Engine) -> None:
+    """Create transport_expenses and stop_expenses M2M link tables if absent."""
+    transport_sql = """
+        CREATE TABLE IF NOT EXISTS transport_expenses (
+            transport_id INTEGER NOT NULL
+                REFERENCES trip_transports(id) ON DELETE CASCADE,
+            expense_id INTEGER NOT NULL
+                REFERENCES expenses(id) ON DELETE CASCADE,
+            PRIMARY KEY (transport_id, expense_id)
+        )
+    """
+    stop_sql = """
+        CREATE TABLE IF NOT EXISTS stop_expenses (
+            destination_id INTEGER NOT NULL
+                REFERENCES destinations(id) ON DELETE CASCADE,
+            expense_id INTEGER NOT NULL
+                REFERENCES expenses(id) ON DELETE CASCADE,
+            PRIMARY KEY (destination_id, expense_id)
+        )
+    """
+    try:
+        with engine.begin() as conn:
+            conn.execute(text(transport_sql))
+            conn.execute(text(stop_sql))
+        logger.info("Ensured transport_expenses and stop_expenses tables exist")
+    except Exception as e:
+        logger.error(f"Failed to create expense link tables: {type(e).__name__}: {e}")
+
+
 def run_migrations(engine: Engine) -> None:
     """Run all pending migrations."""
     logger.info("Running database migrations...")
@@ -314,6 +343,8 @@ def run_migrations(engine: Engine) -> None:
     fix_day_activities_id_sequence(engine)
 
     create_password_reset_tokens_table(engine)
+
+    create_expense_link_tables(engine)
 
     # Create/Update trip_summary view
     create_trip_summary_view(engine)

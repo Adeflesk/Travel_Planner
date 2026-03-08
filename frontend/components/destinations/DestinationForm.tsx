@@ -8,6 +8,7 @@ interface DestinationFormProps {
   formData: DestinationFormData;
   isEditing: boolean;
   isSubmitting?: boolean;
+  locationWarning?: string | null;
   onSubmit: (e: React.FormEvent) => void;
   onCancel: () => void;
   updateField: <K extends keyof DestinationFormData>(
@@ -21,6 +22,7 @@ export function DestinationForm({
   formData,
   isEditing,
   isSubmitting = false,
+  locationWarning,
   onSubmit,
   onCancel,
   updateField,
@@ -40,6 +42,9 @@ export function DestinationForm({
             onTextChange={(text) => updateField('name', text)}
             onRetrieve={onLocationRetrieve}
           />
+          {locationWarning && (
+            <p className="text-xs text-amber-600">{locationWarning}</p>
+          )}
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-700">

@@ -33,6 +33,40 @@ activity_expenses = Table(
     ),
 )
 
+transport_expenses = Table(
+    "transport_expenses",
+    Base.metadata,
+    Column(
+        "transport_id",
+        Integer,
+        ForeignKey("trip_transports.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "expense_id",
+        Integer,
+        ForeignKey("expenses.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+)
+
+stop_expenses = Table(
+    "stop_expenses",
+    Base.metadata,
+    Column(
+        "destination_id",
+        Integer,
+        ForeignKey("destinations.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "expense_id",
+        Integer,
+        ForeignKey("expenses.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+)
+
 
 class Expense(Base):
     __tablename__ = "expenses"
@@ -71,4 +105,16 @@ class Expense(Base):
         secondary=activity_expenses,
         backref="linked_expenses",
         overlaps="activity,expenses",
+    )
+    linked_transports = relationship(
+        "TripTransport",
+        secondary=transport_expenses,
+        backref="linked_expenses",
+        overlaps="transport,expenses",
+    )
+    linked_stops = relationship(
+        "Destination",
+        secondary=stop_expenses,
+        backref="linked_expenses",
+        overlaps="destination,expenses",
     )
