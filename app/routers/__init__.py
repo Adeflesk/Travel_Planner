@@ -21,6 +21,7 @@ from .suggestions import router as suggestions_router
 from .trip_transports import router as trip_transports_router
 from .transport_options import router as transport_options_router
 from .accommodations import router as accommodations_router
+from .exchange_rates import router as exchange_rates_router
 
 __all__ = [
     "health_router",
@@ -38,4 +39,5 @@ __all__ = [
     "trip_transports_router",
     "transport_options_router",
     "accommodations_router",
+    "exchange_rates_router",
 ]

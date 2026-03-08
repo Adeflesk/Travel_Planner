@@ -36,6 +36,7 @@ export function useDestinationForm(
   const [formData, setFormData] = useState<DestinationFormData>(
     createInitialFormData(tripId, startDate, endDate, defaultTimezone)
   );
+  const [locationWarning, setLocationWarning] = useState<string | null>(null);
 
   const resetForm = () => {
     setEditingId(null);
@@ -50,6 +51,11 @@ export function useDestinationForm(
       latitude: result.lat,
       longitude: result.lng,
     }));
+    if (!result.country) {
+      setLocationWarning("We couldn't confirm this location — check the spelling or add a country for precision.");
+    } else {
+      setLocationWarning(null);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -115,6 +121,7 @@ export function useDestinationForm(
     field: K,
     value: DestinationFormData[K]
   ) => {
+    if (field === 'name' && locationWarning) setLocationWarning(null);
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -123,6 +130,7 @@ export function useDestinationForm(
     editingId,
     isEditing: editingId !== null,
     isSubmitting,
+    locationWarning,
     handleSubmit,
     handleLocationRetrieve,
     startEdit,
