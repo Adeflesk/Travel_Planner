@@ -12,9 +12,9 @@ const RETRIEVE_URL = 'https://api.mapbox.com/search/searchbox/v1/retrieve';
 // null = no category filter (general geocoding).
 const CATEGORY: Record<string, string | null> = {
   flight: 'airport',
-  train: 'train_station',
+  train: 'railway_station',
   bus: 'bus_station',
-  ferry: 'ferry_terminal',
+  ferry: null,          // no valid Mapbox POI category — use general geocoding
   drive: null,
   other: null,
 };
