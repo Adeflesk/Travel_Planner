@@ -21,9 +21,14 @@ A full-stack travel planning application built with FastAPI and Next.js. Organis
 
 ### Transport
 - **TripTransport model** — a simple, day-anchored transport record covering flight, train, bus, drive, ferry, and other types
-- **Adaptive form** — `TransportForm` is config-driven via `TRANSPORT_CONFIG`; field labels, placeholders, and visibility adapt per transport type (e.g. "Airline" / "Flight number" for flights, distance + tolls for drives)
+- **Adaptive form** — `TransportForm` is config-driven via `TRANSPORT_CONFIG`; field labels, placeholders, and visibility adapt per transport type (e.g. "Airline" / "Flight number" for flights, "Operator" / "Train code" for trains, distance + tolls for drives)
+- **Mapbox location search** — origin and destination fields are Mapbox-powered autocomplete inputs, filtered by transport type: airports for flights, railway stations for trains, bus stations for buses, general geocoding for others; coordinates and timezone are resolved on selection
+- **Duration badge** — live timezone-correct duration shown in the form and on transport items once both times are entered; uses UTC offset arithmetic via `calculateFlightDuration`
+- **Travel class** — seat class pills for flights (Economy / Premium Economy / Business / First) and travel class pills for trains (2nd / 1st / Business), buses (Standard / Comfort / Premium), and ferries (Deck / Cabin / Business); stored in `extra.seat_class` / `extra.travel_class`
+- **Arrival time always visible** — departure and arrival times sit in the same row for all transport types; overnight toggle controls arrival-day advancement, not time visibility
 - **Overnight toggle** — opt-in overnight flag with auto-detect nudge when arrival time precedes departure time
 - **Transport options** — compare alternatives (e.g. bus vs train) on a single leg before committing
+- **Map markers** — transport origin and destination appear as amber emoji markers on the day map with departure/arrival popups; route shown as an amber dashed polyline
 
 ### Accommodations
 - **Accommodation records** — attach hotel, hostel, Airbnb, or other stays to a destination with check-in/out dates, confirmation number, address, and cost
