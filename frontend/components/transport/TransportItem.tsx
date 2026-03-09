@@ -38,6 +38,9 @@ export function TransportItem({ transport, currentDayId, onEdit, onDelete, onRel
   })();
 
   const seatClass = transport.extra?.seat_class as string | undefined;
+  const travelClass = transport.extra?.travel_class as string | undefined;
+  const classLabel = transport.transport_type === 'flight' ? seatClass : travelClass;
+  const showClass = ['flight', 'train', 'bus', 'ferry'].includes(transport.transport_type) && !!classLabel;
 
   if (!isDeparture) {
     // Arrival-only compact block
@@ -85,9 +88,9 @@ export function TransportItem({ transport, currentDayId, onEdit, onDelete, onRel
             {duration !== null && (
               <span className="text-slate-400">· {formatDuration(duration)}</span>
             )}
-            {seatClass && transport.transport_type === 'flight' && (
+            {showClass && (
               <span className="capitalize text-sky-600 text-xs font-medium bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded">
-                {seatClass}
+                {classLabel}
               </span>
             )}
             {transport.carrier && <span>{transport.carrier}</span>}
