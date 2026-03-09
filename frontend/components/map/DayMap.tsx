@@ -2,7 +2,7 @@
 
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import { MapPin } from 'lucide-react';
 import type { DayActivity, Destination, TripDay, TripTransport } from '@/lib/types';
@@ -87,6 +87,31 @@ function homeBaseIcon() {
     iconSize: [32, 32],
     iconAnchor: [16, 16],
     popupAnchor: [0, -20],
+  });
+}
+
+const TRANSPORT_EMOJI: Record<string, string> = {
+  flight: '✈',
+  train: '🚆',
+  bus: '🚌',
+  drive: '🚗',
+  ferry: '⛴',
+  other: '🚀',
+};
+
+function transportIcon(type: string) {
+  const emoji = TRANSPORT_EMOJI[type] ?? '🚀';
+  return L.divIcon({
+    className: '',
+    html: `<div style="
+      background:#f59e0b;color:#fff;border:2px solid #d97706;
+      border-radius:50%;width:28px;height:28px;
+      display:flex;align-items:center;justify-content:center;
+      box-shadow:0 2px 4px rgba(0,0,0,.35);font-size:14px;
+    ">${emoji}</div>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+    popupAnchor: [0, -18],
   });
 }
 
@@ -208,7 +233,7 @@ export default function DayMap({
     tripContext?.home_base_latitude != null && tripContext.home_base_longitude != null;
   // A linked destination is pending geocoding — don't fall back to home base yet
   const destPendingGeocode = !!linkedDestination && !destCoords;
-  const hasAnyCoords = destCoords != null || hasActivityCoords;
+  const hasAnyCoords = destCoords != null || hasActivityCoords || dayTransports.length > 0;
 
   // No coordinates anywhere — illustrated empty state (suppress while geocoding pending)
   if (!hasAnyCoords && !hasHomeBase && !destPendingGeocode) {
@@ -283,22 +308,50 @@ export default function DayMap({
         {/* Activity route polyline */}
         <ActivityRoutePolyline activities={sortedActivities} />
 
-        {/* Transport routes */}
+        {/* Transport routes + markers */}
         {dayTransports.map((t) => (
-          <Polyline
-            key={t.id}
-            positions={[
-              [t.origin_latitude!, t.origin_longitude!],
-              [t.destination_latitude!, t.destination_longitude!],
-            ]}
-            pathOptions={{ color: '#f59e0b', weight: 2, dashArray: '6 4', opacity: 0.8 }}
-          />
+          <React.Fragment key={t.id}>
+            <Polyline
+              positions={[
+                [t.origin_latitude!, t.origin_longitude!],
+                [t.destination_latitude!, t.destination_longitude!],
+              ]}
+              pathOptions={{ color: '#f59e0b', weight: 2, dashArray: '6 4', opacity: 0.8 }}
+            />
+            <Marker
+              position={[t.origin_latitude!, t.origin_longitude!]}
+              icon={transportIcon(t.transport_type)}
+            >
+              <Popup>
+                <div className="text-sm min-w-[140px]">
+                  <div className="font-semibold">{t.origin}</div>
+                  <div className="text-xs text-gray-500 mt-0.5">Departure</div>
+                  {t.departure_time && <div className="text-xs text-gray-400 mt-0.5">{t.departure_time}</div>}
+                  {t.carrier && <div className="text-xs text-blue-600 mt-0.5">{t.carrier}</div>}
+                </div>
+              </Popup>
+            </Marker>
+            <Marker
+              position={[t.destination_latitude!, t.destination_longitude!]}
+              icon={transportIcon(t.transport_type)}
+            >
+              <Popup>
+                <div className="text-sm min-w-[140px]">
+                  <div className="font-semibold">{t.destination}</div>
+                  <div className="text-xs text-gray-500 mt-0.5">Arrival</div>
+                  {t.arrival_time && <div className="text-xs text-gray-400 mt-0.5">{t.arrival_time}</div>}
+                  {t.carrier && <div className="text-xs text-blue-600 mt-0.5">{t.carrier}</div>}
+                </div>
+              </Popup>
+            </Marker>
+          </React.Fragment>
         ))}
 
         {/* Auto-fit bounds */}
         <BoundsController
           destCoords={destCoords}
           activities={sortedActivities}
+          transports={dayTransports}
           tripContext={tripContext}
         />
       </MapContainer>
@@ -342,10 +395,12 @@ function ActivityRoutePolyline({ activities }: { activities: DayActivity[] }) {
 function BoundsController({
   destCoords,
   activities,
+  transports,
   tripContext,
 }: {
   destCoords: LatLng | null;
   activities: DayActivity[];
+  transports: TripTransport[];
   tripContext?: TripContext | null;
 }) {
   const points: LatLng[] = [];
@@ -356,6 +411,11 @@ function BoundsController({
     if (a.latitude != null && a.longitude != null) {
       points.push({ lat: a.latitude, lng: a.longitude });
     }
+  }
+
+  for (const t of transports) {
+    points.push({ lat: t.origin_latitude!, lng: t.origin_longitude! });
+    points.push({ lat: t.destination_latitude!, lng: t.destination_longitude! });
   }
 
   if (points.length === 0 && tripContext?.home_base_latitude != null) {
