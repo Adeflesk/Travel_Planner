@@ -30,7 +30,7 @@ class TestSendPasswordResetEmail:
         assert any("BREVO_API_KEY" in r.message for r in caplog.records)
 
     def test_calls_brevo_api_with_correct_params(self):
-        """send_password_reset_email calls Brevo TransactionalEmailsApi with correct template params."""
+        """send_password_reset_email calls Brevo transactional_emails with correct params."""
         env = {
             "BREVO_API_KEY": "test-api-key",
             "BREVO_SENDER_EMAIL": "noreply@example.com",
@@ -38,9 +38,9 @@ class TestSendPasswordResetEmail:
             "BREVO_TEMPLATE_PASSWORD_RESET": "42",
         }
         with patch.dict(os.environ, env):
-            with patch("brevo_python.TransactionalEmailsApi") as MockApi:
-                mock_instance = MagicMock()
-                MockApi.return_value = mock_instance
+            with patch("brevo.Brevo") as MockBrevo:
+                mock_client = MagicMock()
+                MockBrevo.return_value = mock_client
 
                 from app.services import email_service
 
@@ -52,18 +52,21 @@ class TestSendPasswordResetEmail:
                     "http://localhost:3000/reset-password?token=xyz",
                 )
 
-                mock_instance.send_transac_email.assert_called_once()
-                call_args = mock_instance.send_transac_email.call_args[0][0]
-                assert call_args.to[0]["email"] == "user@example.com"
-                assert call_args.template_id == 42
-                assert (
-                    "http://localhost:3000/reset-password?token=xyz"
-                    in call_args.params["RESET_LINK"]
+                MockBrevo.assert_called_once_with(api_key="test-api-key")
+                mock_client.transactional_emails.send_transac_email.assert_called_once()
+                kwargs = (
+                    mock_client.transactional_emails.send_transac_email.call_args.kwargs
                 )
+                assert kwargs["template_id"] == 42
+                assert (
+                    kwargs["params"]["RESET_LINK"]
+                    == "http://localhost:3000/reset-password?token=xyz"
+                )
+                assert kwargs["to"][0].email == "user@example.com"
 
-    def test_logs_and_raises_on_api_exception(self):
-        """ApiException is logged and re-raised."""
-        from brevo_python.rest import ApiException
+    def test_logs_and_raises_on_api_error(self):
+        """ApiError is logged and re-raised."""
+        from brevo.core.api_error import ApiError
 
         env = {
             "BREVO_API_KEY": "test-api-key",
@@ -72,19 +75,19 @@ class TestSendPasswordResetEmail:
             "BREVO_TEMPLATE_PASSWORD_RESET": "42",
         }
         with patch.dict(os.environ, env):
-            with patch("brevo_python.TransactionalEmailsApi") as MockApi:
-                mock_instance = MagicMock()
-                mock_instance.send_transac_email.side_effect = ApiException(
-                    status=401, reason="Unauthorized"
+            with patch("brevo.Brevo") as MockBrevo:
+                mock_client = MagicMock()
+                mock_client.transactional_emails.send_transac_email.side_effect = (
+                    ApiError(body={"message": "Unauthorized"})
                 )
-                MockApi.return_value = mock_instance
+                MockBrevo.return_value = mock_client
 
                 from app.services import email_service
 
                 importlib.reload(email_service)
                 from app.services.email_service import send_password_reset_email
 
-                with pytest.raises(ApiException):
+                with pytest.raises(ApiError):
                     send_password_reset_email(
                         "user@example.com", "http://example.com/reset"
                     )
