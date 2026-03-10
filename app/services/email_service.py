@@ -1,50 +1,59 @@
 """
-app/services/email_service.py - Email sending via SMTP.
+app/services/email_service.py - Transactional email via Brevo SDK.
 
-Reads config from environment variables:
-  SMTP_HOST    - SMTP server hostname (e.g. smtp.gmail.com)
-  SMTP_PORT    - SMTP port (default 587)
-  SMTP_USER    - SMTP username
-  SMTP_PASS    - SMTP password
-  SMTP_FROM    - From address (defaults to SMTP_USER)
+Required env vars:
+  BREVO_API_KEY                   - API key from Brevo dashboard
+  BREVO_SENDER_EMAIL              - Verified sender address
+  BREVO_SENDER_NAME               - Display name (defaults to "Travel Planner")
+  BREVO_TEMPLATE_PASSWORD_RESET   - Integer template ID for password reset email
 
-If SMTP_HOST is not set, send_email logs a warning and returns without
-sending — this allows the app to run locally without email configured.
+If BREVO_API_KEY is not set, send functions log a warning and return without
+sending — allows the app to run locally without email configured.
 """
 import logging
 import os
-import smtplib
-from email.mime.text import MIMEText
+
+import brevo_python
+from brevo_python.rest import ApiException
 
 logger = logging.getLogger(__name__)
 
 
-def send_email(to: str, subject: str, body: str) -> None:
-    """Send a plain-text email. Silently skips if SMTP is not configured."""
-    host = os.getenv("SMTP_HOST")
-    if not host:
+def send_password_reset_email(to_email: str, reset_link: str) -> None:
+    """
+    Send a password reset email via Brevo transactional template.
+
+    Silently skips if BREVO_API_KEY is not configured.
+    Raises ApiException on Brevo API errors (caller handles suppression).
+    """
+    api_key = os.getenv("BREVO_API_KEY")
+    if not api_key:
         logger.warning(
-            "SMTP_HOST not set — skipping email to %s (subject: %s)", to, subject
+            "BREVO_API_KEY not set — skipping password reset email to %s", to_email
         )
         return
 
-    port = int(os.getenv("SMTP_PORT", "587"))
-    user = os.getenv("SMTP_USER", "")
-    password = os.getenv("SMTP_PASS", "")
-    from_addr = os.getenv("SMTP_FROM") or user
+    template_id = int(os.getenv("BREVO_TEMPLATE_PASSWORD_RESET", "0"))
+    sender_email = os.getenv("BREVO_SENDER_EMAIL", "")
+    sender_name = os.getenv("BREVO_SENDER_NAME", "Travel Planner")
 
-    msg = MIMEText(body)
-    msg["Subject"] = subject
-    msg["From"] = from_addr
-    msg["To"] = to
+    configuration = brevo_python.Configuration()
+    configuration.api_key["api-key"] = api_key
+
+    api_instance = brevo_python.TransactionalEmailsApi(
+        brevo_python.ApiClient(configuration)
+    )
+
+    email = brevo_python.SendSmtpEmail(
+        to=[{"email": to_email}],
+        template_id=template_id,
+        params={"RESET_LINK": reset_link, "EXPIRY": "1 hour"},
+        sender={"name": sender_name, "email": sender_email},
+    )
 
     try:
-        with smtplib.SMTP(host, port) as smtp:
-            smtp.starttls()
-            if user:
-                smtp.login(user, password)
-            smtp.sendmail(from_addr, [to], msg.as_string())
-        logger.info("Email sent to %s", to)
-    except Exception as e:
-        logger.error("Failed to send email to %s: %s", to, e)
+        api_instance.send_transac_email(email)
+        logger.info("Password reset email sent to %s", to_email)
+    except ApiException as e:
+        logger.error("Brevo API error sending to %s: %s", to_email, e)
         raise
