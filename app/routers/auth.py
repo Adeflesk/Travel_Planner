@@ -46,7 +46,7 @@ from app.schemas.auth import (
     UserResponse,
     UserUpdate,
 )
-from app.services.email_service import send_email
+from app.services.email_service import send_password_reset_email
 from database import get_db
 
 logger = logging.getLogger(__name__)
@@ -284,17 +284,7 @@ def forgot_password(
     reset_link = f"{frontend_url}/reset-password?token={raw_token}"
 
     try:
-        send_email(
-            to=user.email,
-            subject="Reset your Travel Planner password",
-            body=(
-                f"Hi {user.email},\n\n"
-                f"Click the link below to reset your password. "
-                f"This link expires in 1 hour.\n\n"
-                f"{reset_link}\n\n"
-                f"If you didn't request this, ignore this email.\n"
-            ),
-        )
+        send_password_reset_email(to_email=user.email, reset_link=reset_link)
     except Exception as e:
         logger.error("Failed to send password reset email: %s", e)
         # Still return 200 to prevent user enumeration

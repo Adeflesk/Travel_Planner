@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
+from unittest.mock import patch
 
 from app.main import app
 from app.models import Base
@@ -280,8 +281,9 @@ class TestAuthEndpoints:
         assert response.status_code == 200
         assert "reset link" in response.json()["message"]
 
-    def test_forgot_password_known_email_creates_token(self, client):
-        """Forgot password creates a reset token for a registered user."""
+    @patch("app.routers.auth.send_password_reset_email")
+    def test_forgot_password_known_email_creates_token(self, mock_send, client):
+        """Forgot password creates a reset token and calls the email service."""
         client.post(
             "/auth/register",
             json={"email": "user@example.com", "password": "password123"},
@@ -308,6 +310,28 @@ class TestAuthEndpoints:
         )
         db.close()
         assert token_count == 1
+
+        # Verify email service was called with the user's email
+        mock_send.assert_called_once()
+        call_email = mock_send.call_args[1]["to_email"]
+        assert call_email == "user@example.com"
+
+    @patch(
+        "app.routers.auth.send_password_reset_email",
+        side_effect=Exception("Brevo down"),
+    )
+    def test_forgot_password_returns_200_when_email_fails(self, mock_send, client):
+        """Forgot password returns 200 even if the email service raises an exception."""
+        client.post(
+            "/auth/register",
+            json={"email": "user@example.com", "password": "password123"},
+        )
+        response = client.post(
+            "/auth/forgot-password",
+            json={"email": "user@example.com"},
+        )
+        assert response.status_code == 200
+        assert "reset link" in response.json()["message"]
 
     def test_reset_password_invalid_token_returns_400(self, client):
         """Reset with a bad token returns 400."""
