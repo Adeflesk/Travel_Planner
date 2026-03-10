@@ -173,11 +173,10 @@ fly secrets set FRONTEND_URL=https://your-actual-app.vercel.app
 | `MAPBOX_TOKEN` | No | Mapbox public token for server-side geocoding |
 | `WEATHER_CACHE_TTL` | No | Cache duration in seconds (default: 21600) |
 | `CORS_ORIGINS` | No | Additional CORS origins (comma-separated) |
-| `SMTP_HOST` | No* | SMTP server hostname (e.g. smtp.gmail.com). Required for password reset emails. |
-| `SMTP_PORT` | No | SMTP port. Defaults to 587. |
-| `SMTP_USER` | No* | SMTP username / email. Required for password reset emails. |
-| `SMTP_PASS` | No* | SMTP password or app password. Required for password reset emails. |
-| `SMTP_FROM` | No | From address for outbound emails. Defaults to SMTP_USER. |
+| `BREVO_API_KEY` | No* | Brevo API key. Required for password reset emails. |
+| `BREVO_SENDER_EMAIL` | No* | Verified sender email address. Required for password reset emails. |
+| `BREVO_SENDER_NAME` | No | Display name for outbound emails. Defaults to "Travel Planner". |
+| `BREVO_TEMPLATE_PASSWORD_RESET` | No* | Integer template ID from Brevo dashboard. Required for password reset emails. |
 
 ### Frontend (Vercel env vars)
 
