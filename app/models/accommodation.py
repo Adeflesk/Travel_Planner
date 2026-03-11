@@ -25,6 +25,7 @@ class Accommodation(Base):
     cancellation_policy = Column(Text, nullable=True)
     cancel_by_date = Column(Date, nullable=True)
     booked = Column(Boolean, nullable=False, default=False)
+    cancel_reminder_sent = Column(Boolean, nullable=False, default=False)
     paid = Column(Boolean, nullable=False, default=False)
     notes = Column(Text, nullable=True)
 
