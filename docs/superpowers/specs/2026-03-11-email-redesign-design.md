@@ -1,7 +1,7 @@
 # Email System Redesign Design
 
 **Date:** 2026-03-11
-**Status:** Approved
+**Status:** Approved (rev 2)
 **Scope:** Fix password reset email, centralise Brevo config, add trip share notification, add accommodation cancellation reminders, add transport booking window reminders via APScheduler daily job.
 
 ---
@@ -65,6 +65,7 @@ If `BREVO_API_KEY` is not set, all send functions log a warning and return witho
 
 | Variable | Required | Description |
 |---|---|---|
+| `BREVO_TEMPLATE_PASSWORD_RESET` | No* | Integer template ID for password reset (already existed; now read from email_config, not inline os.getenv) |
 | `BREVO_TEMPLATE_TRIP_SHARE` | No* | Integer template ID for trip share notification |
 | `BREVO_TEMPLATE_ACCOMMODATION_REMINDER` | No* | Integer template ID for cancellation reminder |
 | `BREVO_TEMPLATE_TRANSPORT_BOOKING_REMINDER` | No* | Integer template ID for booking window reminder |
@@ -179,14 +180,16 @@ Add `apscheduler` to `requirements.txt`.
 Single function `send_due_reminders(db: Session)` — handles both reminder types in one pass.
 
 **Accommodation reminder logic:**
-- Query: `cancel_by_date` between today and today + 3 days, `cancel_reminder_sent == False`
+- Query: `cancel_by_date >= today AND cancel_by_date <= today + 3 days`, `cancel_reminder_sent == False`
+- Lower bound is inclusive (`>= today`) so deadlines falling on today are included. Records where `cancel_by_date < today` are excluded — the cancellation window has already closed and no reminder is useful.
 - Join to `Trip` → `User` to get the owner's email
 - Send `send_accommodation_reminder_email` for each result
 - Set `cancel_reminder_sent = True`, commit
 
 **Transport booking window logic:**
 - Query: `transport_type IN ('train', 'bus', 'ferry')`, `booked == False`, `booking_reminder_sent == False`
-- Join to `TripDay` where `date` between today and today + 90 days
+- **Inner join** to `TripDay` on `departure_day_id`: only transport records with an assigned departure day are included. Transport legs where `departure_day_id IS NULL` have no known date and are silently skipped.
+- Filter: `TripDay.date >= today AND TripDay.date <= today + 90 days`
 - Join to `Trip` → `User` to get the owner's email
 - Send `send_transport_booking_reminder_email` for each result
 - Set `booking_reminder_sent = True`, commit
@@ -194,19 +197,22 @@ Single function `send_due_reminders(db: Session)` — handles both reminder type
 ### `app/main.py` — Scheduler wiring
 
 ```python
+from contextlib import asynccontextmanager
 from apscheduler.schedulers.background import BackgroundScheduler
 
 scheduler = BackgroundScheduler()
 
-@app.on_event("startup")
-def start_scheduler():
-    scheduler.add_job(run_reminders, "cron", hour=8, minute=0)
+@asynccontextmanager
+async def lifespan(app):
+    scheduler.add_job(run_reminders, "cron", hour=8, minute=0, timezone="UTC")
     scheduler.start()
-
-@app.on_event("shutdown")
-def stop_scheduler():
+    yield
     scheduler.shutdown()
+
+app = FastAPI(lifespan=lifespan)
 ```
+
+Note: uses the `lifespan` context manager pattern (FastAPI 0.93+) rather than the deprecated `@app.on_event` decorator. Scheduler fires at 08:00 UTC daily.
 
 `run_reminders` opens its own DB session, calls `send_due_reminders(db)`, closes the session.
 
@@ -214,7 +220,7 @@ def stop_scheduler():
 
 ## Section 5: Email Service Functions
 
-Three new functions added to `app/services/email_service.py`. All follow the same pattern as the existing `send_password_reset_email` — graceful skip if `BREVO_API_KEY` is unset, `ApiException` logged and re-raised.
+Three new functions added to `app/services/email_service.py`. All follow the same pattern as the existing `send_password_reset_email` — graceful skip if `BREVO_API_KEY` is unset, `ApiError` logged and re-raised.
 
 ```python
 def send_trip_share_email(
@@ -230,6 +236,7 @@ def send_accommodation_reminder_email(
     """Remind a user their free cancellation window is closing."""
     # template: TEMPLATE_ACCOMMODATION_REMINDER
     # params: ACCOMMODATION_NAME, CANCEL_BY_DATE, TRIP_NAME, APP_URL
+    # APP_URL is read internally from email_config.FRONTEND_URL — not a caller-supplied argument
 
 def send_transport_booking_reminder_email(
     to_email: str, transport_type: str, origin: str,
@@ -238,13 +245,14 @@ def send_transport_booking_reminder_email(
     """Notify a user that booking is now open for an unbooked transport leg."""
     # template: TEMPLATE_TRANSPORT_BOOKING_REMINDER
     # params: TRANSPORT_TYPE, ORIGIN, DESTINATION, DEPARTURE_DATE, TRIP_NAME, APP_URL
+    # APP_URL is read internally from email_config.FRONTEND_URL — not a caller-supplied argument
 ```
 
-`APP_URL` is passed from `FRONTEND_URL` config — not a new env var.
+`APP_URL` in the two reminder functions is sourced from `email_config.FRONTEND_URL` inside the function — not passed by the caller.
 
 ### Call Sites
 
-- `send_trip_share_email` — `app/routers/trips.py`, inside `create_trip_share`, immediately after the share record is committed
+- `send_trip_share_email` — `app/routers/trips.py`, inside `create_trip_share`, after the share record is committed. The call is wrapped in `try/except Exception` and the exception is logged and swallowed — the share has already been persisted and a 500 from an email failure would mislead the client.
 - `send_accommodation_reminder_email` — `app/services/reminder_service.py`
 - `send_transport_booking_reminder_email` — `app/services/reminder_service.py`
 
@@ -264,6 +272,7 @@ def send_transport_booking_reminder_email(
 - `test_sends_accommodation_reminder_when_cancel_by_date_within_3_days`
 - `test_does_not_resend_accommodation_reminder_already_sent`
 - `test_does_not_send_accommodation_reminder_outside_window`
+- `test_does_not_send_accommodation_reminder_when_cancel_by_date_is_past`
 - `test_sends_transport_reminder_when_departure_within_90_days_and_unbooked`
 - `test_does_not_send_transport_reminder_if_already_booked`
 - `test_does_not_resend_transport_reminder_already_sent`
