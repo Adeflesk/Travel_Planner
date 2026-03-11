@@ -189,7 +189,7 @@ Single function `send_due_reminders(db: Session)` — handles both reminder type
 **Transport booking window logic:**
 - Query: `transport_type IN ('train', 'bus', 'ferry')`, `booked == False`, `booking_reminder_sent == False`
 - **Inner join** to `TripDay` on `departure_day_id`: only transport records with an assigned departure day are included. Transport legs where `departure_day_id IS NULL` have no known date and are silently skipped.
-- Filter: `TripDay.date >= today AND TripDay.date <= today + 90 days`
+- Filter: `TripDay.date > today AND TripDay.date <= today + 90 days` (lower bound is exclusive — a departure today is too late to act on a booking window reminder)
 - Join to `Trip` → `User` to get the owner's email
 - Send `send_transport_booking_reminder_email` for each result
 - Set `booking_reminder_sent = True`, commit
@@ -220,7 +220,7 @@ Note: uses the `lifespan` context manager pattern (FastAPI 0.93+) rather than th
 
 ## Section 5: Email Service Functions
 
-Three new functions added to `app/services/email_service.py`. All follow the same pattern as the existing `send_password_reset_email` — graceful skip if `BREVO_API_KEY` is unset, `ApiError` logged and re-raised.
+Three new functions added to `app/services/email_service.py`. All follow the same pattern as the existing `send_password_reset_email` — graceful skip if `BREVO_API_KEY` is unset, `ApiException` (`brevo_python.rest.ApiException`) logged and re-raised.
 
 ```python
 def send_trip_share_email(
@@ -277,6 +277,7 @@ def send_transport_booking_reminder_email(
 - `test_does_not_send_transport_reminder_if_already_booked`
 - `test_does_not_resend_transport_reminder_already_sent`
 - `test_does_not_send_transport_reminder_for_flights_or_drives`
+- `test_does_not_send_transport_reminder_when_departure_is_today_or_past`
 
 ---
 
