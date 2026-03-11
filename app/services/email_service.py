@@ -54,3 +54,39 @@ def send_password_reset_email(to_email: str, reset_link: str) -> None:
     except ApiError as e:
         logger.error("Brevo API error sending to %s: %s", to_email, e)
         raise
+
+
+def send_trip_share_email(
+    to_email: str,
+    trip_name: str,
+    shared_by: str,
+    trip_url: str,
+) -> None:
+    """
+    Notify a user that a trip has been shared with them.
+
+    Silently skips if BREVO_API_KEY is not configured.
+    Raises ApiError on Brevo API errors (caller swallows).
+    """
+    if not email_config.BREVO_API_KEY:
+        logger.warning(
+            "BREVO_API_KEY not set — skipping trip share email to %s", to_email
+        )
+        return
+
+    client = _make_client()
+    try:
+        client.transactional_emails.send_transac_email(
+            to=[SendTransacEmailRequestToItem(email=to_email)],
+            template_id=email_config.TEMPLATE_TRIP_SHARE,
+            params={
+                "TRIP_NAME": trip_name,
+                "SHARED_BY": shared_by,
+                "TRIP_URL": trip_url,
+            },
+            sender=_sender(),
+        )
+        logger.info("Trip share email sent to %s for trip '%s'", to_email, trip_name)
+    except ApiError as e:
+        logger.error("Brevo API error sending trip share to %s: %s", to_email, e)
+        raise
