@@ -6,6 +6,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from app.core import email_config
+
 
 class TestSendPasswordResetEmail:
     def test_skips_when_api_key_not_set(self, caplog):
@@ -44,6 +46,7 @@ class TestSendPasswordResetEmail:
 
                 from app.services import email_service
 
+                importlib.reload(email_config)
                 importlib.reload(email_service)
                 from app.services.email_service import send_password_reset_email
 
@@ -84,6 +87,7 @@ class TestSendPasswordResetEmail:
 
                 from app.services import email_service
 
+                importlib.reload(email_config)
                 importlib.reload(email_service)
                 from app.services.email_service import send_password_reset_email
 

@@ -1,17 +1,10 @@
 """
 app/services/email_service.py - Transactional email via Brevo SDK (v4).
 
-Required env vars:
-  BREVO_API_KEY                   - API key from Brevo dashboard
-  BREVO_SENDER_EMAIL              - Verified sender address
-  BREVO_SENDER_NAME               - Display name (defaults to "Travel Planner")
-  BREVO_TEMPLATE_PASSWORD_RESET   - Integer template ID for password reset email
-
-If BREVO_API_KEY is not set, send functions log a warning and return without
-sending — allows the app to run locally without email configured.
+Config is centralised in app.core.email_config.
+If BREVO_API_KEY is not set, send functions log a warning and return without sending.
 """
 import logging
-import os
 
 from brevo import Brevo
 from brevo.core.api_error import ApiError
@@ -20,7 +13,20 @@ from brevo.transactional_emails.types import (
     SendTransacEmailRequestToItem,
 )
 
+from app.core import email_config
+
 logger = logging.getLogger(__name__)
+
+
+def _make_client() -> Brevo:
+    return Brevo(api_key=email_config.BREVO_API_KEY)
+
+
+def _sender() -> SendTransacEmailRequestSender:
+    return SendTransacEmailRequestSender(
+        name=email_config.BREVO_SENDER_NAME,
+        email=email_config.BREVO_SENDER_EMAIL,
+    )
 
 
 def send_password_reset_email(to_email: str, reset_link: str) -> None:
@@ -30,25 +36,19 @@ def send_password_reset_email(to_email: str, reset_link: str) -> None:
     Silently skips if BREVO_API_KEY is not configured.
     Raises ApiError on Brevo API errors (caller handles suppression).
     """
-    api_key = os.getenv("BREVO_API_KEY")
-    if not api_key:
+    if not email_config.BREVO_API_KEY:
         logger.warning(
             "BREVO_API_KEY not set — skipping password reset email to %s", to_email
         )
         return
 
-    template_id = int(os.getenv("BREVO_TEMPLATE_PASSWORD_RESET", "0"))
-    sender_email = os.getenv("BREVO_SENDER_EMAIL", "")
-    sender_name = os.getenv("BREVO_SENDER_NAME", "Travel Planner")
-
-    client = Brevo(api_key=api_key)
-
+    client = _make_client()
     try:
         client.transactional_emails.send_transac_email(
             to=[SendTransacEmailRequestToItem(email=to_email)],
-            template_id=template_id,
+            template_id=email_config.TEMPLATE_PASSWORD_RESET,
             params={"RESET_LINK": reset_link, "EXPIRY": "1 hour"},
-            sender=SendTransacEmailRequestSender(name=sender_name, email=sender_email),
+            sender=_sender(),
         )
         logger.info("Password reset email sent to %s", to_email)
     except ApiError as e:
