@@ -90,3 +90,93 @@ def send_trip_share_email(
     except ApiError as e:
         logger.error("Brevo API error sending trip share to %s: %s", to_email, e)
         raise
+
+
+def send_accommodation_reminder_email(
+    to_email: str,
+    accommodation_name: str,
+    cancel_by_date: str,
+    trip_name: str,
+) -> None:
+    """
+    Remind a user their free cancellation window is closing.
+
+    APP_URL is sourced from email_config.FRONTEND_URL internally.
+    Silently skips if BREVO_API_KEY is not configured.
+    """
+    if not email_config.BREVO_API_KEY:
+        logger.warning(
+            "BREVO_API_KEY not set — skipping accommodation reminder to %s", to_email
+        )
+        return
+
+    client = _make_client()
+    try:
+        client.transactional_emails.send_transac_email(
+            to=[SendTransacEmailRequestToItem(email=to_email)],
+            template_id=email_config.TEMPLATE_ACCOMMODATION_REMINDER,
+            params={
+                "ACCOMMODATION_NAME": accommodation_name,
+                "CANCEL_BY_DATE": cancel_by_date,
+                "TRIP_NAME": trip_name,
+                "APP_URL": email_config.FRONTEND_URL,
+            },
+            sender=_sender(),
+        )
+        logger.info(
+            "Accommodation reminder sent to %s for '%s'", to_email, accommodation_name
+        )
+    except ApiError as e:
+        logger.error(
+            "Brevo API error sending accommodation reminder to %s: %s", to_email, e
+        )
+        raise
+
+
+def send_transport_booking_reminder_email(
+    to_email: str,
+    transport_type: str,
+    origin: str,
+    destination: str,
+    departure_date: str,
+    trip_name: str,
+) -> None:
+    """
+    Notify a user that booking is now open for an unbooked transport leg.
+
+    APP_URL is sourced from email_config.FRONTEND_URL internally.
+    Silently skips if BREVO_API_KEY is not configured.
+    """
+    if not email_config.BREVO_API_KEY:
+        logger.warning(
+            "BREVO_API_KEY not set — skipping transport booking reminder to %s",
+            to_email,
+        )
+        return
+
+    client = _make_client()
+    try:
+        client.transactional_emails.send_transac_email(
+            to=[SendTransacEmailRequestToItem(email=to_email)],
+            template_id=email_config.TEMPLATE_TRANSPORT_BOOKING_REMINDER,
+            params={
+                "TRANSPORT_TYPE": transport_type,
+                "ORIGIN": origin,
+                "DESTINATION": destination,
+                "DEPARTURE_DATE": departure_date,
+                "TRIP_NAME": trip_name,
+                "APP_URL": email_config.FRONTEND_URL,
+            },
+            sender=_sender(),
+        )
+        logger.info(
+            "Transport booking reminder sent to %s for %s → %s",
+            to_email,
+            origin,
+            destination,
+        )
+    except ApiError as e:
+        logger.error(
+            "Brevo API error sending transport reminder to %s: %s", to_email, e
+        )
+        raise
