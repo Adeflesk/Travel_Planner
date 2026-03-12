@@ -33,7 +33,8 @@ export interface TransportLocation {
 }
 
 interface Props {
-  transportType: string;
+  transportType?: string;   // was: transportType: string
+  label?: string;           // NEW
   value: string;
   placeholder?: string;
   required?: boolean;
@@ -47,6 +48,7 @@ function newSessionToken() {
 
 export function TransportLocationSearch({
   transportType,
+  label,        // NEW
   value,
   placeholder = 'Search…',
   required,
@@ -59,7 +61,7 @@ export function TransportLocationSearch({
   const sessionToken = useRef(newSessionToken());
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
-  const category = CATEGORY[transportType] ?? null;
+  const category = transportType ? (CATEGORY[transportType] ?? null) : null;
 
   const fetchSuggestions = useCallback(
     async (q: string) => {
@@ -151,42 +153,49 @@ export function TransportLocationSearch({
     'w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-300';
 
   return (
-    <div ref={containerRef} className="relative">
-      <div className="relative">
-        {loading ? (
-          <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 animate-spin pointer-events-none" />
-        ) : (
-          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-        )}
-        <input
-          type="text"
-          value={value}
-          onChange={handleInput}
-          onFocus={() => suggestions.length > 0 && setOpen(true)}
-          placeholder={placeholder}
-          required={required}
-          autoComplete="off"
-          className={inputCls}
-        />
-      </div>
-
-      {open && suggestions.length > 0 && (
-        <ul className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-          {suggestions.map((s) => (
-            <li
-              key={s.mapbox_id}
-              onMouseDown={() => handleSelect(s)}
-              className="flex items-start gap-3 px-3 py-2.5 hover:bg-slate-50 cursor-pointer"
-            >
-              <MapPin className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
-              <div className="min-w-0">
-                <div className="text-sm font-medium text-slate-800 truncate">{s.name}</div>
-                <div className="text-xs text-slate-500 truncate">{s.place_formatted}</div>
-              </div>
-            </li>
-          ))}
-        </ul>
+    <div className="w-full">
+      {label && (
+        <label className="block text-sm font-medium text-slate-700 mb-1.5">
+          {label}
+        </label>
       )}
+      <div ref={containerRef} className="relative">
+        <div className="relative">
+          {loading ? (
+            <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 animate-spin pointer-events-none" />
+          ) : (
+            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+          )}
+          <input
+            type="text"
+            value={value}
+            onChange={handleInput}
+            onFocus={() => suggestions.length > 0 && setOpen(true)}
+            placeholder={placeholder}
+            required={required}
+            autoComplete="off"
+            className={inputCls}
+          />
+        </div>
+
+        {open && suggestions.length > 0 && (
+          <ul className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+            {suggestions.map((s) => (
+              <li
+                key={s.mapbox_id}
+                onMouseDown={() => handleSelect(s)}
+                className="flex items-start gap-3 px-3 py-2.5 hover:bg-slate-50 cursor-pointer"
+              >
+                <MapPin className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <div className="text-sm font-medium text-slate-800 truncate">{s.name}</div>
+                  <div className="text-xs text-slate-500 truncate">{s.place_formatted}</div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }
