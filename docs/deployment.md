@@ -177,6 +177,9 @@ fly secrets set FRONTEND_URL=https://your-actual-app.vercel.app
 | `BREVO_SENDER_EMAIL` | No* | Verified sender email address. Required for password reset emails. |
 | `BREVO_SENDER_NAME` | No | Display name for outbound emails. Defaults to "Travel Planner". |
 | `BREVO_TEMPLATE_PASSWORD_RESET` | No* | Integer template ID from Brevo dashboard. Required for password reset emails. |
+| `BREVO_TEMPLATE_TRIP_SHARE` | No* | Integer template ID for trip share notification email |
+| `BREVO_TEMPLATE_ACCOMMODATION_REMINDER` | No* | Integer template ID for accommodation cancellation reminder |
+| `BREVO_TEMPLATE_TRANSPORT_BOOKING_REMINDER` | No* | Integer template ID for transport booking window reminder |
 
 ### Frontend (Vercel env vars)
 
