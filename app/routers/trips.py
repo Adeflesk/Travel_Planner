@@ -7,6 +7,7 @@ All endpoints require authentication.
 Author: Travel Planner Team
 """
 
+import logging
 from datetime import date
 from decimal import Decimal
 from typing import List
@@ -16,6 +17,7 @@ from sqlalchemy import case, func, text
 from sqlalchemy.orm import Session
 
 from app import models, schemas
+from app.core import email_config
 from app.core.deps import get_current_user
 from app.services.activity_service import (
     get_destinations_with_activities as svc_get_destinations_with_activities,
@@ -26,7 +28,10 @@ from app.services.expense_service import get_expense_summary as svc_get_expense_
 from app.services.timeline_service import (
     get_accommodation_expenses as svc_get_accommodation_expenses,
 )
+from app.services.email_service import send_trip_share_email
 from database import get_db
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -473,7 +478,7 @@ def create_trip_share(
     current_user: models.User = Depends(get_current_user),
 ):
     """Share a trip with another user (owner only)."""
-    get_trip_or_404(trip_id, db, current_user, require_owner=True)
+    trip = get_trip_or_404(trip_id, db, current_user, require_owner=True)
 
     # Find user by email
     user = db.query(models.User).filter(models.User.email == share_data.email).first()
@@ -506,6 +511,17 @@ def create_trip_share(
     db.add(share)
     db.commit()
     db.refresh(share)
+
+    # Send share notification email — swallow failures, share is already persisted
+    try:
+        send_trip_share_email(
+            to_email=user.email,
+            trip_name=trip.name,
+            shared_by=current_user.email,
+            trip_url=f"{email_config.FRONTEND_URL}/trips/{trip_id}",
+        )
+    except Exception as e:
+        logger.error("Failed to send trip share email to %s: %s", user.email, e)
 
     return schemas.TripShareResponse.from_orm_with_email(share, user.email)
 

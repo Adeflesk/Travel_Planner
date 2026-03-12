@@ -30,6 +30,7 @@ class TripTransport(Base):
     currency = Column(String(10))
     notes = Column(Text)
     booked = Column(Boolean, nullable=False, default=False)
+    booking_reminder_sent = Column(Boolean, nullable=False, default=False)
     overnight = Column(Boolean, nullable=False, default=False)
     sort_order = Column(Integer, nullable=False, default=0)
     origin_latitude = Column(Float, nullable=True)

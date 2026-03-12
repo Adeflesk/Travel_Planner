@@ -16,6 +16,8 @@ project_root = Path(__file__).parent.parent
 env_path = project_root / ".env"
 load_dotenv(dotenv_path=env_path)
 
+from contextlib import asynccontextmanager  # noqa: E402
+from apscheduler.schedulers.background import BackgroundScheduler  # noqa: E402
 from fastapi import FastAPI, Request  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.responses import JSONResponse  # noqa: E402
@@ -60,6 +62,33 @@ except Exception as e:
     # if it's a transient database issue.
 
 
+_scheduler = BackgroundScheduler()
+
+
+def _run_reminders_job() -> None:
+    """APScheduler job: open a DB session, run reminders, close it."""
+    from database import SessionLocal
+    from app.services.reminder_service import send_due_reminders
+
+    db = SessionLocal()
+    try:
+        send_due_reminders(db)
+    except Exception as e:
+        import logging
+
+        logging.getLogger(__name__).error("Reminder job failed: %s", e)
+    finally:
+        db.close()
+
+
+@asynccontextmanager
+async def _lifespan(app: FastAPI):
+    _scheduler.add_job(_run_reminders_job, "cron", hour=8, minute=0, timezone="UTC")
+    _scheduler.start()
+    yield
+    _scheduler.shutdown()
+
+
 def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
     """Custom handler for rate limit exceeded errors."""
     return JSONResponse(
@@ -102,6 +131,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="Travel Planner API",
         version="1.0.0",
+        lifespan=_lifespan,
         docs_url="/docs" if os.getenv("ENVIRONMENT") != "production" else None,
         redoc_url="/redoc" if os.getenv("ENVIRONMENT") != "production" else None,
     )

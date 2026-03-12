@@ -332,6 +332,26 @@ def run_migrations(engine: Engine) -> None:
         if add_column_if_not_exists(engine, "expenses", col_name, col_type, default):
             applied_migrations.append(f"expenses.{col_name}")
 
+    # Email reminder columns
+    accommodation_reminder_columns = [
+        ("cancel_reminder_sent", "BOOLEAN", "FALSE"),
+    ]
+    trip_transport_reminder_columns = [
+        ("booking_reminder_sent", "BOOLEAN", "FALSE"),
+    ]
+
+    for col_name, col_type, default in accommodation_reminder_columns:
+        if add_column_if_not_exists(
+            engine, "accommodations", col_name, col_type, default
+        ):
+            applied_migrations.append(f"accommodations.{col_name}")
+
+    for col_name, col_type, default in trip_transport_reminder_columns:
+        if add_column_if_not_exists(
+            engine, "trip_transports", col_name, col_type, default
+        ):
+            applied_migrations.append(f"trip_transports.{col_name}")
+
     migrations_run = len(applied_migrations)
     if migrations_run > 0:
         logger.info(

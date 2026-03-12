@@ -6,6 +6,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from app.core import email_config
+
 
 class TestSendPasswordResetEmail:
     def test_skips_when_api_key_not_set(self, caplog):
@@ -44,6 +46,7 @@ class TestSendPasswordResetEmail:
 
                 from app.services import email_service
 
+                importlib.reload(email_config)
                 importlib.reload(email_service)
                 from app.services.email_service import send_password_reset_email
 
@@ -84,6 +87,7 @@ class TestSendPasswordResetEmail:
 
                 from app.services import email_service
 
+                importlib.reload(email_config)
                 importlib.reload(email_service)
                 from app.services.email_service import send_password_reset_email
 
@@ -91,3 +95,192 @@ class TestSendPasswordResetEmail:
                     send_password_reset_email(
                         "user@example.com", "http://example.com/reset"
                     )
+
+
+class TestSendTripShareEmail:
+    def test_skips_when_api_key_not_set(self, caplog):
+        """Trip share email is skipped gracefully when BREVO_API_KEY is not configured."""
+        env_backup = os.environ.copy()
+        os.environ.pop("BREVO_API_KEY", None)
+        try:
+            from app.services import email_service
+
+            importlib.reload(email_config)
+            importlib.reload(email_service)
+            from app.services.email_service import send_trip_share_email
+
+            send_trip_share_email(
+                "recipient@example.com",
+                trip_name="Portugal 2026",
+                shared_by="owner@example.com",
+                trip_url="http://localhost:3000/trips/1",
+            )
+        finally:
+            os.environ.clear()
+            os.environ.update(env_backup)
+
+        assert any("BREVO_API_KEY" in r.message for r in caplog.records)
+
+    def test_calls_brevo_with_correct_params(self):
+        """send_trip_share_email calls Brevo with TRIP_NAME, SHARED_BY, TRIP_URL."""
+        env = {
+            "BREVO_API_KEY": "test-api-key",
+            "BREVO_SENDER_EMAIL": "noreply@example.com",
+            "BREVO_SENDER_NAME": "Travel Planner",
+            "BREVO_TEMPLATE_TRIP_SHARE": "10",
+        }
+        with patch.dict(os.environ, env):
+            with patch("brevo.Brevo") as MockBrevo:
+                mock_client = MagicMock()
+                MockBrevo.return_value = mock_client
+
+                from app.services import email_service
+
+                importlib.reload(email_config)
+                importlib.reload(email_service)
+                from app.services.email_service import send_trip_share_email
+
+                send_trip_share_email(
+                    "recipient@example.com",
+                    trip_name="Portugal 2026",
+                    shared_by="owner@example.com",
+                    trip_url="http://localhost:3000/trips/1",
+                )
+
+                mock_client.transactional_emails.send_transac_email.assert_called_once()
+                kwargs = (
+                    mock_client.transactional_emails.send_transac_email.call_args.kwargs
+                )
+                assert kwargs["template_id"] == 10
+                assert kwargs["params"]["TRIP_NAME"] == "Portugal 2026"
+                assert kwargs["params"]["SHARED_BY"] == "owner@example.com"
+                assert kwargs["params"]["TRIP_URL"] == "http://localhost:3000/trips/1"
+                assert kwargs["to"][0].email == "recipient@example.com"
+
+
+class TestSendAccommodationReminderEmail:
+    def test_skips_when_api_key_not_set(self, caplog):
+        env_backup = os.environ.copy()
+        os.environ.pop("BREVO_API_KEY", None)
+        try:
+            from app.services import email_service
+
+            importlib.reload(email_config)
+            importlib.reload(email_service)
+            from app.services.email_service import send_accommodation_reminder_email
+
+            send_accommodation_reminder_email(
+                "user@example.com",
+                accommodation_name="Hotel Lisboa",
+                cancel_by_date="2026-04-01",
+                trip_name="Portugal 2026",
+            )
+        finally:
+            os.environ.clear()
+            os.environ.update(env_backup)
+
+        assert any("BREVO_API_KEY" in r.message for r in caplog.records)
+
+    def test_calls_brevo_with_correct_params(self):
+        env = {
+            "BREVO_API_KEY": "test-api-key",
+            "BREVO_SENDER_EMAIL": "noreply@example.com",
+            "BREVO_SENDER_NAME": "Travel Planner",
+            "BREVO_TEMPLATE_ACCOMMODATION_REMINDER": "20",
+            "FRONTEND_URL": "http://localhost:3000",
+        }
+        with patch.dict(os.environ, env):
+            with patch("brevo.Brevo") as MockBrevo:
+                mock_client = MagicMock()
+                MockBrevo.return_value = mock_client
+
+                from app.services import email_service
+
+                importlib.reload(email_config)
+                importlib.reload(email_service)
+                from app.services.email_service import send_accommodation_reminder_email
+
+                send_accommodation_reminder_email(
+                    "user@example.com",
+                    accommodation_name="Hotel Lisboa",
+                    cancel_by_date="2026-04-01",
+                    trip_name="Portugal 2026",
+                )
+
+                kwargs = (
+                    mock_client.transactional_emails.send_transac_email.call_args.kwargs
+                )
+                assert kwargs["template_id"] == 20
+                assert kwargs["params"]["ACCOMMODATION_NAME"] == "Hotel Lisboa"
+                assert kwargs["params"]["CANCEL_BY_DATE"] == "2026-04-01"
+                assert kwargs["params"]["TRIP_NAME"] == "Portugal 2026"
+                assert kwargs["params"]["APP_URL"] == "http://localhost:3000"
+                assert kwargs["to"][0].email == "user@example.com"
+
+
+class TestSendTransportBookingReminderEmail:
+    def test_skips_when_api_key_not_set(self, caplog):
+        env_backup = os.environ.copy()
+        os.environ.pop("BREVO_API_KEY", None)
+        try:
+            from app.services import email_service
+
+            importlib.reload(email_config)
+            importlib.reload(email_service)
+            from app.services.email_service import send_transport_booking_reminder_email
+
+            send_transport_booking_reminder_email(
+                "user@example.com",
+                transport_type="train",
+                origin="London",
+                destination="Paris",
+                departure_date="2026-06-01",
+                trip_name="Portugal 2026",
+            )
+        finally:
+            os.environ.clear()
+            os.environ.update(env_backup)
+
+        assert any("BREVO_API_KEY" in r.message for r in caplog.records)
+
+    def test_calls_brevo_with_correct_params(self):
+        env = {
+            "BREVO_API_KEY": "test-api-key",
+            "BREVO_SENDER_EMAIL": "noreply@example.com",
+            "BREVO_SENDER_NAME": "Travel Planner",
+            "BREVO_TEMPLATE_TRANSPORT_BOOKING_REMINDER": "30",
+            "FRONTEND_URL": "http://localhost:3000",
+        }
+        with patch.dict(os.environ, env):
+            with patch("brevo.Brevo") as MockBrevo:
+                mock_client = MagicMock()
+                MockBrevo.return_value = mock_client
+
+                from app.services import email_service
+
+                importlib.reload(email_config)
+                importlib.reload(email_service)
+                from app.services.email_service import (
+                    send_transport_booking_reminder_email,
+                )
+
+                send_transport_booking_reminder_email(
+                    "user@example.com",
+                    transport_type="train",
+                    origin="London",
+                    destination="Paris",
+                    departure_date="2026-06-01",
+                    trip_name="Portugal 2026",
+                )
+
+                kwargs = (
+                    mock_client.transactional_emails.send_transac_email.call_args.kwargs
+                )
+                assert kwargs["template_id"] == 30
+                assert kwargs["params"]["TRANSPORT_TYPE"] == "train"
+                assert kwargs["params"]["ORIGIN"] == "London"
+                assert kwargs["params"]["DESTINATION"] == "Paris"
+                assert kwargs["params"]["DEPARTURE_DATE"] == "2026-06-01"
+                assert kwargs["params"]["TRIP_NAME"] == "Portugal 2026"
+                assert kwargs["params"]["APP_URL"] == "http://localhost:3000"
+                assert kwargs["to"][0].email == "user@example.com"
