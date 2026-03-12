@@ -13,10 +13,11 @@ class TestSendPasswordResetEmail:
     def test_skips_when_api_key_not_set(self, caplog):
         """Email is skipped gracefully when BREVO_API_KEY is not configured."""
         env_backup = os.environ.copy()
-        os.environ.pop("BREVO_API_KEY", None)
+        os.environ["BREVO_API_KEY"] = ""
         try:
             from app.services import email_service
 
+            importlib.reload(email_config)
             importlib.reload(email_service)
             from app.services.email_service import send_password_reset_email
 
@@ -101,7 +102,7 @@ class TestSendTripShareEmail:
     def test_skips_when_api_key_not_set(self, caplog):
         """Trip share email is skipped gracefully when BREVO_API_KEY is not configured."""
         env_backup = os.environ.copy()
-        os.environ.pop("BREVO_API_KEY", None)
+        os.environ["BREVO_API_KEY"] = ""
         try:
             from app.services import email_service
 
@@ -161,7 +162,7 @@ class TestSendTripShareEmail:
 class TestSendAccommodationReminderEmail:
     def test_skips_when_api_key_not_set(self, caplog):
         env_backup = os.environ.copy()
-        os.environ.pop("BREVO_API_KEY", None)
+        os.environ["BREVO_API_KEY"] = ""
         try:
             from app.services import email_service
 
@@ -221,7 +222,7 @@ class TestSendAccommodationReminderEmail:
 class TestSendTransportBookingReminderEmail:
     def test_skips_when_api_key_not_set(self, caplog):
         env_backup = os.environ.copy()
-        os.environ.pop("BREVO_API_KEY", None)
+        os.environ["BREVO_API_KEY"] = ""
         try:
             from app.services import email_service
 
