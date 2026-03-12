@@ -121,6 +121,43 @@ export function getTimezoneAbbreviation(
 }
 
 /**
+ * Format an IANA timezone string as a friendly label.
+ * Example: formatTimezoneLabel('America/Los_Angeles') => "Pacific Standard Time (PST)"
+ *
+ * @param tz      IANA timezone string
+ * @param atDate  Date to use for DST-accurate abbreviation (default: now)
+ */
+export function formatTimezoneLabel(tz: string, atDate?: Date): string {
+  if (!isValidTimezone(tz)) return tz;
+  try {
+    const date = atDate ?? new Date();
+
+    // Long name: "Pacific Standard Time"
+    const longFormatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      timeZoneName: 'long',
+    });
+    const longParts = longFormatter.formatToParts(date);
+    const longName = longParts.find(p => p.type === 'timeZoneName')?.value || tz;
+
+    // Short abbreviation: "PST"
+    const shortFormatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      timeZoneName: 'short',
+    });
+    const shortParts = shortFormatter.formatToParts(date);
+    const shortName = shortParts.find(p => p.type === 'timeZoneName')?.value || '';
+
+    if (shortName && shortName !== longName) {
+      return `${longName} (${shortName})`;
+    }
+    return longName;
+  } catch {
+    return tz;
+  }
+}
+
+/**
  * Calculate duration in minutes between two datetime strings,
  * accounting for their respective timezones.
  * 
