@@ -4,8 +4,10 @@ import type { TripContext } from '@/lib/trip-context';
 import { Input, Textarea } from '@/components/ui/Input';
 import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
 import { Button } from '@/components/ui/Button';
-import { getLocalTimezone, getSupportedTimezones } from '@/lib/timezone-utils';
-import { geocodeAddress, Coordinates } from '@/lib/geocode-utils';
+import { getLocalTimezone, getSupportedTimezones, formatTimezoneLabel } from '@/lib/timezone-utils';
+import { TransportLocationSearch } from '@/components/transport/TransportLocationSearch';
+import type { TransportLocation } from '@/components/transport/TransportLocationSearch';
+import type { Coordinates } from '@/lib/geocode-utils';
 
 interface WizardData {
     // Step 1
@@ -62,9 +64,7 @@ export const TripWizard = ({ onSubmit, onCancel, loading }: TripWizardProps) => 
     const [step, setStep] = useState(1);
     const [data, setData] = useState<WizardData>(defaults);
     const set = (updates: Partial<WizardData>) => setData((d) => ({ ...d, ...updates }));
-    const [isValidating, setIsValidating] = useState(false);
-    const [locationWarnings, setLocationWarnings] = useState<{ home_base?: string; first_destination?: string }>({});
-    const lastValidated = useRef<{ home_base: string; first_destination: string } | null>(null);
+    const [showTimezoneOverride, setShowTimezoneOverride] = useState(false);
     const validatedCoords = useRef<{ home_base?: Coordinates | null; first_destination?: Coordinates | null }>({});
 
     const timezones = useMemo(() => getSupportedTimezones(), []);
@@ -116,41 +116,7 @@ export const TripWizard = ({ onSubmit, onCancel, loading }: TripWizardProps) => 
         });
     };
 
-    const handleNext = async () => {
-        if (step !== 1) {
-            setStep(step + 1);
-            return;
-        }
-        const warnings: { home_base?: string; first_destination?: string } = {};
-        const fieldsToCheck: Array<{ key: 'home_base' | 'first_destination'; value: string }> = [
-            { key: 'home_base', value: data.home_base.trim() },
-            { key: 'first_destination', value: data.first_destination.trim() },
-        ];
-        const nonEmpty = fieldsToCheck.filter(f => f.value !== '');
-        const lv = lastValidated.current;
-        const unchanged = lv !== null &&
-            lv.home_base === data.home_base.trim() &&
-            lv.first_destination === data.first_destination.trim();
-
-        if (nonEmpty.length > 0 && !unchanged) {
-            setIsValidating(true);
-            try {
-                const results = await Promise.all(
-                    nonEmpty.map(f => geocodeAddress(f.value).then(coords => ({ key: f.key, coords, found: coords !== null })))
-                );
-                results.forEach(r => {
-                    validatedCoords.current[r.key] = r.coords;
-                    if (!r.found) warnings[r.key] = "We couldn't confirm this location — check the spelling if needed.";
-                });
-            } finally {
-                setIsValidating(false);
-            }
-            lastValidated.current = { home_base: data.home_base.trim(), first_destination: data.first_destination.trim() };
-        } else if (unchanged) {
-            // Re-use existing warnings — don't fire Nominatim again
-            Object.assign(warnings, locationWarnings);
-        }
-        setLocationWarnings(warnings);
+    const handleNext = () => {
         setStep(step + 1);
     };
 
@@ -203,42 +169,60 @@ export const TripWizard = ({ onSubmit, onCancel, loading }: TripWizardProps) => 
                             error={error || undefined}
                         />
                     </div>
-                    <AutocompleteInput
-                        label="Trip Timezone"
-                        value={data.timezone}
-                        onSelect={(v) => set({ timezone: v })}
-                        onChange={(e) => set({ timezone: e.target.value })}
-                        suggestions={timezones}
-                        placeholder="Search timezones..."
-                        hint="Important for keeping your itinerary times accurate."
-                    />
-                    <Input
+                    <TransportLocationSearch
                         label="Departing from"
                         value={data.home_base}
-                        onChange={(e) => {
-                            set({ home_base: e.target.value });
-                            if (locationWarnings.home_base) setLocationWarnings(w => ({ ...w, home_base: undefined }));
-                        }}
                         placeholder="e.g., Sydney, Australia"
+                        onChange={(val) => set({ home_base: val })}
+                        onSelect={(loc: TransportLocation) => {
+                            set({ home_base: loc.name });
+                            validatedCoords.current.home_base = { lat: loc.lat, lng: loc.lng };
+                        }}
                     />
-                    {locationWarnings.home_base && (
-                        <p className="text-xs text-amber-600 -mt-4">
-                            {locationWarnings.home_base}
-                        </p>
-                    )}
-                    <Input
+                    <TransportLocationSearch
                         label="First destination (optional)"
                         value={data.first_destination}
-                        onChange={(e) => {
-                            set({ first_destination: e.target.value });
-                            if (locationWarnings.first_destination) setLocationWarnings(w => ({ ...w, first_destination: undefined }));
-                        }}
                         placeholder="e.g., Paris, France"
+                        onChange={(val) => set({ first_destination: val })}
+                        onSelect={(loc: TransportLocation) => {
+                            set({ first_destination: loc.name });
+                            validatedCoords.current.first_destination = { lat: loc.lat, lng: loc.lng };
+                            if (loc.timezone) {
+                                set({ timezone: loc.timezone });
+                                setShowTimezoneOverride(false);
+                            }
+                        }}
                     />
-                    {locationWarnings.first_destination && (
-                        <p className="text-xs text-amber-600 -mt-4">
-                            {locationWarnings.first_destination}
-                        </p>
+                    {/* Timezone display */}
+                    {data.timezone && !showTimezoneOverride && (
+                        <div className="flex items-center gap-2 text-sm text-slate-600 -mt-2">
+                            <span>Timezone:</span>
+                            <span className="font-medium text-slate-800">
+                                {formatTimezoneLabel(data.timezone, data.start_date ? new Date(data.start_date) : undefined)}
+                            </span>
+                            <span className="text-slate-300">·</span>
+                            <button
+                                type="button"
+                                onClick={() => setShowTimezoneOverride(true)}
+                                className="text-primary-600 hover:text-primary-700 font-medium"
+                            >
+                                Change
+                            </button>
+                        </div>
+                    )}
+                    {showTimezoneOverride && (
+                        <AutocompleteInput
+                            label="Trip Timezone"
+                            value={data.timezone}
+                            onSelect={(v) => {
+                                set({ timezone: v });
+                                setShowTimezoneOverride(false);
+                            }}
+                            onChange={(e) => set({ timezone: e.target.value })}
+                            suggestions={timezones}
+                            placeholder="Search timezones..."
+                            hint="Important for keeping your itinerary times accurate."
+                        />
                     )}
                     <Textarea
                         label="Description (optional)"
@@ -437,12 +421,12 @@ export const TripWizard = ({ onSubmit, onCancel, loading }: TripWizardProps) => 
                 </Button>
                 {step < 5 ? (
                     <Button
-                        disabled={!canNext() || isValidating}
+                        disabled={!canNext()}
                         onClick={handleNext}
                         className="min-w-[120px]"
                         size="lg"
                     >
-                        {isValidating ? 'Checking…' : 'Next Step →'}
+                        Next Step →
                     </Button>
                 ) : (
                     <Button
