@@ -42,6 +42,12 @@ def send_password_reset_email(to_email: str, reset_link: str) -> None:
         )
         return
 
+    if not email_config.TEMPLATE_PASSWORD_RESET:
+        logger.warning(
+            "BREVO_TEMPLATE_PASSWORD_RESET not set — skipping email to %s", to_email
+        )
+        return
+
     client = _make_client()
     try:
         client.transactional_emails.send_transac_email(
@@ -71,6 +77,12 @@ def send_trip_share_email(
     if not email_config.BREVO_API_KEY:
         logger.warning(
             "BREVO_API_KEY not set — skipping trip share email to %s", to_email
+        )
+        return
+
+    if not email_config.TEMPLATE_TRIP_SHARE:
+        logger.warning(
+            "BREVO_TEMPLATE_TRIP_SHARE not set — skipping email to %s", to_email
         )
         return
 
@@ -107,6 +119,13 @@ def send_accommodation_reminder_email(
     if not email_config.BREVO_API_KEY:
         logger.warning(
             "BREVO_API_KEY not set — skipping accommodation reminder to %s", to_email
+        )
+        return
+
+    if not email_config.TEMPLATE_ACCOMMODATION_REMINDER:
+        logger.warning(
+            "BREVO_TEMPLATE_ACCOMMODATION_REMINDER not set — skipping email to %s",
+            to_email,
         )
         return
 
@@ -150,6 +169,13 @@ def send_transport_booking_reminder_email(
     if not email_config.BREVO_API_KEY:
         logger.warning(
             "BREVO_API_KEY not set — skipping transport booking reminder to %s",
+            to_email,
+        )
+        return
+
+    if not email_config.TEMPLATE_TRANSPORT_BOOKING_REMINDER:
+        logger.warning(
+            "BREVO_TEMPLATE_TRANSPORT_BOOKING_REMINDER not set — skipping email to %s",
             to_email,
         )
         return
