@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/lib/auth-context';
 import { Shield, Plane } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -11,7 +12,7 @@ export default function Navigation() {
   return (
     <nav className="flex items-center justify-between">
       <Link href="/dashboard" className="flex items-center space-x-2 group">
-        <Plane className="w-6 h-6 text-white group-hover:text-primary-200 transition-colors" />
+        <Image src="/logo.png" alt="Travel Planner Logo" width={32} height={32} className="rounded-md" />
         <span className="text-xl font-bold text-white">Travel Planner</span>
       </Link>
 

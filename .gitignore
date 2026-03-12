@@ -126,3 +126,4 @@ tmp_deploy/
 min_deploy/
 test_deploy/
 
+.env*.local
