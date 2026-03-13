@@ -298,6 +298,20 @@ export const TripWizard = ({ onSubmit, onCancel, loading }: TripWizardProps) => 
                             </select>
                         </div>
                     </div>
+                    {data.traveller_count > 1 && data.budget && parseFloat(data.budget) > 0 && (
+                        <div className="flex items-center gap-2 px-3 py-2.5 bg-primary-50 border border-primary-100 rounded-xl text-sm text-primary-700">
+                            <span className="font-semibold">
+                                {new Intl.NumberFormat('en', {
+                                    style: 'currency',
+                                    currency: data.budget_currency,
+                                    maximumFractionDigits: 0,
+                                }).format(parseFloat(data.budget) / data.traveller_count)}
+                            </span>
+                            <span className="text-primary-600">
+                                per person ({data.traveller_count} travellers)
+                            </span>
+                        </div>
+                    )}
                     <div className="p-5 bg-sky-50 border border-sky-100 rounded-2xl flex gap-4">
                         <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-sky-600 shadow-sm shrink-0">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
