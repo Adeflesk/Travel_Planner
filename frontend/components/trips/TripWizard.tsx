@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { getLocalTimezone, getSupportedTimezones, formatTimezoneLabel } from '@/lib/timezone-utils';
 import { TransportLocationSearch } from '@/components/transport/TransportLocationSearch';
 import type { TransportLocation } from '@/components/transport/TransportLocationSearch';
-import type { Coordinates } from '@/lib/geocode-utils';
+type Coords = { lat: number; lng: number };
 
 interface WizardData {
     // Step 1
@@ -21,15 +21,13 @@ interface WizardData {
     // Step 2
     traveller_count: number;
     split_costs: boolean;
-    // Step 3
+    // Context defaults (not shown in wizard, passed to TripContext)
     trip_type: TripContext['trip_type'];
     vehicle: TripContext['vehicle'];
     flight_type: TripContext['flight_type'];
-    overnight_flight: boolean;
-    // Step 4
     accommodation: TripContext['accommodation'];
     pacing: TripContext['pacing'];
-    // Step 5
+    // Step 3
     budget: string;
     budget_currency: string;
 }
@@ -37,7 +35,7 @@ interface WizardData {
 const defaults: WizardData = {
     name: '', description: '', timezone: getLocalTimezone(), home_base: '', first_destination: '', start_date: '', end_date: '',
     traveller_count: 1, split_costs: false,
-    trip_type: 'single_city', vehicle: 'none', flight_type: 'none', overnight_flight: false,
+    trip_type: 'single_city', vehicle: 'none', flight_type: 'none',
     accommodation: 'unknown', pacing: 'balanced',
     budget: '', budget_currency: 'USD',
 };
@@ -52,8 +50,8 @@ interface TripWizardProps {
         budget?: number;
         default_currency?: string;
         first_destination?: string;
-        home_base_coords?: Coordinates;
-        first_destination_coords?: Coordinates;
+        home_base_coords?: Coords;
+        first_destination_coords?: Coords;
         context: TripContext;
     }) => void;
     onCancel: () => void;
@@ -62,10 +60,11 @@ interface TripWizardProps {
 
 export const TripWizard = ({ onSubmit, onCancel, loading }: TripWizardProps) => {
     const [step, setStep] = useState(1);
+    const [direction, setDirection] = useState<'forward' | 'back'>('forward');
     const [data, setData] = useState<WizardData>(defaults);
     const set = (updates: Partial<WizardData>) => setData((d) => ({ ...d, ...updates }));
     const [showTimezoneOverride, setShowTimezoneOverride] = useState(false);
-    const validatedCoords = useRef<{ home_base?: Coordinates | null; first_destination?: Coordinates | null }>({});
+    const validatedCoords = useRef<{ home_base?: Coords | null; first_destination?: Coords | null }>({});
 
     const timezones = useMemo(() => getSupportedTimezones(), []);
 
@@ -117,33 +116,43 @@ export const TripWizard = ({ onSubmit, onCancel, loading }: TripWizardProps) => 
     };
 
     const handleNext = () => {
+        setDirection('forward');
         setStep(step + 1);
     };
+
+    const handleBack = () => {
+        setDirection('back');
+        setStep(step - 1);
+    };
+
+    const stepAnimation = direction === 'forward' ? 'animate-slide-in-right' : 'animate-slide-in-left';
 
     const error = getValidationError();
 
     return (
         <div className="flex flex-col gap-8 max-w-2xl mx-auto py-4">
             {/* Step indicator */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    {[1, 2, 3, 4, 5].map((s) => (
-                        <div key={s} className="flex items-center">
-                            <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${s === step ? 'bg-primary-600 text-white shadow-lg ring-4 ring-primary-100' : s < step ? 'bg-primary-100 text-primary-700' : 'bg-slate-100 text-slate-400'
-                                }`}>{s}</span>
-                            {s < 5 && <div className={`w-6 h-0.5 mx-1 ${s < step ? 'bg-primary-200' : 'bg-slate-200'}`} />}
-                        </div>
-                    ))}
+            <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-2xl font-semibold text-slate-900 leading-none" style={{ fontFamily: 'var(--font-display), serif' }}>
+                        {['The Basics', 'Travellers', 'Budget'][step - 1]}
+                    </h2>
+                    <p className="text-xs font-medium text-slate-400 tabular-nums">
+                        {step} / 3
+                    </p>
                 </div>
-                <div className="text-right">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Step {step} of 5</p>
-                    <p className="text-xl font-bold text-slate-900 leading-none">{['The Basics', 'Travellers', 'Transport', 'Stay & Pace', 'Budget'][step - 1]}</p>
+                {/* Progress bar */}
+                <div className="relative h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div
+                        className="absolute inset-y-0 left-0 bg-primary-500 rounded-full transition-all duration-500 ease-out"
+                        style={{ width: `${(step / 3) * 100}%` }}
+                    />
                 </div>
             </div>
 
             {/* Step 1: Basics */}
             {step === 1 && (
-                <div className="space-y-6 animate-fade-in-up">
+                <div className={`space-y-6 ${stepAnimation}`}>
                     <Input
                         label="Trip name"
                         required
@@ -236,7 +245,7 @@ export const TripWizard = ({ onSubmit, onCancel, loading }: TripWizardProps) => 
 
             {/* Step 2: Travellers */}
             {step === 2 && (
-                <div className="space-y-8 animate-fade-in-up">
+                <div className={`space-y-8 ${stepAnimation}`}>
                     <div className="flex flex-col gap-4">
                         <label className="text-base font-semibold text-slate-800">How many people are going?</label>
                         <div className="flex items-center gap-6">
@@ -275,111 +284,9 @@ export const TripWizard = ({ onSubmit, onCancel, loading }: TripWizardProps) => 
                 </div>
             )}
 
-            {/* Step 3: Trip type + transport */}
+            {/* Step 3: Budget */}
             {step === 3 && (
-                <div className="space-y-8 animate-fade-in-up">
-                    <div className="space-y-4">
-                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Trip Style</h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {(['single_city', 'multi_city', 'road_trip', 'international'] as const).map((t) => (
-                                <label key={t} className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${data.trip_type === t ? 'bg-primary-50 border-primary-500 shadow-md transform -translate-y-0.5' : 'bg-white border-slate-100 hover:border-slate-200'}`}>
-                                    <input type="radio" name="trip_type" checked={data.trip_type === t} onChange={() => set({ trip_type: t })} className="text-primary-600 focus:ring-primary-500" />
-                                    <span className="text-sm font-semibold text-slate-800">{{ single_city: 'Single City', multi_city: 'Multi-City Tour', road_trip: 'Road / Rail Trip', international: 'International' }[t]}</span>
-                                </label>
-                            ))}
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                        <div className="space-y-4">
-                            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Driving</h4>
-                            <div className="space-y-2">
-                                {(['own_car', 'rental', 'none'] as const).map((v) => (
-                                    <label key={v} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${data.vehicle === v ? 'bg-slate-50 border-slate-300' : 'bg-white border-transparent hover:bg-slate-50'}`}>
-                                        <input type="radio" name="vehicle" checked={data.vehicle === v} onChange={() => set({ vehicle: v })} className="text-primary-600 focus:ring-primary-500" />
-                                        <span className="text-sm text-slate-700">{{ own_car: 'Own car', rental: 'Rental car', none: 'Neither' }[v]}</span>
-                                    </label>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="space-y-4">
-                            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Air Travel</h4>
-                            <div className="space-y-2">
-                                {(['none', 'return', 'multi_leg', 'comparing'] as const).map((f) => (
-                                    <label key={f} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${data.flight_type === f ? 'bg-slate-50 border-slate-300' : 'bg-white border-transparent hover:bg-slate-50'}`}>
-                                        <input type="radio" name="flight_type" checked={data.flight_type === f} onChange={() => set({ flight_type: f })} className="text-primary-600 focus:ring-primary-500" />
-                                        <span className="text-sm text-slate-700">{{ none: 'No flights', return: 'Return', multi_leg: 'Multi-leg', comparing: 'Comparing' }[f]}</span>
-                                    </label>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                    {/* Overnight inference callout — shown when a flight type is selected */}
-                    {data.flight_type !== 'none' && (
-                        <div className="mt-6 p-4 bg-sky-50 border border-sky-200 rounded-xl space-y-3">
-                            <p className="text-sm font-semibold text-sky-900">
-                                ✈ Will any of your flights cross midnight?
-                            </p>
-                            <p className="text-xs text-sky-700">
-                                If you depart one day and arrive the next, we&apos;ll flag those legs as overnight when you build your itinerary.
-                            </p>
-                            <div className="flex gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => set({ overnight_flight: true })}
-                                    className={`px-4 py-2 text-sm font-semibold rounded-lg border transition-colors ${data.overnight_flight
-                                        ? 'bg-sky-600 text-white border-sky-600'
-                                        : 'bg-white text-sky-700 border-sky-300 hover:bg-sky-50'
-                                        }`}
-                                >
-                                    Yes, overnight
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => set({ overnight_flight: false })}
-                                    className={`px-4 py-2 text-sm font-semibold rounded-lg border transition-colors ${!data.overnight_flight
-                                        ? 'bg-slate-100 text-slate-700 border-slate-300'
-                                        : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
-                                        }`}
-                                >
-                                    No, same-day arrivals
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* Step 4: Stay + pace */}
-            {step === 4 && (
-                <div className="space-y-8 animate-fade-in-up">
-                    <div className="space-y-4">
-                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Accommodation</h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {(['hotel', 'rental_property', 'camping', 'mix', 'unknown'] as const).map((a) => (
-                                <label key={a} className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${data.accommodation === a ? 'bg-primary-50 border-primary-500 shadow-md transform -translate-y-0.5' : 'bg-white border-slate-100 hover:border-slate-200'}`}>
-                                    <input type="radio" name="accommodation" checked={data.accommodation === a} onChange={() => set({ accommodation: a })} className="text-primary-600 focus:ring-primary-500" />
-                                    <span className="text-sm font-semibold text-slate-800">{{ hotel: 'Hotel / Motel', rental_property: 'Rental (Airbnb, etc)', camping: 'Camping', mix: 'Mix', unknown: 'Not sure' }[a]}</span>
-                                </label>
-                            ))}
-                        </div>
-                    </div>
-                    <div className="space-y-4">
-                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Trip Pace</h4>
-                        <div className="flex gap-4">
-                            {(['relaxed', 'balanced', 'packed'] as const).map((p) => (
-                                <label key={p} className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all ${data.pacing === p ? 'bg-primary-50 border-primary-500 shadow-md' : 'bg-white border-slate-100 hover:border-slate-200'}`}>
-                                    <input type="radio" name="pacing" checked={data.pacing === p} onChange={() => set({ pacing: p })} className="hidden" />
-                                    <span className="text-sm font-bold text-slate-800 uppercase tracking-tighter">{{ relaxed: 'Relaxed', balanced: 'Balanced', packed: 'Packed' }[p]}</span>
-                                </label>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Step 5: Budget */}
-            {step === 5 && (
-                <div className="space-y-8 animate-fade-in-up">
+                <div className={`space-y-8 ${stepAnimation}`}>
                     <div className="grid grid-cols-3 gap-6">
                         <div className="col-span-2">
                             <Input
@@ -402,6 +309,20 @@ export const TripWizard = ({ onSubmit, onCancel, loading }: TripWizardProps) => 
                             </select>
                         </div>
                     </div>
+                    {data.traveller_count > 1 && data.budget && parseFloat(data.budget) > 0 && (
+                        <div className="flex items-center gap-2 px-3 py-2.5 bg-primary-50 border border-primary-100 rounded-xl text-sm text-primary-700 animate-pop-in">
+                            <span className="font-semibold">
+                                {new Intl.NumberFormat('en', {
+                                    style: 'currency',
+                                    currency: data.budget_currency,
+                                    maximumFractionDigits: 0,
+                                }).format(parseFloat(data.budget) / data.traveller_count)}
+                            </span>
+                            <span className="text-primary-600">
+                                per person ({data.traveller_count} travellers)
+                            </span>
+                        </div>
+                    )}
                     <div className="p-5 bg-sky-50 border border-sky-100 rounded-2xl flex gap-4">
                         <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-sky-600 shadow-sm shrink-0">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -416,10 +337,10 @@ export const TripWizard = ({ onSubmit, onCancel, loading }: TripWizardProps) => 
 
             {/* Navigation */}
             <div className="flex items-center justify-between pt-8 border-t border-slate-100">
-                <Button variant="ghost" onClick={step === 1 ? onCancel : () => setStep(step - 1)}>
+                <Button variant="ghost" onClick={step === 1 ? onCancel : handleBack}>
                     {step === 1 ? 'Cancel' : '← Back'}
                 </Button>
-                {step < 5 ? (
+                {step < 3 ? (
                     <Button
                         disabled={!canNext()}
                         onClick={handleNext}
@@ -432,7 +353,7 @@ export const TripWizard = ({ onSubmit, onCancel, loading }: TripWizardProps) => 
                     <Button
                         loading={loading}
                         onClick={handleSubmit}
-                        className="min-w-[160px]"
+                        className="min-w-[160px] !bg-secondary-500 hover:!bg-secondary-600 !border-secondary-500 hover:!border-secondary-600 !shadow-lg !shadow-secondary-500/25"
                         size="lg"
                     >
                         Plan My Trip

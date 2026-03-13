@@ -50,13 +50,7 @@ test.describe('Trip Management', () => {
     // Step 2: Travellers
     await authenticatedPage.getByRole('button', { name: /Next Step/i }).click();
 
-    // Step 3: Transport
-    await authenticatedPage.getByRole('button', { name: /Next Step/i }).click();
-
-    // Step 4: Stay & Pace
-    await authenticatedPage.getByRole('button', { name: /Next Step/i }).click();
-
-    // Step 5: Budget
+    // Step 3: Budget
     await authenticatedPage.getByLabel('Total budget').fill(tripData.budget.toString());
 
     // Handle the alert
@@ -147,7 +141,6 @@ test.describe('Trip Management', () => {
   test('should cancel trip creation form', async ({ authenticatedPage }) => {
     // Open form
     await authenticatedPage.getByRole('button', { name: /New Trip/i }).click();
-    await expect(authenticatedPage.getByText('Step 1 of 5')).toBeVisible();
     await expect(authenticatedPage.getByText('The Basics')).toBeVisible();
 
     // Cancel form - use the last Cancel button which should be in the wizard footer
