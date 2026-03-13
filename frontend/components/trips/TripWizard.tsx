@@ -60,6 +60,7 @@ interface TripWizardProps {
 
 export const TripWizard = ({ onSubmit, onCancel, loading }: TripWizardProps) => {
     const [step, setStep] = useState(1);
+    const [direction, setDirection] = useState<'forward' | 'back'>('forward');
     const [data, setData] = useState<WizardData>(defaults);
     const set = (updates: Partial<WizardData>) => setData((d) => ({ ...d, ...updates }));
     const [showTimezoneOverride, setShowTimezoneOverride] = useState(false);
@@ -115,33 +116,43 @@ export const TripWizard = ({ onSubmit, onCancel, loading }: TripWizardProps) => 
     };
 
     const handleNext = () => {
+        setDirection('forward');
         setStep(step + 1);
     };
+
+    const handleBack = () => {
+        setDirection('back');
+        setStep(step - 1);
+    };
+
+    const stepAnimation = direction === 'forward' ? 'animate-slide-in-right' : 'animate-slide-in-left';
 
     const error = getValidationError();
 
     return (
         <div className="flex flex-col gap-8 max-w-2xl mx-auto py-4">
             {/* Step indicator */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    {[1, 2, 3].map((s) => (
-                        <div key={s} className="flex items-center">
-                            <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${s === step ? 'bg-primary-600 text-white shadow-lg ring-4 ring-primary-100' : s < step ? 'bg-primary-100 text-primary-700' : 'bg-slate-100 text-slate-400'
-                                }`}>{s}</span>
-                            {s < 3 && <div className={`w-6 h-0.5 mx-1 ${s < step ? 'bg-primary-200' : 'bg-slate-200'}`} />}
-                        </div>
-                    ))}
+            <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-2xl font-semibold text-slate-900 leading-none" style={{ fontFamily: 'var(--font-display), serif' }}>
+                        {['The Basics', 'Travellers', 'Budget'][step - 1]}
+                    </h2>
+                    <p className="text-xs font-medium text-slate-400 tabular-nums">
+                        {step} / 3
+                    </p>
                 </div>
-                <div className="text-right">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Step {step} of 3</p>
-                    <p className="text-xl font-bold text-slate-900 leading-none">{['The Basics', 'Travellers', 'Budget'][step - 1]}</p>
+                {/* Progress bar */}
+                <div className="relative h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div
+                        className="absolute inset-y-0 left-0 bg-primary-500 rounded-full transition-all duration-500 ease-out"
+                        style={{ width: `${(step / 3) * 100}%` }}
+                    />
                 </div>
             </div>
 
             {/* Step 1: Basics */}
             {step === 1 && (
-                <div className="space-y-6 animate-fade-in-up">
+                <div className={`space-y-6 ${stepAnimation}`}>
                     <Input
                         label="Trip name"
                         required
@@ -234,7 +245,7 @@ export const TripWizard = ({ onSubmit, onCancel, loading }: TripWizardProps) => 
 
             {/* Step 2: Travellers */}
             {step === 2 && (
-                <div className="space-y-8 animate-fade-in-up">
+                <div className={`space-y-8 ${stepAnimation}`}>
                     <div className="flex flex-col gap-4">
                         <label className="text-base font-semibold text-slate-800">How many people are going?</label>
                         <div className="flex items-center gap-6">
@@ -275,7 +286,7 @@ export const TripWizard = ({ onSubmit, onCancel, loading }: TripWizardProps) => 
 
             {/* Step 3: Budget */}
             {step === 3 && (
-                <div className="space-y-8 animate-fade-in-up">
+                <div className={`space-y-8 ${stepAnimation}`}>
                     <div className="grid grid-cols-3 gap-6">
                         <div className="col-span-2">
                             <Input
@@ -299,7 +310,7 @@ export const TripWizard = ({ onSubmit, onCancel, loading }: TripWizardProps) => 
                         </div>
                     </div>
                     {data.traveller_count > 1 && data.budget && parseFloat(data.budget) > 0 && (
-                        <div className="flex items-center gap-2 px-3 py-2.5 bg-primary-50 border border-primary-100 rounded-xl text-sm text-primary-700">
+                        <div className="flex items-center gap-2 px-3 py-2.5 bg-primary-50 border border-primary-100 rounded-xl text-sm text-primary-700 animate-pop-in">
                             <span className="font-semibold">
                                 {new Intl.NumberFormat('en', {
                                     style: 'currency',
@@ -326,7 +337,7 @@ export const TripWizard = ({ onSubmit, onCancel, loading }: TripWizardProps) => 
 
             {/* Navigation */}
             <div className="flex items-center justify-between pt-8 border-t border-slate-100">
-                <Button variant="ghost" onClick={step === 1 ? onCancel : () => setStep(step - 1)}>
+                <Button variant="ghost" onClick={step === 1 ? onCancel : handleBack}>
                     {step === 1 ? 'Cancel' : '← Back'}
                 </Button>
                 {step < 3 ? (
@@ -342,7 +353,7 @@ export const TripWizard = ({ onSubmit, onCancel, loading }: TripWizardProps) => 
                     <Button
                         loading={loading}
                         onClick={handleSubmit}
-                        className="min-w-[160px]"
+                        className="min-w-[160px] !bg-secondary-500 hover:!bg-secondary-600 !border-secondary-500 hover:!border-secondary-600 !shadow-lg !shadow-secondary-500/25"
                         size="lg"
                     >
                         Plan My Trip
