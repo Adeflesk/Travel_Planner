@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { Trip } from '@/lib/types';
 import type { TripContext } from '@/lib/trip-context';
 import { tripApi, destinationApi } from '@/lib/api';
-import { geocodeAddress, Coordinates } from '@/lib/geocode-utils';
+import type { Coordinates } from '@/lib/geocode-utils';
 import { autoCreateDaysForDestination } from '@/lib/destination-day-utils';
 import { TripCard, TripWizard } from '@/components/trips';
 import { Plus, X } from 'lucide-react';
@@ -59,22 +59,14 @@ function TripsContent() {
       loadTrips();
       setShowForm(false);
 
-      if (tripId && data.context?.home_base) {
-        // Use pre-validated coords if available, otherwise geocode now
-        const homeCoords = data.home_base_coords
-          ? Promise.resolve(data.home_base_coords)
-          : geocodeAddress(data.context.home_base);
-        homeCoords.then(coords => {
-          if (coords) {
-            tripApi.update(tripId, {
-              context: {
-                ...data.context,
-                home_base_latitude: coords.lat,
-                home_base_longitude: coords.lng
-              }
-            }).catch(console.error);
+      if (tripId && data.home_base_coords) {
+        tripApi.update(tripId, {
+          context: {
+            ...data.context,
+            home_base_latitude: data.home_base_coords.lat,
+            home_base_longitude: data.home_base_coords.lng,
           }
-        });
+        }).catch(console.error);
       }
 
       if (tripId && data.first_destination) {
@@ -87,18 +79,12 @@ function TripsContent() {
         }).then(destRes => {
           const dest = destRes.data;
 
-          // Use pre-validated coords if available, otherwise geocode now
-          const destCoords = data.first_destination_coords
-            ? Promise.resolve(data.first_destination_coords)
-            : geocodeAddress(data.first_destination as string);
-          destCoords.then(coords => {
-            if (coords) {
-              destinationApi.update(dest.id, {
-                latitude: coords.lat,
-                longitude: coords.lng
-              }).catch(console.error);
-            }
-          });
+          if (data.first_destination_coords) {
+            destinationApi.update(dest.id, {
+              latitude: data.first_destination_coords.lat,
+              longitude: data.first_destination_coords.lng,
+            }).catch(console.error);
+          }
 
           // Create days for the destination
           if (dest.arrival_date && dest.departure_date) {
