@@ -19,9 +19,9 @@ Convert expenses to the trip's base currency at entry time and store the convert
 
 ## Data Model Changes
 
-### Trip model — add one field
+### Trip model — reuse existing field
 
-- `base_currency: String(3)` — the currency the budget is denominated in. Inferred from the first destination's country when creating a trip, overridable by the user. Defaults to `"USD"`.
+The Trip model already has `default_currency: String(10)`. Reuse this as the base currency for budget calculations — no new column needed. Ensure it defaults to `"USD"` and is inferred from the first destination's country when creating a trip. Throughout this spec, "base currency" refers to `trip.default_currency`.
 
 ### Expense model — add two fields
 
@@ -38,7 +38,7 @@ Convention:
 ### Migration
 
 - All existing expenses: `base_amount = amount`, `exchange_rate = 1.0`
-- All existing trips: `base_currency = "USD"` (or inferred from first destination if one exists)
+- All existing trips: set `default_currency = "USD"` where null (or inferred from first destination if one exists)
 - Must be compatible with both SQLite (local) and Postgres (production)
 
 ## Currency Service
@@ -75,7 +75,8 @@ Minimal changes — the core of Approach 1:
 
 ### `_generate_alerts()`
 
-- Use `base_currency` for currency symbol in alert messages instead of hardcoded `$`
+- Add `base_currency: str` parameter to the function signature
+- Format amounts as `"{amount:.2f} {base_currency}"` (e.g., "54.00 USD", "50.00 EUR") — use the ISO currency code, not a symbol, to avoid locale ambiguity ($ is used by USD, CAD, AUD, etc.)
 
 ### Schema changes
 
