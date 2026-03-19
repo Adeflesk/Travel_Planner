@@ -47,6 +47,8 @@ The existing `app/services/exchange_rate.py` already handles rate fetching with 
 
 - `convert(amount: Decimal, from_currency: str, to_currency: str) -> tuple[Decimal, Decimal] | None` — returns `(exchange_rate, base_amount)` or `None` if rates unavailable
 
+**Rate direction:** `convert("EUR", "USD")` needs the EUR→USD rate (how many USD per 1 EUR). The existing `get_rates(base)` returns rates *from* the base currency, so `get_rates("EUR")["USD"]` gives the correct multiplier directly. The `convert()` helper calls `get_rates(from_currency)` and looks up `rates[to_currency]`. Then `base_amount = amount * rate`.
+
 ### Base currency inference
 
 - `infer_base_currency(destinations) -> str` — maps first destination's country to currency code via a static lookup (or `pycountry`). Falls back to `"USD"`.
@@ -54,7 +56,8 @@ The existing `app/services/exchange_rate.py` already handles rate fetching with 
 
 ### New API endpoint
 
-- `GET /exchange-rate/?from=EUR&to=USD` — returns the current rate for frontend pre-fill. Returns `null` if unavailable.
+- `GET /exchange-rate/?from=EUR&to=USD` — returns `{ "rate": 1.08, "from": "EUR", "to": "USD" }` for frontend pre-fill. Returns `{ "rate": null, ... }` if unavailable.
+- Lives in a new `app/routers/exchange_rate.py` router.
 
 ## Budget Service Changes
 
@@ -90,7 +93,7 @@ Conversion logic sits between schema validation and model persistence in the rou
 2. Router fetches the trip to get `base_currency`
 3. If `currency == base_currency` -> `exchange_rate = 1.0`, `base_amount = amount`
 4. Else if `exchange_rate` provided by user -> `base_amount = amount * exchange_rate`
-5. Else -> call `exchange_rate.get_rates(base_currency)`, compute `base_amount`
+5. Else -> call `convert(amount, expense_currency, base_currency)` which internally calls `get_rates(expense_currency)[base_currency]`
 6. Inject `exchange_rate` and `base_amount` into the dict before `models.Expense(**data)`
 
 ### Update
@@ -139,7 +142,7 @@ Default view: base currency.
 
 ### API client
 
-- Add `exchangeApi.getRates(baseCurrency)` -> `GET /exchange-rate/?base=USD`
+- Add `exchangeApi.getRate(from, to)` -> `GET /exchange-rate/?from=EUR&to=USD`
 
 ## Error Handling & Edge Cases
 
