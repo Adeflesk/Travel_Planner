@@ -85,3 +85,31 @@ def invalidate_cache(base: str | None = None) -> None:
         _cache.clear()
     else:
         _cache.pop(base.upper(), None)
+
+
+def convert(amount, from_currency: str, to_currency: str) -> tuple | None:
+    """
+    Convert *amount* from one currency to another.
+
+    Returns ``(exchange_rate, base_amount)`` or ``None`` if rates are
+    unavailable.  ``base_amount`` is quantized to 2 decimal places.
+    """
+    from decimal import Decimal, ROUND_HALF_UP
+
+    from_currency = from_currency.upper().strip()
+    to_currency = to_currency.upper().strip()
+
+    if from_currency == to_currency:
+        return Decimal("1.0"), amount
+
+    rates = get_rates(from_currency)
+    if rates is None:
+        return None
+
+    rate_float = rates.get(to_currency)
+    if rate_float is None:
+        return None
+
+    rate = Decimal(str(rate_float))
+    base_amount = (amount * rate).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    return rate, base_amount
