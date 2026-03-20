@@ -284,6 +284,8 @@ def run_migrations(engine: Engine) -> None:
     expense_columns = [
         ("transport_id", "INTEGER", "NULL"),
         ("accommodation_id", "INTEGER", "NULL"),
+        ("exchange_rate", "NUMERIC(12, 6)", "1.0"),
+        ("base_amount", "NUMERIC(10, 2)", "NULL"),
     ]
 
     applied_migrations: list[str] = []
@@ -383,8 +385,8 @@ def create_trip_summary_view(engine: Engine) -> None:
             t.end_date,
             t.budget,
             COUNT(DISTINCT td.id)             AS day_count,
-            COALESCE(SUM(e.amount), 0)        AS total_spent,
-            t.budget - COALESCE(SUM(e.amount), 0) AS budget_remaining
+            COALESCE(SUM(COALESCE(e.base_amount, e.amount)), 0) AS total_spent,
+            t.budget - COALESCE(SUM(COALESCE(e.base_amount, e.amount)), 0) AS budget_remaining
         FROM trips t
         LEFT JOIN trip_days td  ON td.trip_id = t.id
         LEFT JOIN expenses e    ON e.trip_id = t.id
