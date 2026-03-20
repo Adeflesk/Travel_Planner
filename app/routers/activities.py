@@ -110,9 +110,12 @@ def _sync_activity_expense(
         expense_date = activity_date or datetime.date.today()
         expense_category = activity.category or "activity"
 
+        cost_decimal = Decimal(str(activity.cost))
         if existing:
             # Update in place
-            existing.amount = Decimal(str(activity.cost))
+            existing.amount = cost_decimal
+            existing.base_amount = cost_decimal
+            existing.exchange_rate = Decimal("1.0")
             existing.currency = currency
             existing.category = expense_category
             existing.description = activity.title
@@ -124,7 +127,9 @@ def _sync_activity_expense(
                 trip_id=trip_id,
                 activity_id=activity.id,
                 category=expense_category,
-                amount=Decimal(str(activity.cost)),
+                amount=cost_decimal,
+                base_amount=cost_decimal,
+                exchange_rate=Decimal("1.0"),
                 currency=currency,
                 description=activity.title,
                 date=expense_date,

@@ -60,8 +60,11 @@ def _sync_transport_expense(
         if transport.carrier:
             description = f"{transport.carrier}: {description}"
 
+        cost_decimal = Decimal(str(transport.cost))
         if existing:
-            existing.amount = Decimal(str(transport.cost))
+            existing.amount = cost_decimal
+            existing.base_amount = cost_decimal
+            existing.exchange_rate = Decimal("1.0")
             existing.currency = currency
             existing.category = transport.transport_type
             existing.description = description
@@ -72,7 +75,9 @@ def _sync_transport_expense(
                 trip_id=transport.trip_id,
                 transport_id=transport.id,
                 category=transport.transport_type,
-                amount=Decimal(str(transport.cost)),
+                amount=cost_decimal,
+                base_amount=cost_decimal,
+                exchange_rate=Decimal("1.0"),
                 currency=currency,
                 description=description,
                 date=expense_date,

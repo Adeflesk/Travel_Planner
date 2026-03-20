@@ -383,6 +383,8 @@ def test_check_budget_over(client, test_user, db_session):
     # Add existing expense to use up most of the budget
     exp = models.Expense(
         amount=Decimal("80.00"),
+        base_amount=Decimal("80.00"),
+        exchange_rate=Decimal("1.0"),
         currency="USD",
         category="food",
         trip_id=trip.id,

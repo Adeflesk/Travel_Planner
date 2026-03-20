@@ -44,17 +44,24 @@ def get_budget_status(
         return None
 
     total_budget = Decimal(str(trip.budget)) if trip.budget else None
+    base_currency = trip.default_currency or "USD"
 
     # Get expense totals by category
     category_stats = (
         db.query(
             models.Expense.category,
-            func.sum(models.Expense.amount).label("total"),
+            func.sum(models.Expense.base_amount).label("total"),
             func.sum(
-                case((models.Expense.booked.is_(True), models.Expense.amount), else_=0)
+                case(
+                    (models.Expense.booked.is_(True), models.Expense.base_amount),
+                    else_=0,
+                )
             ).label("booked"),
             func.sum(
-                case((models.Expense.booked.is_(False), models.Expense.amount), else_=0)
+                case(
+                    (models.Expense.booked.is_(False), models.Expense.base_amount),
+                    else_=0,
+                )
             ).label("estimated"),
         )
         .filter(models.Expense.trip_id == trip_id)
@@ -120,6 +127,7 @@ def get_budget_status(
         by_category=by_category,
         warning_threshold=warning_threshold,
         danger_threshold=danger_threshold,
+        base_currency=base_currency,
     )
 
     return schemas.BudgetStatusResponse(
@@ -134,6 +142,7 @@ def get_budget_status(
         alerts=alerts,
         warning_threshold=warning_threshold,
         danger_threshold=danger_threshold,
+        base_currency=base_currency,
     )
 
 
@@ -159,6 +168,7 @@ def _generate_alerts(
     by_category: list[schemas.CategoryBudget],
     warning_threshold: int,
     danger_threshold: int,
+    base_currency: str = "USD",
 ) -> list[schemas.BudgetAlert]:
     """Generate budget alerts based on current status."""
     alerts = []
@@ -170,7 +180,7 @@ def _generate_alerts(
             alerts.append(
                 schemas.BudgetAlert(
                     type="over_budget",
-                    message=f"Over budget by ${over_amount:.2f}",
+                    message=f"Over budget by {over_amount:.2f} {base_currency}",
                     amount=over_amount,
                     percentage=round(percentage_used, 1),
                 )
@@ -180,7 +190,7 @@ def _generate_alerts(
             alerts.append(
                 schemas.BudgetAlert(
                     type="approaching_limit",
-                    message=f"Almost at budget limit! Only ${remaining:.2f} remaining",
+                    message=f"Almost at budget limit! Only {remaining:.2f} {base_currency} remaining",
                     amount=remaining,
                     percentage=round(percentage_used, 1),
                 )
@@ -190,7 +200,7 @@ def _generate_alerts(
             alerts.append(
                 schemas.BudgetAlert(
                     type="approaching_limit",
-                    message=f"Approaching budget limit. ${remaining:.2f} remaining",
+                    message=f"Approaching budget limit. {remaining:.2f} {base_currency} remaining",
                     amount=remaining,
                     percentage=round(percentage_used, 1),
                 )
@@ -232,7 +242,7 @@ def check_expense_impact(
 
     # Get current total
     current_total = (
-        db.query(func.coalesce(func.sum(models.Expense.amount), 0))
+        db.query(func.coalesce(func.sum(models.Expense.base_amount), 0))
         .filter(models.Expense.trip_id == trip_id)
         .scalar()
     )
