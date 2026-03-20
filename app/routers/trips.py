@@ -24,6 +24,7 @@ from app.services.activity_service import (
     get_trip_progress as svc_get_trip_progress,
 )
 from app.services.budget_service import get_budget_status as svc_get_budget_status
+from app.services.exchange_rate import convert
 from app.services.expense_service import get_expense_summary as svc_get_expense_summary
 from app.services.timeline_service import (
     get_accommodation_expenses as svc_get_accommodation_expenses,
@@ -267,6 +268,47 @@ def get_budget_status(
     if result is None:
         raise HTTPException(status_code=404, detail="Trip not found")
     return result
+
+
+@router.post("/trips/{trip_id}/rebase-currency/", tags=["trips"])
+def rebase_currency(
+    trip_id: int,
+    payload: schemas.RebaseCurrencyRequest,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Batch-recalculate all expenses for a new base currency."""
+    trip = get_trip_or_404(trip_id, db, current_user)
+    new_currency = payload.new_currency
+
+    expenses = db.query(models.Expense).filter(models.Expense.trip_id == trip_id).all()
+
+    updated = 0
+    failed_ids = []
+
+    for expense in expenses:
+        result = convert(
+            Decimal(str(expense.amount)),
+            expense.currency or "USD",
+            new_currency,
+        )
+        if result is None:
+            failed_ids.append(expense.id)
+            continue
+
+        expense.exchange_rate = result[0]
+        expense.base_amount = result[1]
+        updated += 1
+
+    trip.default_currency = new_currency
+    db.commit()
+
+    return {
+        "new_currency": new_currency,
+        "updated_count": updated,
+        "failed_count": len(failed_ids),
+        "failed_expense_ids": failed_ids,
+    }
 
 
 @router.get(

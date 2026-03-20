@@ -148,6 +148,12 @@ class TripWithOwnership(Trip):
     budget_remaining: Optional[Decimal] = None
 
 
+class RebaseCurrencyRequest(BaseModel):
+    """Request body for POST /trips/{trip_id}/rebase-currency/."""
+
+    new_currency: str
+
+
 class TripStatsCounts(BaseModel):
     """Counts of trip items by category."""
 
