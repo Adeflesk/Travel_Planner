@@ -14,6 +14,9 @@ export default function BudgetExceededModal({
   onConfirm,
   onCancel,
 }: BudgetExceededModalProps) {
+  const currency = impact.base_currency || 'USD';
+  const fmt = (n: number) => `${n.toFixed(2)} ${currency}`;
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
@@ -42,7 +45,7 @@ export default function BudgetExceededModal({
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Over budget by</span>
                 <span className="font-semibold text-red-600">
-                  ${impact.over_by.toFixed(2)}
+                  {fmt(impact.over_by)}
                 </span>
               </div>
             )}
@@ -50,7 +53,7 @@ export default function BudgetExceededModal({
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">New total / Budget</span>
                 <span className="font-medium text-gray-900">
-                  ${impact.new_total.toFixed(2)} / ${impact.budget.toFixed(2)}
+                  {fmt(impact.new_total)} / {fmt(impact.budget)}
                 </span>
               </div>
             )}
