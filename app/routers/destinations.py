@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from app import schemas, models
 from app.core.deps import get_current_user
 from app.services import weather_service
+from app.services.exchange_rate import infer_base_currency
 from app.services.geocoding import geocode
 from database import get_db
 
@@ -72,6 +73,22 @@ def create_destination(
     db.add(db_destination)
     db.commit()
     db.refresh(db_destination)
+
+    # Infer base currency from first destination's country if trip has no explicit currency
+    trip = db.get(models.Trip, destination.trip_id)
+    if trip and not trip.default_currency and db_destination.country:
+        existing_count = (
+            db.query(models.Destination)
+            .filter(
+                models.Destination.trip_id == destination.trip_id,
+                models.Destination.id != db_destination.id,
+            )
+            .count()
+        )
+        if existing_count == 0:  # This is the first destination
+            trip.default_currency = infer_base_currency(db_destination.country)
+            db.commit()
+
     return db_destination
 
 
