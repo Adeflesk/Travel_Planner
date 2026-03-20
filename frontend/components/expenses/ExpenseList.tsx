@@ -9,6 +9,7 @@ import BudgetExceededModal from './BudgetExceededModal';
 import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useTripCurrency } from '@/lib/trip-context';
+import { CurrencyToggle } from './CurrencyToggle';
 
 interface ExpenseListProps {
   tripId: number;
@@ -39,6 +40,7 @@ export default function ExpenseList({ tripId }: ExpenseListProps) {
   const baseCurrency = useTripCurrency();
 
   const [showExpenses, setShowExpenses] = useState(true);
+  const [showBaseCurrency, setShowBaseCurrency] = useState(true);
 
   const handleDelete = async (id: number) => {
     if (confirm('Delete this expense?')) {
@@ -73,6 +75,14 @@ export default function ExpenseList({ tripId }: ExpenseListProps) {
 
       {showExpenses && (
         <>
+          {baseCurrency && (
+            <div className="flex justify-end mb-2">
+              <CurrencyToggle
+                showBase={showBaseCurrency}
+                onToggle={() => setShowBaseCurrency((prev) => !prev)}
+              />
+            </div>
+          )}
           {loading ? (
             <p className="text-center text-gray-500">Loading...</p>
           ) : expenses.length === 0 ? (
@@ -85,6 +95,8 @@ export default function ExpenseList({ tripId }: ExpenseListProps) {
                   expense={expense}
                   onEdit={startEdit}
                   onDelete={handleDelete}
+                  baseCurrency={baseCurrency}
+                  showBaseCurrency={showBaseCurrency}
                 />
               ))}
             </div>
