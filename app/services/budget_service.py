@@ -190,7 +190,10 @@ def _generate_alerts(
             alerts.append(
                 schemas.BudgetAlert(
                     type="approaching_limit",
-                    message=f"Almost at budget limit! Only {remaining:.2f} {base_currency} remaining",
+                    message=(
+                        f"Almost at budget limit! Only {remaining:.2f}"
+                        f" {base_currency} remaining"
+                    ),
                     amount=remaining,
                     percentage=round(percentage_used, 1),
                 )
@@ -214,7 +217,10 @@ def _generate_alerts(
                 alerts.append(
                     schemas.BudgetAlert(
                         type="over_category",
-                        message=f"{cat.category.title()} is using {cat.percentage:.0f}% of your total budget",
+                        message=(
+                            f"{cat.category.title()} is using"
+                            f" {cat.percentage:.0f}% of your total budget"
+                        ),
                         category=cat.category,
                         amount=cat.spent,
                         percentage=cat.percentage,
