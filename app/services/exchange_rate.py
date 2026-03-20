@@ -76,6 +76,84 @@ def _stale_fallback(base: str) -> dict[str, float] | None:
     return None
 
 
+# Static country → currency lookup. Covers the most common travel destinations.
+_COUNTRY_CURRENCY: dict[str, str] = {
+    "united states": "USD",
+    "canada": "CAD",
+    "united kingdom": "GBP",
+    "japan": "JPY",
+    "china": "CNY",
+    "australia": "AUD",
+    "new zealand": "NZD",
+    "switzerland": "CHF",
+    "india": "INR",
+    "brazil": "BRL",
+    "mexico": "MXN",
+    "south korea": "KRW",
+    "singapore": "SGD",
+    "hong kong": "HKD",
+    "thailand": "THB",
+    "vietnam": "VND",
+    "indonesia": "IDR",
+    "malaysia": "MYR",
+    "philippines": "PHP",
+    "taiwan": "TWD",
+    "south africa": "ZAR",
+    "turkey": "TRY",
+    "russia": "RUB",
+    "egypt": "EGP",
+    "morocco": "MAD",
+    "colombia": "COP",
+    "argentina": "ARS",
+    "chile": "CLP",
+    "peru": "PEN",
+    "israel": "ILS",
+    "united arab emirates": "AED",
+    "saudi arabia": "SAR",
+    "norway": "NOK",
+    "sweden": "SEK",
+    "denmark": "DKK",
+    "iceland": "ISK",
+    "czech republic": "CZK",
+    "czechia": "CZK",
+    "poland": "PLN",
+    "hungary": "HUF",
+    "romania": "RON",
+    "croatia": "EUR",
+    # Eurozone countries
+    "france": "EUR",
+    "germany": "EUR",
+    "italy": "EUR",
+    "spain": "EUR",
+    "portugal": "EUR",
+    "netherlands": "EUR",
+    "belgium": "EUR",
+    "austria": "EUR",
+    "ireland": "EUR",
+    "greece": "EUR",
+    "finland": "EUR",
+    "estonia": "EUR",
+    "latvia": "EUR",
+    "lithuania": "EUR",
+    "slovakia": "EUR",
+    "slovenia": "EUR",
+    "luxembourg": "EUR",
+    "malta": "EUR",
+    "cyprus": "EUR",
+}
+
+
+def infer_base_currency(country: str | None) -> str:
+    """
+    Map a country name to its ISO 4217 currency code.
+
+    Returns "USD" if the country is unknown, empty, or None.
+    """
+    if not country:
+        return "USD"
+    return _COUNTRY_CURRENCY.get(country.strip().lower(), "USD")
+
+
 def invalidate_cache(base: str | None = None) -> None:
     """
     Invalidate the cache for *base* (or all bases if None).
