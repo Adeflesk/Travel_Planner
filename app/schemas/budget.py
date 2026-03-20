@@ -9,7 +9,7 @@ Author: Travel Planner Team
 from decimal import Decimal
 from typing import List, Literal, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 
 BudgetStatus = Literal["normal", "warning", "danger", "over"]
@@ -50,6 +50,7 @@ class BudgetStatusResponse(BaseModel):
     alerts: List[BudgetAlert]
     warning_threshold: int = 75
     danger_threshold: int = 90
+    base_currency: str = "USD"
 
     model_config = {"from_attributes": True}
 
@@ -62,3 +63,16 @@ class BudgetImpactResponse(BaseModel):
     new_total: Optional[float] = None
     budget: Optional[float] = None
     percentage: Optional[float] = None
+    base_currency: str = "USD"
+
+
+class RebaseCurrencyRequest(BaseModel):
+    new_currency: str
+
+    @field_validator("new_currency")
+    @classmethod
+    def validate_currency_code(cls, v: str) -> str:
+        v = v.strip().upper()
+        if len(v) != 3 or not v.isalpha():
+            raise ValueError("new_currency must be a 3-letter ISO currency code")
+        return v
