@@ -83,6 +83,10 @@ class Expense(Base):
     category = Column(String(50), nullable=False)
     amount = Column(Numeric(10, 2), nullable=False)
     currency = Column(String(3), default="USD")
+    exchange_rate = Column(
+        Numeric(12, 6), default=1.0, nullable=False, server_default="1.0"
+    )
+    base_amount = Column(Numeric(10, 2), nullable=True)
     description = Column(String(200))
     date = Column(Date, nullable=False)
     booked = Column(Boolean, default=False)

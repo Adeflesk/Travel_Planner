@@ -10,6 +10,8 @@ interface ExpenseItemProps {
   expense: Expense;
   onEdit: (expense: Expense) => void;
   onDelete: (id: number) => void;
+  baseCurrency?: string;
+  showBaseCurrency?: boolean;
 }
 
 const getCancelStatus = (cancelByDate: string) => {
@@ -36,7 +38,7 @@ const getCancelStatus = (cancelByDate: string) => {
   }
 };
 
-export function ExpenseItem({ expense, onEdit, onDelete }: ExpenseItemProps) {
+export function ExpenseItem({ expense, onEdit, onDelete, baseCurrency, showBaseCurrency = true }: ExpenseItemProps) {
   return (
     <div
       className="flex justify-between items-center border-b border-gray-200 py-3 hover:bg-gray-50 transition px-2 rounded"
@@ -68,10 +70,29 @@ export function ExpenseItem({ expense, onEdit, onDelete }: ExpenseItemProps) {
       </div>
       <div className="flex items-center gap-3">
         <div className="text-right">
-          <p className="font-semibold text-lg">
-            ${parseFloat(expense.amount.toString()).toFixed(2)}
-          </p>
-          <p className="text-xs text-gray-500">{expense.currency}</p>
+          {showBaseCurrency && expense.base_amount != null && baseCurrency ? (
+            <>
+              <p className="font-semibold text-lg">
+                {parseFloat(expense.base_amount.toString()).toFixed(2)} {baseCurrency}
+              </p>
+              {expense.currency !== baseCurrency && (
+                <p className="text-xs text-gray-500">
+                  {parseFloat(expense.amount.toString()).toFixed(2)} {expense.currency}
+                </p>
+              )}
+            </>
+          ) : (
+            <>
+              <p className="font-semibold text-lg">
+                {parseFloat(expense.amount.toString()).toFixed(2)} {expense.currency}
+              </p>
+              {expense.base_amount != null && baseCurrency && expense.currency !== baseCurrency && (
+                <p className="text-xs text-gray-500">
+                  {parseFloat(expense.base_amount.toString()).toFixed(2)} {baseCurrency}
+                </p>
+              )}
+            </>
+          )}
         </div>
         <div className="flex gap-1">
           <button

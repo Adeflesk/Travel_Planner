@@ -76,6 +76,84 @@ def _stale_fallback(base: str) -> dict[str, float] | None:
     return None
 
 
+# Static country → currency lookup. Covers the most common travel destinations.
+_COUNTRY_CURRENCY: dict[str, str] = {
+    "united states": "USD",
+    "canada": "CAD",
+    "united kingdom": "GBP",
+    "japan": "JPY",
+    "china": "CNY",
+    "australia": "AUD",
+    "new zealand": "NZD",
+    "switzerland": "CHF",
+    "india": "INR",
+    "brazil": "BRL",
+    "mexico": "MXN",
+    "south korea": "KRW",
+    "singapore": "SGD",
+    "hong kong": "HKD",
+    "thailand": "THB",
+    "vietnam": "VND",
+    "indonesia": "IDR",
+    "malaysia": "MYR",
+    "philippines": "PHP",
+    "taiwan": "TWD",
+    "south africa": "ZAR",
+    "turkey": "TRY",
+    "russia": "RUB",
+    "egypt": "EGP",
+    "morocco": "MAD",
+    "colombia": "COP",
+    "argentina": "ARS",
+    "chile": "CLP",
+    "peru": "PEN",
+    "israel": "ILS",
+    "united arab emirates": "AED",
+    "saudi arabia": "SAR",
+    "norway": "NOK",
+    "sweden": "SEK",
+    "denmark": "DKK",
+    "iceland": "ISK",
+    "czech republic": "CZK",
+    "czechia": "CZK",
+    "poland": "PLN",
+    "hungary": "HUF",
+    "romania": "RON",
+    "croatia": "EUR",
+    # Eurozone countries
+    "france": "EUR",
+    "germany": "EUR",
+    "italy": "EUR",
+    "spain": "EUR",
+    "portugal": "EUR",
+    "netherlands": "EUR",
+    "belgium": "EUR",
+    "austria": "EUR",
+    "ireland": "EUR",
+    "greece": "EUR",
+    "finland": "EUR",
+    "estonia": "EUR",
+    "latvia": "EUR",
+    "lithuania": "EUR",
+    "slovakia": "EUR",
+    "slovenia": "EUR",
+    "luxembourg": "EUR",
+    "malta": "EUR",
+    "cyprus": "EUR",
+}
+
+
+def infer_base_currency(country: str | None) -> str:
+    """
+    Map a country name to its ISO 4217 currency code.
+
+    Returns "USD" if the country is unknown, empty, or None.
+    """
+    if not country:
+        return "USD"
+    return _COUNTRY_CURRENCY.get(country.strip().lower(), "USD")
+
+
 def invalidate_cache(base: str | None = None) -> None:
     """
     Invalidate the cache for *base* (or all bases if None).
@@ -85,3 +163,31 @@ def invalidate_cache(base: str | None = None) -> None:
         _cache.clear()
     else:
         _cache.pop(base.upper(), None)
+
+
+def convert(amount, from_currency: str, to_currency: str) -> tuple | None:
+    """
+    Convert *amount* from one currency to another.
+
+    Returns ``(exchange_rate, base_amount)`` or ``None`` if rates are
+    unavailable.  ``base_amount`` is quantized to 2 decimal places.
+    """
+    from decimal import Decimal, ROUND_HALF_UP
+
+    from_currency = from_currency.upper().strip()
+    to_currency = to_currency.upper().strip()
+
+    if from_currency == to_currency:
+        return Decimal("1.0"), amount
+
+    rates = get_rates(from_currency)
+    if rates is None:
+        return None
+
+    rate_float = rates.get(to_currency)
+    if rate_float is None:
+        return None
+
+    rate = Decimal(str(rate_float))
+    base_amount = (amount * rate).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    return rate, base_amount

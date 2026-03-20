@@ -225,6 +225,14 @@ export const expenseApi = {
   },
 };
 
+// Exchange Rate API
+export const exchangeApi = {
+  getRate: (from: string, to: string) =>
+    api.get<{ rate: number | null; from: string; to: string }>(
+      `/exchange-rates/pair/?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`
+    ),
+};
+
 // Packing Item API
 export const packingApi = {
   getByTripId: (tripId: number) =>

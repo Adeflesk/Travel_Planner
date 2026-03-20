@@ -18,6 +18,7 @@ from app.core.deps import get_current_user
 from database import get_db
 from app.services.budget_service import check_expense_impact
 from app.services.expense_service import get_expense_summary as svc_get_expense_summary
+from app.services.exchange_rate import convert
 
 router = APIRouter()
 
@@ -48,6 +49,43 @@ def check_trip_access(
     raise HTTPException(status_code=404, detail="Trip not found")
 
 
+def _resolve_conversion(
+    amount: Decimal,
+    expense_currency: str,
+    base_currency: str,
+    user_rate: float | None,
+) -> tuple[Decimal, Decimal]:
+    """
+    Resolve exchange_rate and base_amount for an expense.
+
+    Returns (exchange_rate, base_amount).
+    Raises HTTPException 422 if rate is needed but unavailable.
+    """
+    from decimal import ROUND_HALF_UP
+
+    expense_currency = (expense_currency or "USD").upper()
+    base_currency = (base_currency or "USD").upper()
+
+    if expense_currency == base_currency:
+        return Decimal("1.0"), amount
+
+    if user_rate is not None:
+        rate = Decimal(str(user_rate))
+        base_amount = (amount * rate).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        return rate, base_amount
+
+    result = convert(amount, expense_currency, base_currency)
+    if result is None:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"Exchange rate unavailable for {expense_currency} → {base_currency}. "
+                "Please provide an exchange_rate manually."
+            ),
+        )
+    return result
+
+
 @router.post(
     "/expenses/check-budget/",
     response_model=schemas.BudgetImpactResponse,
@@ -59,11 +97,22 @@ def check_budget(
     current_user: models.User = Depends(get_current_user),
 ):
     """Check if adding an expense would exceed the trip budget."""
-    check_trip_access(expense.trip_id, db, current_user)
-    impact = check_expense_impact(expense.trip_id, Decimal(str(expense.amount)), db)
+    trip = check_trip_access(expense.trip_id, db, current_user)
+    base_currency = trip.default_currency or "USD"
+
+    _, base_amount = _resolve_conversion(
+        amount=Decimal(str(expense.amount)),
+        expense_currency=expense.currency,
+        base_currency=base_currency,
+        user_rate=expense.exchange_rate,
+    )
+
+    impact = check_expense_impact(expense.trip_id, base_amount, db)
     if impact is None:
-        return schemas.BudgetImpactResponse(would_exceed=False)
-    return schemas.BudgetImpactResponse(**impact)
+        return schemas.BudgetImpactResponse(
+            would_exceed=False, base_currency=base_currency
+        )
+    return schemas.BudgetImpactResponse(**impact, base_currency=base_currency)
 
 
 @router.post(
@@ -74,9 +123,21 @@ def create_expense(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    check_trip_access(expense.trip_id, db, current_user, require_owner=True)
+    trip = check_trip_access(expense.trip_id, db, current_user, require_owner=True)
+    base_currency = trip.default_currency or "USD"
 
-    db_expense = models.Expense(**expense.model_dump())
+    exchange_rate, base_amount = _resolve_conversion(
+        amount=Decimal(str(expense.amount)),
+        expense_currency=expense.currency,
+        base_currency=base_currency,
+        user_rate=expense.exchange_rate,
+    )
+
+    expense_data = expense.model_dump()
+    expense_data["exchange_rate"] = exchange_rate
+    expense_data["base_amount"] = base_amount
+
+    db_expense = models.Expense(**expense_data)
     db.add(db_expense)
     db.commit()
     db.refresh(db_expense)
@@ -114,10 +175,44 @@ def update_expense(
     if not expense:
         raise HTTPException(status_code=404, detail="Expense not found")
 
-    check_trip_access(expense.trip_id, db, current_user, require_owner=True)
+    trip = check_trip_access(expense.trip_id, db, current_user, require_owner=True)
+    base_currency = trip.default_currency or "USD"
 
-    for key, value in expense_update.model_dump(exclude_unset=True).items():
-        setattr(expense, key, value)
+    update_data = expense_update.model_dump(exclude_unset=True)
+
+    amount_changed = "amount" in update_data
+    currency_changed = "currency" in update_data
+    rate_changed = "exchange_rate" in update_data
+
+    for key, value in update_data.items():
+        if key != "exchange_rate" or value is not None:
+            setattr(expense, key, value)
+
+    if amount_changed or currency_changed or rate_changed:
+        current_amount = Decimal(str(update_data.get("amount", expense.amount)))
+        current_currency = update_data.get("currency", expense.currency) or "USD"
+        user_rate = update_data.get("exchange_rate")
+
+        if user_rate is None and not rate_changed:
+            if amount_changed and not currency_changed:
+                # Only amount changed: reuse stored rate
+                from decimal import ROUND_HALF_UP
+
+                expense.base_amount = (
+                    current_amount * Decimal(str(expense.exchange_rate))
+                ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            else:
+                exchange_rate, base_amount = _resolve_conversion(
+                    current_amount, current_currency, base_currency, None
+                )
+                expense.exchange_rate = exchange_rate
+                expense.base_amount = base_amount
+        else:
+            exchange_rate, base_amount = _resolve_conversion(
+                current_amount, current_currency, base_currency, user_rate
+            )
+            expense.exchange_rate = exchange_rate
+            expense.base_amount = base_amount
 
     db.commit()
     db.refresh(expense)

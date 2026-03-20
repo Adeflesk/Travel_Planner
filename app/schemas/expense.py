@@ -23,12 +23,14 @@ class ExpenseCreate(ExpenseBase):
     trip_id: int
     destination_id: Optional[int] = None
     activity_id: Optional[int] = None
+    exchange_rate: float | None = None
 
 
 class ExpenseUpdate(BaseModel):
     category: Optional[str] = None
     amount: Optional[Decimal] = None
     currency: Optional[str] = None
+    exchange_rate: float | None = None
     description: Optional[str] = None
     date: Optional[DateType] = None
     booked: Optional[bool] = None
@@ -41,6 +43,8 @@ class Expense(ExpenseBase):
     trip_id: int
     destination_id: Optional[int] = None
     activity_id: Optional[int] = None
+    exchange_rate: float = 1.0
+    base_amount: Decimal | None = None
 
     model_config = {"from_attributes": True}
 

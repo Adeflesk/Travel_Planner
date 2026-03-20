@@ -74,6 +74,7 @@ export function useExpenseForm(tripId: number, onSuccess: () => void) {
       description: expense.description,
       date: expense.date,
       currency: expense.currency,
+      exchange_rate: expense.exchange_rate,
       booked: expense.booked,
       paid: expense.paid,
       cancel_by_date: expense.cancel_by_date || '',

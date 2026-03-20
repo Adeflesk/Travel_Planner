@@ -53,7 +53,7 @@ test.describe('Expense Management', () => {
     // Fill in the expense form
     await authenticatedPage.getByPlaceholder('e.g., Hotel booking, Dinner').fill('Hilton Hotel');
     await authenticatedPage.locator('input[type="number"]').fill('250.50');
-    await authenticatedPage.locator('select').first().selectOption('accommodation');
+    await authenticatedPage.getByLabel('Category').selectOption('accommodation');
 
     // Submit
     await authenticatedPage.getByRole('button', { name: /Add Expense/i }).click();
@@ -77,7 +77,7 @@ test.describe('Expense Management', () => {
     // Verify expense details
     await expect(authenticatedPage.getByText('Restaurant Dinner')).toBeVisible();
     // Check the expense row has the amount
-    await expect(authenticatedPage.locator('.space-y-2').getByText('$85.00')).toBeVisible();
+    await expect(authenticatedPage.locator('.space-y-2').getByText('85.00 USD')).toBeVisible();
   });
 
   test('should calculate total expenses', async ({ authenticatedPage, authApiRequest }) => {
@@ -247,7 +247,7 @@ test.describe('Expense Management', () => {
     // Fill required fields
     await authenticatedPage.getByPlaceholder('e.g., Hotel booking, Dinner').fill('Test Expense');
     await authenticatedPage.locator('input[type="number"]').fill('100');
-    await authenticatedPage.locator('select').first().selectOption('other');
+    await authenticatedPage.getByLabel('Category').selectOption('other');
 
     // Check the booked checkbox
     await authenticatedPage.getByLabel('Booked').check();
