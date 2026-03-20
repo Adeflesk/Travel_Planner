@@ -47,19 +47,21 @@ def get_budget_status(
     base_currency = trip.default_currency or "USD"
 
     # Get expense totals by category
+    # COALESCE guards against any expenses with null base_amount
+    base_amt = func.coalesce(models.Expense.base_amount, models.Expense.amount)
     category_stats = (
         db.query(
             models.Expense.category,
-            func.sum(models.Expense.base_amount).label("total"),
+            func.sum(base_amt).label("total"),
             func.sum(
                 case(
-                    (models.Expense.booked.is_(True), models.Expense.base_amount),
+                    (models.Expense.booked.is_(True), base_amt),
                     else_=0,
                 )
             ).label("booked"),
             func.sum(
                 case(
-                    (models.Expense.booked.is_(False), models.Expense.base_amount),
+                    (models.Expense.booked.is_(False), base_amt),
                     else_=0,
                 )
             ).label("estimated"),
@@ -248,7 +250,14 @@ def check_expense_impact(
 
     # Get current total
     current_total = (
-        db.query(func.coalesce(func.sum(models.Expense.base_amount), 0))
+        db.query(
+            func.coalesce(
+                func.sum(
+                    func.coalesce(models.Expense.base_amount, models.Expense.amount)
+                ),
+                0,
+            )
+        )
         .filter(models.Expense.trip_id == trip_id)
         .scalar()
     )

@@ -278,7 +278,7 @@ def rebase_currency(
     current_user: models.User = Depends(get_current_user),
 ):
     """Batch-recalculate all expenses for a new base currency."""
-    trip = get_trip_or_404(trip_id, db, current_user)
+    trip = get_trip_or_404(trip_id, db, current_user, require_owner=True)
     new_currency = payload.new_currency
 
     expenses = db.query(models.Expense).filter(models.Expense.trip_id == trip_id).all()
