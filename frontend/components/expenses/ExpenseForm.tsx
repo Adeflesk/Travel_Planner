@@ -1,7 +1,15 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { ExpenseFormData } from '@/lib/types';
 import { categories } from './useExpenses';
+import { exchangeApi } from '@/lib/api';
+
+const commonCurrencies = [
+  'USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY',
+  'SEK', 'NZD', 'MXN', 'SGD', 'HKD', 'NOK', 'KRW', 'TRY',
+  'INR', 'BRL', 'ZAR', 'THB',
+];
 
 interface ExpenseFormProps {
   formData: ExpenseFormData;
@@ -12,6 +20,7 @@ interface ExpenseFormProps {
     field: K,
     value: ExpenseFormData[K]
   ) => void;
+  baseCurrency?: string;
 }
 
 export function ExpenseForm({
@@ -20,7 +29,37 @@ export function ExpenseForm({
   onSubmit,
   onCancel,
   updateField,
+  baseCurrency = 'USD',
 }: ExpenseFormProps) {
+  const [fetchingRate, setFetchingRate] = useState(false);
+
+  // Auto-fetch exchange rate when currency changes
+  useEffect(() => {
+    const currency = formData.currency || 'USD';
+    if (currency === baseCurrency || isEditing) return;
+
+    let cancelled = false;
+
+    const fetchRate = async () => {
+      setFetchingRate(true);
+      try {
+        const { data } = await exchangeApi.getRate(currency, baseCurrency);
+        if (!cancelled && data.rate != null) {
+          updateField('exchange_rate', data.rate);
+        }
+      } catch {
+        // Rate unavailable — user can enter manually
+      } finally {
+        if (!cancelled) setFetchingRate(false);
+      }
+    };
+
+    fetchRate();
+
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.currency, baseCurrency]);
+
   return (
     <form onSubmit={onSubmit} className="bg-gray-50 p-4 rounded-lg mb-4">
       <h3 className="font-semibold mb-3">
@@ -50,6 +89,44 @@ export function ExpenseForm({
             className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
           />
         </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-gray-700">Currency</label>
+          <select
+            value={formData.currency || 'USD'}
+            onChange={(e) => {
+              updateField('currency', e.target.value);
+              updateField('exchange_rate', null);
+            }}
+            className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs"
+          >
+            {commonCurrencies.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+        </div>
+        {formData.currency && formData.currency !== baseCurrency && (
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">
+              Exchange Rate
+              <span className="text-gray-400 font-normal ml-1">
+                (1 {formData.currency} = ? {baseCurrency})
+              </span>
+            </label>
+            <input
+              type="number"
+              value={formData.exchange_rate ?? ''}
+              onChange={(e) => updateField('exchange_rate', parseFloat(e.target.value) || null)}
+              placeholder={fetchingRate ? 'Fetching rate...' : 'e.g., 1.08'}
+              step="0.000001"
+              className="bg-white border border-slate-300 text-slate-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-slate-400"
+            />
+            {formData.exchange_rate && formData.amount ? (
+              <p className="text-xs text-slate-500 mt-0.5">
+                ≈ {(formData.amount * formData.exchange_rate).toFixed(2)} {baseCurrency}
+              </p>
+            ) : null}
+          </div>
+        )}
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-700">Category</label>
           <select

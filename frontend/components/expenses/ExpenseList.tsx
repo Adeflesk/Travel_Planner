@@ -8,6 +8,7 @@ import { ExpenseSummary } from './ExpenseSummary';
 import BudgetExceededModal from './BudgetExceededModal';
 import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
+import { useTripCurrency } from '@/lib/trip-context';
 
 interface ExpenseListProps {
   tripId: number;
@@ -35,6 +36,8 @@ export default function ExpenseList({ tripId }: ExpenseListProps) {
     updateField,
   } = useExpenseForm(tripId, reload);
 
+  const baseCurrency = useTripCurrency();
+
   const [showExpenses, setShowExpenses] = useState(true);
 
   const handleDelete = async (id: number) => {
@@ -51,6 +54,7 @@ export default function ExpenseList({ tripId }: ExpenseListProps) {
         onSubmit={handleSubmit}
         onCancel={resetForm}
         updateField={updateField}
+        baseCurrency={baseCurrency}
       />
 
       <ExpenseSummary
