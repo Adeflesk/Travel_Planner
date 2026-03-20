@@ -80,6 +80,8 @@ export interface Expense {
   category: string;
   amount: number;
   currency: string;
+  exchange_rate: number;
+  base_amount: number | null;
   description?: string;
   date: string;
   booked: boolean;
@@ -226,6 +228,7 @@ export interface ExpenseFormData {
   description?: string;
   date: string;
   currency?: string;
+  exchange_rate?: number | null;
   booked?: boolean;
   paid?: boolean;
   cancel_by_date?: string;
@@ -436,6 +439,7 @@ export interface BudgetStatusResponse {
   alerts: BudgetAlert[];
   warning_threshold: number;
   danger_threshold: number;
+  base_currency: string;
 }
 
 export interface BudgetImpact {
@@ -444,6 +448,7 @@ export interface BudgetImpact {
   new_total?: number;
   budget?: number;
   percentage?: number;
+  base_currency?: string;
 }
 
 
