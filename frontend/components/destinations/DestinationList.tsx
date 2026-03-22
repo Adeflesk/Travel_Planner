@@ -36,7 +36,8 @@ export default function DestinationList({ tripId }: DestinationListProps) {
     reload,
     tripContext?.startDate,
     tripContext?.endDate,
-    tripContext?.timezone
+    tripContext?.timezone,
+    destinations.length
   );
 
   const handleDelete = async (id: number) => {
