@@ -29,6 +29,12 @@ export function NextTripCard({ nextTrip }: NextTripCardProps) {
   const budgetTotal = nextTrip.budget_total || 0;
   const percentUsed =
     budgetTotal > 0 ? Math.min((nextTrip.budget_used / budgetTotal) * 100, 100) : 0;
+  const fmt = (n: number) =>
+    new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: nextTrip.budget_currency || 'USD',
+      maximumFractionDigits: 0,
+    }).format(n);
 
   return (
     <Card padding="lg" hover>
@@ -66,7 +72,7 @@ export function NextTripCard({ nextTrip }: NextTripCardProps) {
         <div className="flex items-center justify-between text-sm text-slate-600 mb-1">
           <span>Budget used</span>
           <span className="tabular-nums">
-            ${nextTrip.budget_used.toFixed(0)} / ${budgetTotal.toFixed(0)}
+            {fmt(nextTrip.budget_used)} / {fmt(budgetTotal)}
           </span>
         </div>
         <BudgetProgressBar value={percentUsed} size="sm" showLabel={false} />

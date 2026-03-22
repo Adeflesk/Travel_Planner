@@ -58,10 +58,9 @@ def _get_destinations_for_trip(db: Session, trip_id: int) -> List[str]:
 
 
 def _get_trip_expense_total(db: Session, trip_id: int) -> float:
+    base_amt = func.coalesce(models.Expense.base_amount, models.Expense.amount)
     total = (
-        db.query(func.sum(models.Expense.amount))
-        .filter(models.Expense.trip_id == trip_id)
-        .scalar()
+        db.query(func.sum(base_amt)).filter(models.Expense.trip_id == trip_id).scalar()
     )
     return _to_float(total)
 
@@ -204,6 +203,7 @@ def get_dashboard_data(db: Session, current_user: models.User) -> schemas.Dashbo
             destinations=_get_destinations_for_trip(db, next_trip_model.id),
             budget_used=_get_trip_expense_total(db, next_trip_model.id),
             budget_total=_to_float(next_trip_model.budget),
+            budget_currency=next_trip_model.default_currency or "USD",
         )
 
     # Stats
@@ -226,8 +226,9 @@ def get_dashboard_data(db: Session, current_user: models.User) -> schemas.Dashbo
     year_end = date(today.year, 12, 31)
     spent_this_year = 0.0
     if trip_ids:
+        base_amt = func.coalesce(models.Expense.base_amount, models.Expense.amount)
         spent_this_year = _to_float(
-            db.query(func.sum(models.Expense.amount))
+            db.query(func.sum(base_amt))
             .filter(
                 models.Expense.trip_id.in_(trip_ids),
                 models.Expense.date >= year_start,
@@ -236,11 +237,20 @@ def get_dashboard_data(db: Session, current_user: models.User) -> schemas.Dashbo
             .scalar()
         )
 
+    # Use user's configured default currency
+    user_settings = (
+        db.query(models.UserSettings)
+        .filter(models.UserSettings.user_id == current_user.id)
+        .first()
+    )
+    preferred_currency = user_settings.default_currency if user_settings else "USD"
+
     stats = schemas.DashboardStats(
         total_trips=total_trips,
         countries_visited=int(countries_visited),
         spent_this_year=spent_this_year,
         upcoming_trips=upcoming_trips,
+        preferred_currency=preferred_currency,
     )
 
     # Action items
