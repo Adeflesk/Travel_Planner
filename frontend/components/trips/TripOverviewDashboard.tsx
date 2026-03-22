@@ -289,7 +289,7 @@ export function TripOverviewDashboard({
   const { stats, loading: statsLoading } = useTripStats(trip.id);
   const { budget, loading: budgetLoading } = useBudget(trip.id);
   const tripCtx = useTripContext();
-  const currency = tripCtx?.tripContext?.budget_currency || 'USD';
+  const budgetCurrency = tripCtx?.tripContext?.budget_currency || 'USD';
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [packing, setPacking] = useState<PackingSummary | null>(null);
 
@@ -554,7 +554,7 @@ export function TripOverviewDashboard({
                   status={budget.status}
                   total={budget.total_budget}
                   spent={budget.total_spent}
-                  currency={currency}
+                  currency={budget?.base_currency || budgetCurrency}
                 />
                 {budget.by_category.length > 0 && (
                   <div className="mt-4 space-y-2">

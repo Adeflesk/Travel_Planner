@@ -23,6 +23,7 @@ class DashboardNextTrip(BaseModel):
     destinations: List[str]
     budget_used: float
     budget_total: float
+    budget_currency: str = "USD"
 
 
 class DashboardStats(BaseModel):
@@ -30,6 +31,7 @@ class DashboardStats(BaseModel):
     countries_visited: int
     spent_this_year: float
     upcoming_trips: int
+    preferred_currency: str = "USD"
 
 
 ActionItemType = Literal["booking", "packing", "budget", "deadline"]

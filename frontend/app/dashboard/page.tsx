@@ -34,7 +34,11 @@ function DashboardContent() {
       },
       {
         label: 'Spent This Year',
-        value: `$${data.stats.spent_this_year.toFixed(0)}`,
+        value: new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: data.stats.preferred_currency || 'USD',
+          maximumFractionDigits: 0,
+        }).format(data.stats.spent_this_year),
         icon: <Wallet className="w-6 h-6" />,
         helper: 'Year to date',
       },
