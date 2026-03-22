@@ -117,6 +117,7 @@ def db_setup(db_engine, testing_session_local, setup_database):
     # Tables in reverse dependency order (leaf rows first so FK constraints are satisfied).
     # Keep this list in sync with app/models whenever models are added/removed.
     tables_to_clean = [
+        "rate_snapshots",
         "user_settings",
         "trip_shares",
         "packing_items",

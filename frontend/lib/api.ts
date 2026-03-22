@@ -225,6 +225,16 @@ export const expenseApi = {
   },
 };
 
+// Rate History API
+import { TripRateSummary, GlobalRateSummary } from './types';
+
+export const rateHistoryApi = {
+  getTripSummary: (tripId: number, days = 30) =>
+    api.get<TripRateSummary>(`/rate-history/trip/${tripId}?days=${days}`),
+  getGlobalSummary: (days = 30) =>
+    api.get<GlobalRateSummary>(`/rate-history/global?days=${days}`),
+};
+
 // Exchange Rate API
 export const exchangeApi = {
   getRate: (from: string, to: string) =>
