@@ -11,6 +11,8 @@ const CATEGORY_BORDER_HEX: Record<string, string> = {
     museum: '#6366F1',        // indigo-500
     restaurant: '#F43F5E',    // rose-500
     bar: '#A855F7',           // purple-500
+    sightseeing: '#F97316',   // orange-500
+    visiting: '#EC4899',      // pink-500
     activity: '#0EA5E9',      // sky-500
     transport: '#F59E0B',     // amber-500
     accommodation: '#10B981', // emerald-500
@@ -21,6 +23,8 @@ const CATEGORY_ICONS: Record<string, string> = {
     museum: '🏛️',
     restaurant: '🍽️',
     bar: '🍸',
+    sightseeing: '👀',
+    visiting: '🏡',
     activity: '🧗',
     transport: '🚆',
     accommodation: '🏨',

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { TripTransport, TripTransportCreate, TripTransportUpdate, TransportType, TripDay, Destination } from '@/lib/types';
-import { useTripCurrency } from '@/lib/trip-context';
+import { useTripCurrency, useTripContext } from '@/lib/trip-context';
 import { TRANSPORT_CONFIG } from '@/lib/transport-config';
 import { TransportLocationSearch } from './TransportLocationSearch';
 import type { TransportLocation } from './TransportLocationSearch';
@@ -51,7 +51,9 @@ export function TransportForm({
   onClose,
   isSubmitting,
 }: TransportFormProps) {
-  const [type, setType] = useState<TransportType>(initialData?.transport_type ?? 'flight');
+  const tripCtxValue = useTripContext();
+  const defaultType = tripCtxValue?.tripContext?.vehicle === 'own_car' || tripCtxValue?.tripContext?.vehicle === 'rental' ? 'drive' : 'flight';
+  const [type, setType] = useState<TransportType>(initialData?.transport_type ?? defaultType);
   const [origin, setOrigin] = useState(initialData?.origin ?? '');
   const [destination, setDestination] = useState(initialData?.destination ?? '');
   const [depDayId, setDepDayId] = useState<string>(
