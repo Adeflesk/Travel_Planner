@@ -4,7 +4,7 @@ app/routers/exchange_rates.py - Exchange rate endpoints
 
 from fastapi import APIRouter, HTTPException, Query
 
-from app.services.exchange_rate import get_rates
+from app.services.exchange_rate import get_rates, record_rate_snapshots
 
 router = APIRouter(prefix="/exchange-rates", tags=["exchange-rates"])
 
@@ -44,5 +44,9 @@ def get_exchange_rate_pair(
 
     rates = get_rates(from_currency)
     rate = rates.get(to_currency) if rates else None
+
+    # Trigger snapshot recording for the requested pair
+    if rates:
+        record_rate_snapshots(from_currency, rates, [to_currency])
 
     return {"rate": rate, "from": from_currency, "to": to_currency}

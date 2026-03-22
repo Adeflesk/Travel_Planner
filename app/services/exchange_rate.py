@@ -165,6 +165,32 @@ def invalidate_cache(base: str | None = None) -> None:
         _cache.pop(base.upper(), None)
 
 
+def record_rate_snapshots(
+    base: str,
+    rates: dict[str, float],
+    target_currencies: list[str],
+) -> None:
+    """
+    Record rate snapshots after a cache refresh.
+
+    Creates its own DB session so it can be called from the exchange rate
+    service without threading a session through get_rates().
+    """
+    if not target_currencies:
+        return
+    try:
+        from database import SessionLocal
+        from app.services.rate_snapshot_service import record_snapshots
+
+        db = SessionLocal()
+        try:
+            record_snapshots(db, base, rates, target_currencies)
+        finally:
+            db.close()
+    except Exception as exc:
+        logger.warning("Failed to record rate snapshots: %s", exc)
+
+
 def convert(amount, from_currency: str, to_currency: str) -> tuple | None:
     """
     Convert *amount* from one currency to another.

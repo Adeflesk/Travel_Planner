@@ -33,12 +33,14 @@ export interface DashboardData {
     destinations: string[];
     budget_used: number;
     budget_total: number;
+    budget_currency: string;
   } | null;
   stats: {
     total_trips: number;
     countries_visited: number;
     spent_this_year: number;
     upcoming_trips: number;
+    preferred_currency: string;
   };
   action_items: Array<{
     type: 'booking' | 'packing' | 'budget' | 'deadline';
@@ -556,4 +558,28 @@ export interface UserSettings {
   default_currency: string;
   home_base?: string;
   feature_flags: Record<string, boolean>;
+}
+
+// Exchange rate monitoring types
+
+export interface RatePoint {
+  rate: number;
+  fetched_at: string;
+}
+
+export interface CurrencyRateSummary {
+  base_currency: string;
+  target_currency: string;
+  current_rate: number | null;
+  history: RatePoint[];
+}
+
+export interface TripRateSummary {
+  trip_base_currency: string;
+  currencies: CurrencyRateSummary[];
+}
+
+export interface GlobalRateSummary {
+  user_base_currency: string;
+  currencies: CurrencyRateSummary[];
 }

@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Trip, TripDay } from '@/lib/types';
 import { tripApi } from '@/lib/api';
 import { geocodeAddress } from '@/lib/geocode-utils';
-import { MapPin, Receipt, Package, Compass, Clock, Users, Calendar } from 'lucide-react';
+import { MapPin, Receipt, Package, Compass, Clock, Users, Calendar, LineChart } from 'lucide-react';
 import { DestinationList } from '@/components/destinations';
 import { ExpenseList } from '@/components/expenses';
 import { TripActivityList } from '@/components/trip-activities';
@@ -33,7 +33,7 @@ function TripDetailContent() {
   const [trip, setTrip] = useState<Trip | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<
-    'days' | 'destinations' | 'timeline' | 'expenses' | 'activities' | 'packing'
+    'days' | 'destinations' | 'timeline' | 'expenses' | 'activities' | 'packing' | 'exchange-rates'
   >('days');
   const [showShareModal, setShowShareModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -176,6 +176,7 @@ function TripDetailContent() {
                 { id: 'expenses', label: 'Expenses', icon: Receipt },
                 { id: 'activities', label: 'Activities', icon: Compass },
                 { id: 'packing', label: 'Packing List', icon: Package },
+                { id: 'exchange-rates', label: 'Rates', icon: LineChart },
               ].map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -183,7 +184,13 @@ function TripDetailContent() {
                   <Button
                     key={tab.id}
                     variant={isActive ? 'primary' : 'secondary'}
-                    onClick={() => setActiveTab(tab.id as typeof activeTab)}
+                    onClick={() => {
+                      if (tab.id === 'exchange-rates') {
+                        router.push(`/trips/${tripId}/exchange-rates`);
+                      } else {
+                        setActiveTab(tab.id as typeof activeTab);
+                      }
+                    }}
                     leftIcon={<Icon />}
                   >
                     {tab.label}

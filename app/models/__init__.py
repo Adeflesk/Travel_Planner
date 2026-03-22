@@ -20,6 +20,7 @@ from .trip_transport import TripTransport
 from .transport_option import TransportOption
 from .accommodation import Accommodation
 from .password_reset_token import PasswordResetToken
+from .rate_snapshot import RateSnapshot
 
 __all__ = [
     "Base",
@@ -37,4 +38,5 @@ __all__ = [
     "TransportOption",
     "Accommodation",
     "PasswordResetToken",
+    "RateSnapshot",
 ]

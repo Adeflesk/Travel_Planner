@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/lib/auth-context';
-import { Shield, Plane } from 'lucide-react';
+import { Shield } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 export default function Navigation() {
@@ -38,6 +38,12 @@ export default function Navigation() {
               className="text-white hover:text-primary-200 transition-colors font-medium"
             >
               Settings
+            </Link>
+            <Link
+              href="/exchange-rates"
+              className="text-white hover:text-primary-200 transition-colors font-medium"
+            >
+              Rates
             </Link>
             <Link
               href="/help"
