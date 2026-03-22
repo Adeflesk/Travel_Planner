@@ -82,6 +82,8 @@ export function TransportLocationSearch({
         if (category) {
           params.set('poi_category', category);
           params.set('types', 'poi');
+        } else {
+          params.set('types', 'place,address,poi');
         }
         const res = await fetch(`${SUGGEST_URL}?${params}`);
         if (!res.ok) throw new Error('suggest failed');

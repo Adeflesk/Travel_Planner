@@ -40,7 +40,17 @@ export const TransportBlock = ({ transport, currentDayId, onClick }: TransportBl
     const startMins = timeToMins(time);
     const topOffsetMins = Math.max(0, startMins - DAY_START_MINS);
     const topRem = (topOffsetMins / 60) * 4;
-    const heightRem = 3; // fixed 3rem height for transport blocks
+
+    // Calculate duration-proportional height like ActivityBlock
+    const MIN_HEIGHT_REM = 3; // minimum so text remains readable
+    let heightRem = MIN_HEIGHT_REM;
+    if (isDeparture && transport.arrival_time && transport.arrival_day_id === currentDayId) {
+        // Same-day journey: use actual duration
+        const durationMins = timeToMins(transport.arrival_time) - startMins;
+        if (durationMins > 0) {
+            heightRem = Math.max(MIN_HEIGHT_REM, (durationMins / 60) * 4);
+        }
+    }
 
     const icon = TYPE_ICON[transport.transport_type] ?? '🚀';
     const hex = TYPE_HEX[transport.transport_type] ?? TYPE_HEX.other;
