@@ -6,6 +6,8 @@ import { getLocalTimezone } from '@/lib/timezone-utils';
 import { destinationApi } from '@/lib/api';
 import { autoCreateDaysForDestination } from '@/lib/destination-day-utils';
 import type { LocationSearchResult } from '@/components/shared/LocationSearchBox';
+import { useTripContext } from '@/lib/trip-context';
+import { tripApi } from '@/lib/api';
 
 const createInitialFormData = (
   tripId: number,
@@ -29,8 +31,10 @@ export function useDestinationForm(
   onSuccess: () => void,
   startDate?: string,
   endDate?: string,
-  defaultTimezone?: string
+  defaultTimezone?: string,
+  destinationCount: number = 0
 ) {
+  const tripContextValue = useTripContext();
   const [editingId, setEditingId] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<DestinationFormData>(
@@ -88,6 +92,19 @@ export function useDestinationForm(
           } catch (err) {
             console.error("Failed to auto create days", err);
           }
+        }
+      }
+
+      if (isNew && destinationCount === 1) {
+        // Transition exactly from 1 -> 2
+        try {
+           const ctx = tripContextValue?.tripContext;
+           if (ctx && ctx.trip_type === 'single_city') {
+             await tripApi.update(tripId, { context: { ...ctx, trip_type: 'multi_city' } });
+             alert('Trip type updated to Multi-City');
+           }
+        } catch (e) {
+           console.error('Failed to update trip type', e);
         }
       }
 
