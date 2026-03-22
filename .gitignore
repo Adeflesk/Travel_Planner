@@ -127,3 +127,9 @@ min_deploy/
 test_deploy/
 
 .env*.local
+
+# =========================
+# Generated insights
+# =========================
+docs/insights/facets/
+docs/insights/report.html
