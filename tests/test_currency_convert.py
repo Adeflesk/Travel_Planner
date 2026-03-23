@@ -21,7 +21,7 @@ def test_convert_normal_case():
     invalidate_cache()
     mock_resp = _mock_rates({"USD": 1.08, "GBP": 0.86})
 
-    with patch("app.services.exchange_rate.httpx.get", return_value=mock_resp):
+    with patch("app.services.exchange_rate.timed_get", return_value=mock_resp):
         result = convert(Decimal("50"), "EUR", "USD")
 
     assert result is not None
@@ -33,7 +33,7 @@ def test_convert_normal_case():
 def test_convert_same_currency():
     """Same currency returns rate 1.0, same amount — no API call."""
     invalidate_cache()
-    with patch("app.services.exchange_rate.httpx.get") as mock_get:
+    with patch("app.services.exchange_rate.timed_get") as mock_get:
         result = convert(Decimal("100"), "USD", "USD")
         mock_get.assert_not_called()
 
@@ -49,7 +49,7 @@ def test_convert_api_failure_returns_none():
     import httpx
 
     with patch(
-        "app.services.exchange_rate.httpx.get",
+        "app.services.exchange_rate.timed_get",
         side_effect=httpx.RequestError("timeout"),
     ):
         result = convert(Decimal("50"), "EUR", "USD")
@@ -62,7 +62,7 @@ def test_convert_target_currency_not_in_rates():
     invalidate_cache()
     mock_resp = _mock_rates({"GBP": 0.86})  # no USD
 
-    with patch("app.services.exchange_rate.httpx.get", return_value=mock_resp):
+    with patch("app.services.exchange_rate.timed_get", return_value=mock_resp):
         result = convert(Decimal("50"), "EUR", "USD")
 
     assert result is None
@@ -73,7 +73,7 @@ def test_convert_rounds_to_two_decimals():
     invalidate_cache()
     mock_resp = _mock_rates({"USD": 1.12345})
 
-    with patch("app.services.exchange_rate.httpx.get", return_value=mock_resp):
+    with patch("app.services.exchange_rate.timed_get", return_value=mock_resp):
         result = convert(Decimal("100"), "EUR", "USD")
 
     assert result is not None

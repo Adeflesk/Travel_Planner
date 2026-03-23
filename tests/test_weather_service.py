@@ -98,7 +98,7 @@ def test_fetch_weather_returns_cached_data(mock_call_api, mock_get_key):
 
 
 @patch("app.services.weather_service._get_api_key")
-@patch("httpx.get")
+@patch("app.services.weather_service.timed_get")
 def test_call_openweather_api_success(mock_get, mock_get_key):
     """Test successful API call to OpenWeatherMap"""
     mock_get_key.return_value = "test_api_key"
@@ -127,7 +127,7 @@ def test_call_openweather_api_success(mock_get, mock_get_key):
 
 
 @patch("app.services.weather_service._get_api_key")
-@patch("httpx.get")
+@patch("app.services.weather_service.timed_get")
 def test_call_openweather_api_handles_404(mock_get, mock_get_key):
     """Test API returns None for location not found (404)"""
     mock_get_key.return_value = "test_api_key"
