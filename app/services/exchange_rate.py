@@ -12,7 +12,7 @@ gracefully and never block business logic on exchange rate availability.
 import logging
 import time
 
-import httpx
+from app.core.http import timed_get
 
 logger = logging.getLogger(__name__)
 
@@ -38,10 +38,13 @@ def get_rates(base: str = "USD") -> dict[str, float] | None:
     if cached is not None:
         fetched_at, rates = cached
         if time.monotonic() - fetched_at < _TTL_SECONDS:
+            logger.debug("Exchange rate cache hit for base %s", base)
             return rates
 
     try:
-        response = httpx.get(_BASE_URL.format(base=base), timeout=5.0)
+        response = timed_get(
+            _BASE_URL.format(base=base), service="exchange-rate", timeout=5.0
+        )
         if response.status_code != 200:
             logger.warning(
                 "Exchange rate API returned %d for base %s",
@@ -60,6 +63,11 @@ def get_rates(base: str = "USD") -> dict[str, float] | None:
             return _stale_fallback(base)
 
         _cache[base] = (time.monotonic(), rates)
+        logger.info(
+            "Exchange rates updated for base %s — %d currencies",
+            base,
+            len(rates),
+        )
         return rates
 
     except Exception as exc:

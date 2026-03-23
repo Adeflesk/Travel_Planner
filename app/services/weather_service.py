@@ -11,7 +11,7 @@ import os
 import logging
 from datetime import datetime
 from typing import Optional, Dict, List, Any
-import httpx
+from app.core.http import timed_get
 
 logger = logging.getLogger(__name__)
 
@@ -140,23 +140,14 @@ def _call_openweather_api(location: str) -> Optional[Dict[str, Any]]:
             "cnt": 40,  # 5 days of 3-hour forecasts
         }
 
-        response = httpx.get(url, params=params, timeout=10.0)
+        response = timed_get(url, service="openweather", timeout=10.0, params=params)
         response.raise_for_status()
 
         data = response.json()
-        logger.info(f"Successfully fetched weather for {location}")
         return data
 
-    except httpx.HTTPStatusError as e:
-        if e.response.status_code == 404:
-            logger.warning(f"Location not found: {location}")
-        elif e.response.status_code == 401:
-            logger.error("Invalid OpenWeatherMap API key")
-        else:
-            logger.error(f"HTTP error fetching weather: {e}")
-        return None
     except Exception as e:
-        logger.error(f"Error calling OpenWeatherMap API: {str(e)}")
+        logger.error("OpenWeatherMap call failed for %s: %s", location, e)
         return None
 
 

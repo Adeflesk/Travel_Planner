@@ -9,7 +9,7 @@ import logging
 import os
 from urllib.parse import quote
 
-import httpx
+from app.core.http import timed_get
 
 logger = logging.getLogger(__name__)
 
@@ -33,14 +33,15 @@ def geocode(query: str) -> tuple[float, float] | None:
 
     try:
         url = MAPBOX_GEOCODING_URL.format(query=quote(query))
-        response = httpx.get(
+        response = timed_get(
             url,
+            service="mapbox-geocode",
+            timeout=5.0,
             params={
                 "access_token": token,
                 "limit": 1,
                 "types": "place,address,poi",
             },
-            timeout=5.0,
         )
         if response.status_code != 200:
             logger.warning(

@@ -16,6 +16,10 @@ project_root = Path(__file__).parent.parent
 env_path = project_root / ".env"
 load_dotenv(dotenv_path=env_path)
 
+from app.core.logging_config import setup_logging  # noqa: E402
+
+setup_logging()
+
 from contextlib import asynccontextmanager  # noqa: E402
 from apscheduler.schedulers.background import BackgroundScheduler  # noqa: E402
 from fastapi import FastAPI, Request  # noqa: E402

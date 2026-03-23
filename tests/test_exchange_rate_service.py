@@ -33,7 +33,7 @@ def test_get_rates_returns_dict_on_success():
     invalidate_cache()
     mock_resp = _mock_er_response({"EUR": 0.92, "GBP": 0.79})
 
-    with patch("app.services.exchange_rate.httpx.get", return_value=mock_resp):
+    with patch("app.services.exchange_rate.timed_get", return_value=mock_resp):
         result = get_rates("USD")
 
     assert result is not None
@@ -46,7 +46,7 @@ def test_get_rates_uses_cache_on_second_call():
     mock_resp = _mock_er_response({"EUR": 0.92})
 
     with patch(
-        "app.services.exchange_rate.httpx.get", return_value=mock_resp
+        "app.services.exchange_rate.timed_get", return_value=mock_resp
     ) as mock_get:
         get_rates("USD")
         get_rates("USD")  # should be a cache hit
@@ -59,7 +59,7 @@ def test_get_rates_returns_none_on_network_error():
     import httpx
 
     with patch(
-        "app.services.exchange_rate.httpx.get",
+        "app.services.exchange_rate.timed_get",
         side_effect=httpx.RequestError("timeout"),
     ):
         result = get_rates("USD")
@@ -72,7 +72,7 @@ def test_get_rates_returns_none_on_non_200():
     mock_resp = Mock()
     mock_resp.status_code = 503
 
-    with patch("app.services.exchange_rate.httpx.get", return_value=mock_resp):
+    with patch("app.services.exchange_rate.timed_get", return_value=mock_resp):
         result = get_rates("USD")
 
     assert result is None
@@ -84,7 +84,7 @@ def test_get_rates_returns_none_on_api_error_result():
     mock_resp.status_code = 200
     mock_resp.json.return_value = {"result": "error", "error-type": "invalid-key"}
 
-    with patch("app.services.exchange_rate.httpx.get", return_value=mock_resp):
+    with patch("app.services.exchange_rate.timed_get", return_value=mock_resp):
         result = get_rates("USD")
 
     assert result is None
@@ -97,7 +97,7 @@ def test_get_rates_returns_stale_cache_on_failure():
 
     # Populate cache first
     mock_resp = _mock_er_response({"EUR": 0.91})
-    with patch("app.services.exchange_rate.httpx.get", return_value=mock_resp):
+    with patch("app.services.exchange_rate.timed_get", return_value=mock_resp):
         get_rates("USD")
 
     # Force cache expiry by patching monotonic
@@ -108,7 +108,7 @@ def test_get_rates_returns_stale_cache_on_failure():
 
     # Now fail the network call — stale cache should be returned
     with patch(
-        "app.services.exchange_rate.httpx.get", side_effect=httpx.RequestError("down")
+        "app.services.exchange_rate.timed_get", side_effect=httpx.RequestError("down")
     ):
         result = get_rates("USD")
 
@@ -125,7 +125,7 @@ def test_get_rates_normalises_base_to_uppercase():
     invalidate_cache()
     mock_resp = _mock_er_response({"USD": 1.0})
 
-    with patch("app.services.exchange_rate.httpx.get", return_value=mock_resp):
+    with patch("app.services.exchange_rate.timed_get", return_value=mock_resp):
         result = get_rates("eur")
 
     assert result is not None
@@ -140,7 +140,7 @@ def test_exchange_rates_endpoint_returns_200(client):
     invalidate_cache()
     mock_resp = _mock_er_response({"EUR": 0.92, "JPY": 149.5})
 
-    with patch("app.services.exchange_rate.httpx.get", return_value=mock_resp):
+    with patch("app.services.exchange_rate.timed_get", return_value=mock_resp):
         resp = client.get("/exchange-rates/?base=USD")
 
     assert resp.status_code == 200
@@ -154,7 +154,7 @@ def test_exchange_rates_endpoint_returns_503_when_unavailable(client):
     import httpx
 
     with patch(
-        "app.services.exchange_rate.httpx.get",
+        "app.services.exchange_rate.timed_get",
         side_effect=httpx.RequestError("connection refused"),
     ):
         resp = client.get("/exchange-rates/?base=USD")
@@ -166,7 +166,7 @@ def test_exchange_rates_endpoint_defaults_to_usd(client):
     invalidate_cache()
     mock_resp = _mock_er_response({"EUR": 0.92})
 
-    with patch("app.services.exchange_rate.httpx.get", return_value=mock_resp):
+    with patch("app.services.exchange_rate.timed_get", return_value=mock_resp):
         resp = client.get("/exchange-rates/")
 
     assert resp.status_code == 200

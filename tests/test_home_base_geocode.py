@@ -29,7 +29,7 @@ def _mock_mapbox(coordinates: list[float]) -> Mock:
 def test_geocode_home_base_returns_coords():
     """A valid home_base string should resolve to (lat, lng)."""
     with patch(
-        "app.services.geocoding.httpx.get",
+        "app.services.geocoding.timed_get",
         return_value=_mock_mapbox([-0.1278, 51.5074]),
     ):
         with patch.dict(os.environ, {"MAPBOX_TOKEN": "pk.test"}):
@@ -42,7 +42,7 @@ def test_geocode_home_base_returns_coords():
 
 def test_geocode_home_base_empty_string_returns_none():
     """An empty home_base must not call Mapbox and must return None."""
-    with patch("app.services.geocoding.httpx.get") as mock_get:
+    with patch("app.services.geocoding.timed_get") as mock_get:
         with patch.dict(os.environ, {"MAPBOX_TOKEN": "pk.test"}):
             from app.services.geocoding import geocode
 
@@ -54,7 +54,7 @@ def test_geocode_home_base_empty_string_returns_none():
 
 def test_geocode_home_base_whitespace_only_returns_none():
     """A whitespace-only home_base is treated the same as empty."""
-    with patch("app.services.geocoding.httpx.get") as mock_get:
+    with patch("app.services.geocoding.timed_get") as mock_get:
         with patch.dict(os.environ, {"MAPBOX_TOKEN": "pk.test"}):
             from app.services.geocoding import geocode
 
@@ -83,7 +83,7 @@ def test_geocode_home_base_unrecognized_location_returns_none():
     resp.status_code = 200
     resp.json.return_value = {"features": []}
 
-    with patch("app.services.geocoding.httpx.get", return_value=resp):
+    with patch("app.services.geocoding.timed_get", return_value=resp):
         with patch.dict(os.environ, {"MAPBOX_TOKEN": "pk.test"}):
             from app.services.geocoding import geocode
 
@@ -97,7 +97,7 @@ def test_geocode_home_base_mapbox_error_response_returns_none():
     resp = Mock()
     resp.status_code = 503
 
-    with patch("app.services.geocoding.httpx.get", return_value=resp):
+    with patch("app.services.geocoding.timed_get", return_value=resp):
         with patch.dict(os.environ, {"MAPBOX_TOKEN": "pk.test"}):
             from app.services.geocoding import geocode
 
@@ -111,7 +111,7 @@ def test_geocode_home_base_network_error_returns_none():
     import httpx
 
     with patch(
-        "app.services.geocoding.httpx.get", side_effect=httpx.RequestError("timeout")
+        "app.services.geocoding.timed_get", side_effect=httpx.RequestError("timeout")
     ):
         with patch.dict(os.environ, {"MAPBOX_TOKEN": "pk.test"}):
             from app.services.geocoding import geocode
@@ -157,7 +157,7 @@ def test_settings_home_base_geocode_failure_does_not_block_save(client):
     import httpx
 
     with patch(
-        "app.services.geocoding.httpx.get",
+        "app.services.geocoding.timed_get",
         side_effect=httpx.RequestError("connection refused"),
     ):
         resp = client.patch("/settings/", json={"home_base": "Rome, Italy"})
