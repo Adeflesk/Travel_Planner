@@ -3,6 +3,7 @@ import inspect
 import re
 
 import pytest
+from fastapi.testclient import TestClient
 
 
 def test_secret_key_required_in_production(monkeypatch):
@@ -64,3 +65,15 @@ def test_cors_regex_is_scoped_to_project():
     assert re.match(
         regex, "https://travel-planner-one-abc123-someuser.vercel.app"
     ), f"CORS regex '{regex}' should match travel-planner preview deploys"
+
+
+def test_security_headers_present():
+    """All responses must include standard security headers."""
+    from app.main import app
+
+    client = TestClient(app)
+    response = client.get("/health")
+
+    assert response.headers.get("X-Content-Type-Options") == "nosniff"
+    assert response.headers.get("X-Frame-Options") == "DENY"
+    assert response.headers.get("Referrer-Policy") == "strict-origin-when-cross-origin"
