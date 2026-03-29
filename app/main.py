@@ -148,10 +148,10 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=get_cors_origins(),
-        allow_origin_regex=r"https://.*\.vercel\.app",  # Support Vercel previews
+        allow_origin_regex=r"https://travel-planner-.*\.vercel\.app",
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Content-Type", "Authorization"],
     )
 
     app.include_router(health_router)

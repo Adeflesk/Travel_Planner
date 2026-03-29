@@ -1,5 +1,7 @@
 import importlib
 import inspect
+import re
+
 import pytest
 
 
@@ -40,3 +42,25 @@ def test_trip_summary_query_uses_parameterized_sql():
     assert (
         "expanding=True" in source or ":ids" in source
     ), "get_trips should use bindparam with expanding=True for the IN clause"
+
+
+def test_cors_regex_is_scoped_to_project():
+    """CORS regex must not match arbitrary *.vercel.app domains."""
+    from app.main import create_app
+
+    app = create_app()
+    cors_middleware = None
+    for middleware in app.user_middleware:
+        if middleware.cls.__name__ == "CORSMiddleware":
+            cors_middleware = middleware
+            break
+
+    assert cors_middleware is not None, "CORSMiddleware not found"
+    regex = cors_middleware.kwargs.get("allow_origin_regex", "")
+
+    assert not re.match(
+        regex, "https://evil-attacker.vercel.app"
+    ), f"CORS regex '{regex}' matches arbitrary vercel.app subdomains"
+    assert re.match(
+        regex, "https://travel-planner-one-abc123-someuser.vercel.app"
+    ), f"CORS regex '{regex}' should match travel-planner preview deploys"
