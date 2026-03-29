@@ -1,4 +1,5 @@
 import importlib
+import inspect
 import pytest
 
 
@@ -24,3 +25,18 @@ def test_secret_key_allows_default_in_dev(monkeypatch):
 
     importlib.reload(sec_module)
     assert sec_module.SECRET_KEY == "dev-secret-key-change-in-production"
+
+
+def test_trip_summary_query_uses_parameterized_sql():
+    """The trip summary query must use bind parameters, not f-string interpolation."""
+    from app.routers.trips import get_trips
+
+    source = inspect.getsource(get_trips)
+    # The old vulnerable pattern: f-string with IN ({ids_csv})
+    assert (
+        'f"' not in source or "ids_csv" not in source
+    ), "get_trips still uses f-string SQL interpolation — use bindparam(expanding=True)"
+    # The safe pattern should use :ids bind parameter
+    assert (
+        "expanding=True" in source or ":ids" in source
+    ), "get_trips should use bindparam with expanding=True for the IN clause"

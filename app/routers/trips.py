@@ -13,7 +13,7 @@ from decimal import Decimal
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import case, func, text
+from sqlalchemy import bindparam, case, func, text
 from sqlalchemy.orm import Session
 
 from app import models, schemas
@@ -114,13 +114,12 @@ def get_trips(
     all_trip_ids = [t.id for t in owned_trips] + [t.id for t, _ in shared_trip_data]
     summary_map: dict[int, dict] = {}
     if all_trip_ids:
-        # Expand IDs inline (safe — all are ints from the DB)
-        ids_csv = ",".join(str(i) for i in all_trip_ids)
         rows = db.execute(
             text(
-                f"SELECT id, day_count, total_spent, budget_remaining"
-                f" FROM trip_summary WHERE id IN ({ids_csv})"
-            )
+                "SELECT id, day_count, total_spent, budget_remaining"
+                " FROM trip_summary WHERE id IN :ids"
+            ).bindparams(bindparam("ids", expanding=True)),
+            {"ids": all_trip_ids},
         ).fetchall()
         for row in rows:
             summary_map[row[0]] = {
