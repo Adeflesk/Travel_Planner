@@ -16,9 +16,15 @@ from pydantic import BaseModel
 
 
 # Configuration from environment variables
-SECRET_KEY = os.getenv(
-    "JWT_SECRET_KEY", os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
-)
+_env = os.getenv("ENVIRONMENT", "development")
+SECRET_KEY = os.getenv("JWT_SECRET_KEY") or os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    if _env == "production":
+        raise ValueError(
+            "JWT_SECRET_KEY environment variable must be set in production. "
+            'Generate one with: python -c "import secrets; print(secrets.token_urlsafe(32))"'
+        )
+    SECRET_KEY = "dev-secret-key-change-in-production"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "7"))
