@@ -73,7 +73,7 @@ def get_trip_or_404(
             )
             .first()
         )
-        if share:
+        if share and share.permission in ("view", "edit"):
             return trip
 
     raise HTTPException(status_code=404, detail="Trip not found")
