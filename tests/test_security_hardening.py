@@ -77,3 +77,21 @@ def test_security_headers_present():
     assert response.headers.get("X-Content-Type-Options") == "nosniff"
     assert response.headers.get("X-Frame-Options") == "DENY"
     assert response.headers.get("Referrer-Policy") == "strict-origin-when-cross-origin"
+
+
+def test_admin_reset_password_uses_pydantic_schema():
+    """Admin password reset must accept a Pydantic body, not a bare string."""
+    from app.routers.admin import reset_user_password
+
+    sig = inspect.signature(reset_user_password)
+    params = sig.parameters
+
+    assert (
+        "new_password" not in params
+    ), "reset_user_password should accept a Pydantic body schema, not a bare new_password param"
+    body_params = [
+        name for name, p in params.items() if name not in ("user_id", "db", "admin")
+    ]
+    assert (
+        len(body_params) >= 1
+    ), "reset_user_password should have a Pydantic body parameter"

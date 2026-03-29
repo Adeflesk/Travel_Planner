@@ -15,6 +15,7 @@ from app.schemas.auth import (
     UserResponse,
     AdminUserCreate,
     AdminUserUpdate,
+    AdminResetPassword,
 )
 from app.core.deps import get_admin_user
 from app.core.security import get_password_hash
@@ -146,7 +147,7 @@ def delete_user(
 @router.post("/users/{user_id}/reset-password", status_code=204)
 def reset_user_password(
     user_id: int,
-    new_password: str,
+    body: AdminResetPassword,
     db: Session = Depends(get_db),
     admin: models.User = Depends(get_admin_user),
 ):
@@ -155,12 +156,7 @@ def reset_user_password(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if len(new_password) < 8:
-        raise HTTPException(
-            status_code=400, detail="Password must be at least 8 characters"
-        )
-
-    user.hashed_password = get_password_hash(new_password)
+    user.hashed_password = get_password_hash(body.new_password)
     db.commit()
     return None
 
