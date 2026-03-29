@@ -95,3 +95,24 @@ def test_admin_reset_password_uses_pydantic_schema():
     assert (
         len(body_params) >= 1
     ), "reset_user_password should have a Pydantic body parameter"
+
+
+def test_admin_list_users_has_limit_upper_bound():
+    """The admin user list endpoint must enforce an upper bound on 'limit'."""
+    from app.main import app
+
+    openapi = app.openapi()
+    paths = openapi.get("paths", {})
+    admin_users = paths.get("/admin/users/", {}).get("get", {})
+    params = admin_users.get("parameters", [])
+
+    limit_param = next((p for p in params if p.get("name") == "limit"), None)
+    assert limit_param is not None, "limit parameter not found in OpenAPI schema"
+
+    schema = limit_param.get("schema", {})
+    assert (
+        "maximum" in schema or "exclusiveMaximum" in schema
+    ), f"limit parameter has no upper bound: {schema}"
+    assert (
+        schema.get("maximum", float("inf")) <= 1000
+    ), f"limit upper bound is too high: {schema.get('maximum')}"

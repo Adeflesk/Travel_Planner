@@ -7,7 +7,7 @@ Author: Travel Planner Team
 """
 
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app import models
@@ -26,8 +26,8 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 
 @router.get("/users/", response_model=List[UserResponse])
 def list_users(
-    skip: int = 0,
-    limit: int = 100,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
     db: Session = Depends(get_db),
     admin: models.User = Depends(get_admin_user),
 ):
