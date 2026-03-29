@@ -116,3 +116,35 @@ def test_admin_list_users_has_limit_upper_bound():
     assert (
         schema.get("maximum", float("inf")) <= 1000
     ), f"limit upper bound is too high: {schema.get('maximum')}"
+
+
+def test_frontend_url_required_in_production(monkeypatch):
+    """FRONTEND_URL must be set in production."""
+    monkeypatch.delenv("FRONTEND_URL", raising=False)
+    monkeypatch.setenv("ENVIRONMENT", "production")
+
+    import app.core.email_config as email_module
+
+    with pytest.raises(ValueError, match="FRONTEND_URL"):
+        importlib.reload(email_module)
+
+
+def test_frontend_url_defaults_in_dev(monkeypatch):
+    """FRONTEND_URL can default to localhost in development."""
+    monkeypatch.delenv("FRONTEND_URL", raising=False)
+    monkeypatch.delenv("ENVIRONMENT", raising=False)
+
+    import app.core.email_config as email_module
+
+    importlib.reload(email_module)
+    assert email_module.FRONTEND_URL == "http://localhost:3000"
+
+
+def test_get_trip_or_404_checks_permission_field():
+    """get_trip_or_404 should reference share.permission in its access check."""
+    from app.routers.trips import get_trip_or_404
+
+    source = inspect.getsource(get_trip_or_404)
+    assert (
+        "share.permission" in source or "permission" in source
+    ), "get_trip_or_404 does not check the permission field on TripShare"
