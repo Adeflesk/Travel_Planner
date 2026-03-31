@@ -159,6 +159,12 @@ class AdminUserCreate(BaseModel):
         return v
 
 
+class AdminResetPassword(BaseModel):
+    """Schema for admin resetting a user's password."""
+
+    new_password: str = Field(..., min_length=8)
+
+
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
 

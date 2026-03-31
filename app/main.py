@@ -25,6 +25,9 @@ from apscheduler.schedulers.background import BackgroundScheduler  # noqa: E402
 from fastapi import FastAPI, Request  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.responses import JSONResponse  # noqa: E402
+from starlette.middleware.base import BaseHTTPMiddleware  # noqa: E402
+from starlette.requests import Request as StarletteRequest  # noqa: E402
+from starlette.responses import Response as StarletteResponse  # noqa: E402
 from slowapi.errors import RateLimitExceeded  # noqa: E402
 
 from app.core.rate_limit import limiter  # noqa: E402
@@ -132,6 +135,18 @@ def get_cors_origins() -> list[str]:
     return origins
 
 
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: StarletteRequest, call_next):
+        response: StarletteResponse = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers[
+            "Permissions-Policy"
+        ] = "camera=(), microphone=(), geolocation=()"
+        return response
+
+
 def create_app() -> FastAPI:
     app = FastAPI(
         title="Travel Planner API",
@@ -148,11 +163,13 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=get_cors_origins(),
-        allow_origin_regex=r"https://.*\.vercel\.app",  # Support Vercel previews
+        allow_origin_regex=r"https://travel-planner-.*\.vercel\.app",
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Content-Type", "Authorization"],
     )
+
+    app.add_middleware(SecurityHeadersMiddleware)
 
     app.include_router(health_router)
     app.include_router(auth_router)

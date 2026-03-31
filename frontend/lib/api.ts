@@ -186,7 +186,6 @@ export const expenseApi = {
         }
       }
     });
-    console.log('Expense create payload:', cleanedData);
     return api.post<Expense>('/expenses/', cleanedData);
   },
   update: (id: number, data: Partial<ExpenseFormData>) => {
@@ -205,7 +204,6 @@ export const expenseApi = {
         }
       }
     });
-    console.log('Expense update payload:', cleanedData);
     return api.put<Expense>(`/expenses/${id}`, cleanedData);
   },
   delete: (id: number) => api.delete(`/expenses/${id}`),

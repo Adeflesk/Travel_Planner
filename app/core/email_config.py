@@ -14,12 +14,20 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+# Capture explicit env state before load_dotenv can augment it
+_frontend_url_explicit = os.environ.get("FRONTEND_URL")
+_environment_explicit = os.environ.get("ENVIRONMENT")
+
 load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent.parent / ".env")
 
 BREVO_API_KEY = os.getenv("BREVO_API_KEY")
 BREVO_SENDER_EMAIL = os.getenv("BREVO_SENDER_EMAIL", "")
 BREVO_SENDER_NAME = os.getenv("BREVO_SENDER_NAME", "Travel Planner")
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+FRONTEND_URL = os.getenv("FRONTEND_URL")
+if not _frontend_url_explicit:
+    if _environment_explicit == "production":
+        raise ValueError("FRONTEND_URL environment variable must be set in production")
+    FRONTEND_URL = "http://localhost:3000"
 
 TEMPLATE_PASSWORD_RESET = int(os.getenv("BREVO_TEMPLATE_PASSWORD_RESET", "0"))
 TEMPLATE_TRIP_SHARE = int(os.getenv("BREVO_TEMPLATE_TRIP_SHARE", "0"))
