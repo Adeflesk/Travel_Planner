@@ -19,7 +19,9 @@ const EMPTY: AccommodationCreate = {
   name: '',
   address: '',
   check_in_date: '',
+  check_in_time: '',
   check_out_date: '',
+  check_out_time: '',
   cost: undefined,
   currency: 'USD',
   confirmation_number: '',
@@ -54,7 +56,9 @@ export function AccommodationForm({
         name: editing.name,
         address: editing.address ?? '',
         check_in_date: editing.check_in_date,
+        check_in_time: editing.check_in_time ?? '',
         check_out_date: editing.check_out_date,
+        check_out_time: editing.check_out_time ?? '',
         cost: editing.cost,
         currency: editing.currency ?? 'USD',
         confirmation_number: editing.confirmation_number ?? '',
@@ -129,10 +133,11 @@ export function AccommodationForm({
             />
           </div>
 
+          {/* Check-in row: date + optional time */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Check-in <span className="text-red-500">*</span>
+                Check-in date <span className="text-red-500">*</span>
               </label>
               <input
                 required
@@ -143,14 +148,36 @@ export function AccommodationForm({
               />
             </div>
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Check-in time</label>
+              <input
+                type="time"
+                value={form.check_in_time ?? ''}
+                onChange={(e) => set('check_in_time', e.target.value)}
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          {/* Check-out row: date + optional time */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Check-out <span className="text-red-500">*</span>
+                Check-out date <span className="text-red-500">*</span>
               </label>
               <input
                 required
                 type="date"
                 value={form.check_out_date}
                 onChange={(e) => set('check_out_date', e.target.value)}
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Check-out time</label>
+              <input
+                type="time"
+                value={form.check_out_time ?? ''}
+                onChange={(e) => set('check_out_time', e.target.value)}
                 className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
