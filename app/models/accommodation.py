@@ -17,6 +17,8 @@ class Accommodation(Base):
     address = Column(Text, nullable=True)
     check_in_date = Column(Date, nullable=False)
     check_out_date = Column(Date, nullable=False)
+    check_in_time = Column(String(5), nullable=True)
+    check_out_time = Column(String(5), nullable=True)
     cost = Column(Float, nullable=True)
     currency = Column(String(10), nullable=True)
     confirmation_number = Column(String(200), nullable=True)

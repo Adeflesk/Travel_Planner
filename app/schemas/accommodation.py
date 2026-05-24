@@ -8,6 +8,8 @@ class AccommodationBase(BaseModel):
     address: Optional[str] = None
     check_in_date: Optional[DateType] = None
     check_out_date: Optional[DateType] = None
+    check_in_time: Optional[str] = None
+    check_out_time: Optional[str] = None
     cost: Optional[float] = None
     currency: Optional[str] = None
     confirmation_number: Optional[str] = None
@@ -35,6 +37,8 @@ class AccommodationUpdate(BaseModel):
     address: Optional[str] = None
     check_in_date: Optional[DateType] = None
     check_out_date: Optional[DateType] = None
+    check_in_time: Optional[str] = None
+    check_out_time: Optional[str] = None
     cost: Optional[float] = None
     currency: Optional[str] = None
     confirmation_number: Optional[str] = None
