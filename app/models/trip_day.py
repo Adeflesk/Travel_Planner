@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Text, Date, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Integer, Text, Date, ForeignKey, JSON, UniqueConstraint
 from sqlalchemy.orm import relationship
 from .base import Base
 
@@ -18,6 +18,7 @@ class TripDay(Base):
     destination_id = Column(
         Integer, ForeignKey("destinations.id", ondelete="SET NULL"), nullable=True
     )
+    alerts = Column(JSON, nullable=True)
 
     __table_args__ = (UniqueConstraint("trip_id", "date", name="uq_trip_day"),)
 

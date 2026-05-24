@@ -57,3 +57,26 @@ def test_activity_book_by_date_null_when_booked(client, test_user, db_session):
     )
     assert resp.status_code == 200
     assert resp.json()["book_by_date"] is None
+
+
+def test_day_alerts_patch(client, test_user, db_session):
+    trip, day = _make_trip_and_day(db_session, test_user["user"].id)
+    alerts = [
+        {"text": "Flash flood risk in afternoon", "severity": "warning"},
+        {"text": "Shuttle timing: first at 6am", "severity": "info"},
+    ]
+    resp = client.patch(f"/trip-days/{day.id}", json={"alerts": alerts})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data["alerts"]) == 2
+    assert data["alerts"][0]["severity"] == "warning"
+
+
+def test_day_alerts_replace(client, test_user, db_session):
+    trip, day = _make_trip_and_day(db_session, test_user["user"].id)
+    client.patch(
+        f"/trip-days/{day.id}", json={"alerts": [{"text": "A", "severity": "tip"}]}
+    )
+    resp = client.patch(f"/trip-days/{day.id}", json={"alerts": []})
+    assert resp.status_code == 200
+    assert resp.json()["alerts"] == []
