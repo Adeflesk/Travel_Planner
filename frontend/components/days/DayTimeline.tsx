@@ -1,6 +1,7 @@
 import { DayActivity, TripTransport } from '@/lib/types';
 import { ActivityBlock } from './ActivityBlock';
 import { TransportBlock } from './TransportBlock';
+import { TRANSPORT_ICON, TRANSPORT_COLOR } from '@/lib/transport-config';
 
 interface DayTimelineProps {
     scheduled: DayActivity[];
@@ -10,6 +11,10 @@ interface DayTimelineProps {
     currentDayId?: number;
     onEditTransport?: (t: TripTransport) => void;
     highlightedActivityId?: number;
+    /** ID of the item being hovered from the map side (activity id or "transport-{id}") */
+    highlightedItemId?: string | null;
+    /** Called when a timeline item is hovered (for map panning) */
+    onItemHover?: (id: string | null) => void;
 }
 
 const HOURS = Array.from({ length: 17 }, (_, i) => i + 7); // 7am to 11pm (23:00)
@@ -22,6 +27,8 @@ export const DayTimeline = ({
     currentDayId,
     onEditTransport,
     highlightedActivityId,
+    highlightedItemId,
+    onItemHover,
 }: DayTimelineProps) => {
     return (
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden p-6 relative">
@@ -53,7 +60,8 @@ export const DayTimeline = ({
                             key={activity.id}
                             activity={activity}
                             onClick={() => onEditActivity(activity)}
-                            highlighted={highlightedActivityId === activity.id}
+                            highlighted={highlightedActivityId === activity.id || highlightedItemId === String(activity.id)}
+                            onHover={(id) => onItemHover?.(id != null ? String(id) : null)}
                         />
                     ))}
                     {currentDayId != null && transportItems.map(t => {
@@ -65,6 +73,8 @@ export const DayTimeline = ({
                                 transport={t}
                                 currentDayId={currentDayId}
                                 onClick={() => onEditTransport?.(t)}
+                                highlighted={highlightedItemId === `transport-${t.id}`}
+                                onHover={onItemHover}
                             />
                         );
                     })}
@@ -100,17 +110,21 @@ export const DayTimeline = ({
                     <div className="space-y-2">
                         {transportItems
                             .filter(t => t.departure_day_id === currentDayId && !t.departure_time)
-                            .map(t => (
-                                <div
-                                    key={t.id}
-                                    onClick={() => onEditTransport?.(t)}
-                                    className="p-3 bg-white rounded-xl border border-slate-200 cursor-pointer hover:border-slate-300 hover:shadow-sm transition-all flex items-center gap-2"
-                                >
-                                    <span className="text-base">✈</span>
-                                    <span className="text-sm font-medium text-slate-700">{t.origin} → {t.destination}</span>
-                                    {t.carrier && <span className="text-xs text-slate-400">{t.carrier}</span>}
-                                </div>
-                            ))}
+                            .map(t => {
+                                const Icon = TRANSPORT_ICON[t.transport_type] ?? TRANSPORT_ICON.other;
+                                const color = TRANSPORT_COLOR[t.transport_type] ?? TRANSPORT_COLOR.other;
+                                return (
+                                    <div
+                                        key={t.id}
+                                        onClick={() => onEditTransport?.(t)}
+                                        className="p-3 bg-white rounded-xl border border-slate-200 cursor-pointer hover:border-slate-300 hover:shadow-sm transition-all flex items-center gap-2"
+                                    >
+                                        <Icon className="w-4 h-4 shrink-0" style={{ color }} />
+                                        <span className="text-sm font-medium text-slate-700">{t.origin} → {t.destination}</span>
+                                        {t.carrier && <span className="text-xs text-slate-400">{t.carrier}</span>}
+                                    </div>
+                                );
+                            })}
                     </div>
                 </div>
             )}

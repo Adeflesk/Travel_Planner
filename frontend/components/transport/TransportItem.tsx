@@ -1,18 +1,10 @@
 'use client';
 
-import { TripTransport, TransportType } from '@/lib/types';
+import { TripTransport } from '@/lib/types';
 import { Pencil, Trash2, Check } from 'lucide-react';
 import { TransportOptionList } from './TransportOptionList';
 import { calculateFlightDuration, formatDuration } from '@/lib/timezone-utils';
-
-const TYPE_ICON: Record<TransportType, string> = {
-  flight: '✈',
-  train: '🚆',
-  bus: '🚌',
-  drive: '🚗',
-  ferry: '⛴',
-  other: '🚀',
-};
+import { TRANSPORT_ICON, TRANSPORT_COLOR } from '@/lib/transport-config';
 
 interface TransportItemProps {
   transport: TripTransport;
@@ -24,7 +16,8 @@ interface TransportItemProps {
 
 export function TransportItem({ transport, currentDayId, onEdit, onDelete, onReload }: TransportItemProps) {
   const isDeparture = transport.departure_day_id === currentDayId;
-  const icon = TYPE_ICON[transport.transport_type] ?? '🚀';
+  const Icon = TRANSPORT_ICON[transport.transport_type] ?? TRANSPORT_ICON.other;
+  const color = TRANSPORT_COLOR[transport.transport_type] ?? TRANSPORT_COLOR.other;
 
   const duration: number | null = (() => {
     if (!transport.departure_time || !transport.arrival_time) return null;
@@ -46,7 +39,7 @@ export function TransportItem({ transport, currentDayId, onEdit, onDelete, onRel
     // Arrival-only compact block
     return (
       <div className="flex items-center gap-3 py-3 px-4 bg-sky-50 border border-sky-200 rounded-xl text-sm">
-        <span className="text-lg">{icon}</span>
+        <Icon className="w-5 h-5" style={{ color }} />
         <div>
           <span className="font-semibold text-sky-800">← arrived from {transport.origin}</span>
           {transport.arrival_time && (
@@ -61,15 +54,18 @@ export function TransportItem({ transport, currentDayId, onEdit, onDelete, onRel
   return (
     <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
       <div className="flex items-start gap-3 p-4">
-        <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-sky-50 flex items-center justify-center text-xl">
-          {icon}
+        <div
+          className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center"
+          style={{ backgroundColor: `${color}14`, color }}
+        >
+          <Icon className="w-5 h-5" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-slate-900">
               {transport.origin} → {transport.destination}
             </span>
-            {transport.booked && (
+            {transport.booked && transport.transport_type !== 'drive' && (
               <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
                 <Check className="w-3 h-3" /> Booked
               </span>

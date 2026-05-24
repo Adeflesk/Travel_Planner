@@ -74,12 +74,13 @@ def _get_action_items_for_trip(
     days_until_start = (trip.start_date - today).days
     trip_urgency = _urgency_from_days(days_until_start)
 
-    # Booking: transport not booked
+    # Booking: transport not booked (drives are never "booked")
     unbooked_transport = (
         db.query(models.TripTransport)
         .filter(
             models.TripTransport.trip_id == trip.id,
             models.TripTransport.booked.is_(False),
+            models.TripTransport.transport_type != "drive",
         )
         .all()
     )

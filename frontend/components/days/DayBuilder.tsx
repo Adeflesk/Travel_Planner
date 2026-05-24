@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/Button';
 import { TransportForm, TransportItem, useTransport } from '@/components/transport';
 import { tripApi, destinationApi } from '@/lib/api';
 import { useTripContext } from '@/lib/trip-context';
+import { useTripAccommodations, AccommodationDayBadge } from '@/components/accommodations';
 
 const DayMap = dynamic(() => import('@/components/map/DayMap'), {
     ssr: false,
@@ -62,12 +63,19 @@ export const DayBuilder = ({ day, tripId, onRefresh }: DayBuilderProps) => {
     const [selectedTransport, setSelectedTransport] = useState<TripTransport | null>(null);
     const [isTransportSubmitting, setIsTransportSubmitting] = useState(false);
 
+    // Accommodation badge for this day
+    const { getBadgeType } = useTripAccommodations(tripId);
+    const accommodationBadge = getBadgeType(day.date);
+
     // Map state
     const tripCtx = useTripContext();
     const [mapExpanded, setMapExpanded] = useState(() => {
         try { return localStorage.getItem(MAP_OPEN_KEY) === 'true'; } catch { return false; }
     });
     const [highlightedActivityId, setHighlightedActivityId] = useState<number | undefined>();
+
+    // Bidirectional hover linking between timeline ↔ map
+    const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
 
     const toggleMap = useCallback(() => {
         setMapExpanded(prev => {
@@ -161,10 +169,21 @@ export const DayBuilder = ({ day, tripId, onRefresh }: DayBuilderProps) => {
                                     transports={transportItems}
                                     tripContext={tripCtx?.tripContext}
                                     onActivityClick={setHighlightedActivityId}
+                                    hoveredItemId={hoveredItemId}
+                                    onMarkerHover={setHoveredItemId}
                                 />
                             </div>
                         )}
                     </div>
+
+                    {accommodationBadge && (
+                        <div className="mb-4">
+                            <AccommodationDayBadge
+                                type={accommodationBadge.type}
+                                name={accommodationBadge.accommodation.name}
+                            />
+                        </div>
+                    )}
 
                     <DayTimeline
                         scheduled={scheduled}
@@ -174,6 +193,8 @@ export const DayBuilder = ({ day, tripId, onRefresh }: DayBuilderProps) => {
                         currentDayId={day.id}
                         onEditTransport={openTransportEdit}
                         highlightedActivityId={highlightedActivityId}
+                        highlightedItemId={hoveredItemId}
+                        onItemHover={setHoveredItemId}
                     />
 
                     {/* Transport cards below timeline */}
@@ -212,6 +233,8 @@ export const DayBuilder = ({ day, tripId, onRefresh }: DayBuilderProps) => {
                                 transports={transportItems}
                                 tripContext={tripCtx?.tripContext}
                                 onActivityClick={setHighlightedActivityId}
+                                hoveredItemId={hoveredItemId}
+                                onMarkerHover={setHoveredItemId}
                             />
                         </div>
                     </div>

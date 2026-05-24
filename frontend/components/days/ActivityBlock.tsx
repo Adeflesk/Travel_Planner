@@ -4,6 +4,7 @@ interface ActivityBlockProps {
     activity: DayActivity;
     onClick: () => void;
     highlighted?: boolean;
+    onHover?: (id: number | null) => void;
 }
 
 // Left border hex color per category
@@ -31,7 +32,7 @@ const CATEGORY_ICONS: Record<string, string> = {
     other: '📌',
 };
 
-export const ActivityBlock = ({ activity, onClick, highlighted }: ActivityBlockProps) => {
+export const ActivityBlock = ({ activity, onClick, highlighted, onHover }: ActivityBlockProps) => {
     const [startHour, startMin] = (activity.start_time ?? '00:00').split(':').map(Number);
     const totalStartMins = startHour * 60 + startMin;
     const dayStartMins = 7 * 60; // 7am
@@ -54,7 +55,9 @@ export const ActivityBlock = ({ activity, onClick, highlighted }: ActivityBlockP
     return (
         <div
             onClick={onClick}
-            className={`absolute left-0 right-0 bg-white rounded-r-lg shadow-sm border cursor-pointer overflow-hidden group transition-all hover:shadow-md hover:border-slate-200 ${highlighted ? 'ring-2 ring-red-500 ring-offset-1 border-red-200 shadow-md' : 'border-slate-100'}`}
+            onMouseEnter={() => onHover?.(activity.id)}
+            onMouseLeave={() => onHover?.(null)}
+            className={`absolute left-0 right-0 bg-white rounded-r-lg shadow-sm border cursor-pointer overflow-hidden group transition-all hover:shadow-md hover:border-slate-200 ${highlighted ? 'ring-2 ring-sky-400 ring-offset-1 border-sky-200 shadow-md' : 'border-slate-100'}`}
             style={{
                 top: `${topRem}rem`,
                 height: `${heightRem}rem`,

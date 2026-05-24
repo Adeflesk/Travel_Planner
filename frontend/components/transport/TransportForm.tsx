@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, Trash2 } from 'lucide-react';
 import { TripTransport, TripTransportCreate, TripTransportUpdate, TransportType, TripDay, Destination } from '@/lib/types';
 import { useTripCurrency, useTripContext } from '@/lib/trip-context';
-import { TRANSPORT_CONFIG } from '@/lib/transport-config';
+import { TRANSPORT_CONFIG, TRANSPORT_ICON, TRANSPORT_COLOR, TRANSPORT_LABEL } from '@/lib/transport-config';
 import { TransportLocationSearch } from './TransportLocationSearch';
 import type { TransportLocation } from './TransportLocationSearch';
 import { calculateFlightDuration, formatDuration } from '@/lib/timezone-utils';
@@ -20,14 +20,7 @@ interface TransportFormProps {
   isSubmitting?: boolean;
 }
 
-const TRANSPORT_TYPES: { value: TransportType; label: string; icon: string }[] = [
-  { value: 'flight', label: 'Flight', icon: '✈' },
-  { value: 'train', label: 'Train', icon: '🚆' },
-  { value: 'bus', label: 'Bus', icon: '🚌' },
-  { value: 'drive', label: 'Drive', icon: '🚗' },
-  { value: 'ferry', label: 'Ferry', icon: '⛴' },
-  { value: 'other', label: 'Other', icon: '🚀' },
-];
+const ALL_TYPES: TransportType[] = ['flight', 'train', 'bus', 'drive', 'ferry', 'other'];
 
 const TRAVEL_CLASS_OPTIONS: Partial<Record<TransportType, string[]>> = {
   train: ['2nd Class', '1st Class', 'Business'],
@@ -161,379 +154,407 @@ export function TransportForm({
     onSave(data);
   };
 
-  const inputCls = 'w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-300';
+  const inputCls = 'w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-sky-300 transition-colors';
+  const labelCls = 'block text-xs font-medium text-slate-500 mb-1';
+  const sectionCls = 'rounded-xl bg-slate-50/70 p-4 space-y-3';
+
+  const ActiveIcon = TRANSPORT_ICON[type];
+  const activeColor = TRANSPORT_COLOR[type];
 
   return (
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <div
+        className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-slide-up"
+      >
+        {/* ── Header with active type icon ── */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
-          <h2 className="text-xl font-bold text-slate-900">
-            {initialData ? 'Edit Transport' : 'Add Transport'}
-          </h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors"
+              style={{ backgroundColor: `${activeColor}14`, color: activeColor }}
+            >
+              <ActiveIcon className="w-5 h-5" />
+            </div>
+            <h2 className="text-lg font-bold text-slate-900">
+              {initialData ? 'Edit Transport' : 'Add Transport'}
+            </h2>
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
-          {/* Type selector */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Type</label>
-            <div className="flex flex-wrap gap-2">
-              {TRANSPORT_TYPES.map(t => (
-                <button
-                  key={t.value}
-                  type="button"
-                  onClick={() => {
-                    setType(t.value);
-                    setTravelClass('');
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-5">
+
+          {/* ═══ Section: Route ═══ */}
+          <div className={sectionCls}>
+            {/* Type selector */}
+            <div>
+              <label className={labelCls}>Type</label>
+              <div className="flex flex-wrap gap-1.5">
+                {ALL_TYPES.map(t => {
+                  const Icon = TRANSPORT_ICON[t];
+                  const color = TRANSPORT_COLOR[t];
+                  const active = type === t;
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => {
+                        setType(t);
+                        setTravelClass('');
+                      }}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border transition-all ${active
+                          ? 'text-white border-transparent shadow-sm'
+                          : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                        }`}
+                      style={active ? { backgroundColor: color, borderColor: color } : undefined}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      {TRANSPORT_LABEL[t]}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Origin / Destination */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>From *</label>
+                <TransportLocationSearch
+                  transportType={type}
+                  value={origin}
+                  placeholder="e.g. London Heathrow"
+                  required
+                  onChange={(val) => {
+                    setOrigin(val);
+                    if (val !== prefilledOrigin) {
+                      setOriginCoords(null);
+                      setOriginTimezone(null);
+                      setPrefilledOrigin(null);
+                    }
                   }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border transition-colors ${type === t.value
-                      ? 'bg-sky-600 text-white border-sky-600'
-                      : 'bg-white text-slate-700 border-slate-200 hover:border-sky-300'
-                    }`}
-                >
-                  <span>{t.icon}</span> {t.label}
-                </button>
-              ))}
+                  onSelect={(loc: TransportLocation) => {
+                    setOrigin(loc.name);
+                    setOriginCoords({ lat: loc.lat, lng: loc.lng });
+                    setOriginTimezone(loc.timezone);
+                  }}
+                />
+                {prefilledOrigin && origin === prefilledOrigin && (
+                  <p className="text-xs text-sky-600 mt-1">Auto-filled from linked destination</p>
+                )}
+              </div>
+              <div>
+                <label className={labelCls}>To *</label>
+                <TransportLocationSearch
+                  transportType={type}
+                  value={destination}
+                  placeholder="e.g. New York JFK"
+                  required
+                  onChange={(val) => {
+                    setDestination(val);
+                    setDestCoords(null);
+                    setDestTimezone(null);
+                  }}
+                  onSelect={(loc: TransportLocation) => {
+                    setDestination(loc.name);
+                    setDestCoords({ lat: loc.lat, lng: loc.lng });
+                    setDestTimezone(loc.timezone);
+                  }}
+                />
+              </div>
             </div>
           </div>
 
-          {/* Origin / Destination */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* ═══ Section: Schedule ═══ */}
+          <div className={sectionCls}>
+            {/* Departure day */}
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">From *</label>
-              <TransportLocationSearch
-                transportType={type}
-                value={origin}
-                placeholder="e.g. London Heathrow"
-                required
-                onChange={(val) => {
-                  setOrigin(val);
-                  if (val !== prefilledOrigin) {
-                    setOriginCoords(null);
-                    setOriginTimezone(null);
-                    setPrefilledOrigin(null);
+              <label className={labelCls}>Departure day</label>
+              <select
+                className={inputCls}
+                value={depDayId}
+                onChange={e => {
+                  const newDepId = e.target.value;
+                  setDepDayId(newDepId);
+                  if (overnight && newDepId) {
+                    advanceArrToNextDay(newDepId);
                   }
-                }}
-                onSelect={(loc: TransportLocation) => {
-                  setOrigin(loc.name);
-                  setOriginCoords({ lat: loc.lat, lng: loc.lng });
-                  setOriginTimezone(loc.timezone);
-                }}
-              />
-              {prefilledOrigin && origin === prefilledOrigin && (
-                <p className="text-xs text-sky-600 mt-1">Auto-filled from linked destination</p>
-              )}
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">To *</label>
-              <TransportLocationSearch
-                transportType={type}
-                value={destination}
-                placeholder="e.g. New York JFK"
-                required
-                onChange={(val) => {
-                  setDestination(val);
-                  setDestCoords(null);
-                  setDestTimezone(null);
-                }}
-                onSelect={(loc: TransportLocation) => {
-                  setDestination(loc.name);
-                  setDestCoords({ lat: loc.lat, lng: loc.lng });
-                  setDestTimezone(loc.timezone);
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Departure day */}
-          <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Departure day</label>
-            <select
-              className={inputCls}
-              value={depDayId}
-              onChange={e => {
-                const newDepId = e.target.value;
-                setDepDayId(newDepId);
-                if (overnight && newDepId) {
-                  advanceArrToNextDay(newDepId);
-                }
-
-                // Smart pre-fill origin from linked destination
-                if (newDepId && destinations) {
-                  const depDay = tripDays.find(d => d.id === parseInt(newDepId, 10));
-                  if (depDay?.destination_id) {
-                    const dest = destinations.find(d => d.id === depDay.destination_id);
-                    if (dest) {
-                      const label = dest.name + (dest.country ? `, ${dest.country}` : '');
-                      setOrigin(label);
-                      setPrefilledOrigin(label);
-                      if (dest.latitude != null && dest.longitude != null) {
-                        setOriginCoords({ lat: dest.latitude, lng: dest.longitude });
-                      } else {
-                        setOriginCoords(null);
+                  if (newDepId && destinations) {
+                    const depDay = tripDays.find(d => d.id === parseInt(newDepId, 10));
+                    if (depDay?.destination_id) {
+                      const dest = destinations.find(d => d.id === depDay.destination_id);
+                      if (dest) {
+                        const destLabel = dest.name + (dest.country ? `, ${dest.country}` : '');
+                        setOrigin(destLabel);
+                        setPrefilledOrigin(destLabel);
+                        if (dest.latitude != null && dest.longitude != null) {
+                          setOriginCoords({ lat: dest.latitude, lng: dest.longitude });
+                        } else {
+                          setOriginCoords(null);
+                        }
                       }
                     }
                   }
-                }
-              }}
-            >
-              <option value="">— none —</option>
-              {tripDays.map(d => (
-                <option key={d.id} value={d.id}>{formatDayLabel(d)}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Departure time + Arrival time */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Departure time</label>
-              <input className={inputCls} type="time" value={depTime} onChange={e => setDepTime(e.target.value)} />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Arrival time</label>
-              <input className={inputCls} type="time" value={arrTime} onChange={e => setArrTime(e.target.value)} />
-            </div>
-          </div>
-
-          {/* Duration badge — shown when times + timezones are known */}
-          {duration !== null && (
-            <div className="flex items-center gap-2 px-3 py-2 bg-sky-50 border border-sky-200 rounded-lg text-sm text-sky-700">
-              <span>🕐</span>
-              <span className="font-semibold">Duration: {formatDuration(duration)}</span>
-              {originTimezone && destTimezone && originTimezone !== destTimezone && (
-                <span className="text-xs text-sky-500 ml-1">(timezone-adjusted)</span>
-              )}
-            </div>
-          )}
-
-          {/* Auto-detect overnight nudge */}
-          {cfg.overnightSupported && !overnight && depTime && arrTime && arrTime < depTime && (
-            <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm">
-              <span className="text-amber-600">⚠</span>
-              <span className="text-amber-800 flex-1">Arrival before departure — travelling overnight?</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setOvernight(true);
-                  advanceArrToNextDay(depDayId);
                 }}
-                className="px-3 py-1 bg-amber-600 text-white text-xs font-semibold rounded-md hover:bg-amber-700 whitespace-nowrap"
               >
-                Set overnight
-              </button>
-            </div>
-          )}
-
-          {/* Overnight toggle — only for overnight-capable types */}
-          {cfg.overnightSupported && (
-            <>
-              <label className="flex items-center gap-3 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={overnight}
-                  disabled={!depDayId}
-                  onChange={e => {
-                    setOvernight(e.target.checked);
-                    if (!e.target.checked) {
-                      setArrDayId(depDayId);
-                    } else {
-                      advanceArrToNextDay(depDayId);
-                    }
-                  }}
-                  className="w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                />
-                <span className="text-sm font-medium text-slate-700">Crosses midnight / Overnight</span>
-              </label>
-              {!depDayId && (
-                <p className="text-xs text-slate-400 ml-7">Select a departure day to enable overnight</p>
-              )}
-            </>
-          )}
-
-          {/* Arrival day picker — only when overnight is on */}
-          {overnight && cfg.overnightSupported && (
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Arrival day</label>
-              <select className={inputCls} value={arrDayId} onChange={e => setArrDayId(e.target.value)}>
                 <option value="">— none —</option>
                 {tripDays.map(d => (
                   <option key={d.id} value={d.id}>{formatDayLabel(d)}</option>
                 ))}
               </select>
             </div>
-          )}
 
-          {/* Carrier + Reference — config-driven */}
-          {(cfg.showCarrier || cfg.showReference) && (
-            <div className={`grid gap-3 ${cfg.showCarrier && cfg.showReference ? 'grid-cols-2' : 'grid-cols-1'}`}>
-              {cfg.showCarrier && (
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">
-                    {cfg.carrierLabel ?? 'Carrier'}
-                  </label>
-                  <input
-                    className={inputCls}
-                    value={carrier}
-                    onChange={e => setCarrier(e.target.value)}
-                    placeholder={cfg.carrierPlaceholder ?? ''}
-                  />
-                </div>
-              )}
-              {cfg.showReference && (
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">
-                    {cfg.referenceLabel ?? 'Reference'}
-                  </label>
-                  <input
-                    className={inputCls}
-                    value={reference}
-                    onChange={e => setReference(e.target.value)}
-                    placeholder={cfg.referencePlaceholder ?? ''}
-                  />
-                </div>
-              )}
+            {/* Departure time + Arrival time */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>Departure time</label>
+                <input className={inputCls} type="time" value={depTime} onChange={e => setDepTime(e.target.value)} />
+              </div>
+              <div>
+                <label className={labelCls}>Arrival time</label>
+                <input className={inputCls} type="time" value={arrTime} onChange={e => setArrTime(e.target.value)} />
+              </div>
             </div>
-          )}
 
-          {/* Cost + currency */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Cost</label>
-              <input className={inputCls} type="number" step="0.01" value={cost} onChange={e => setCost(e.target.value)} placeholder="0.00" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Currency</label>
-              <input className={inputCls} value={currency} onChange={e => setCurrency(e.target.value)} placeholder="USD" maxLength={10} />
-            </div>
+            {/* Duration badge */}
+            {duration !== null && (
+              <div
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium"
+                style={{ backgroundColor: `${activeColor}10`, color: activeColor }}
+              >
+                <ActiveIcon className="w-4 h-4" />
+                <span>{formatDuration(duration)}</span>
+                {originTimezone && destTimezone && originTimezone !== destTimezone && (
+                  <span className="text-xs opacity-70 ml-1">(timezone-adjusted)</span>
+                )}
+              </div>
+            )}
+
+            {/* Auto-detect overnight nudge */}
+            {cfg.overnightSupported && !overnight && depTime && arrTime && arrTime < depTime && (
+              <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm">
+                <span className="text-amber-600 text-base">⚠</span>
+                <span className="text-amber-800 flex-1">Arrival before departure — overnight?</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOvernight(true);
+                    advanceArrToNextDay(depDayId);
+                  }}
+                  className="px-3 py-1 bg-amber-600 text-white text-xs font-semibold rounded-md hover:bg-amber-700 whitespace-nowrap transition-colors"
+                >
+                  Set overnight
+                </button>
+              </div>
+            )}
+
+            {/* Overnight toggle */}
+            {cfg.overnightSupported && (
+              <>
+                <label className="flex items-center gap-3 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={overnight}
+                    disabled={!depDayId}
+                    onChange={e => {
+                      setOvernight(e.target.checked);
+                      if (!e.target.checked) {
+                        setArrDayId(depDayId);
+                      } else {
+                        advanceArrToNextDay(depDayId);
+                      }
+                    }}
+                    className="w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                  <span className="text-sm font-medium text-slate-700">Crosses midnight / Overnight</span>
+                </label>
+                {!depDayId && (
+                  <p className="text-xs text-slate-400 ml-7">Select a departure day first</p>
+                )}
+              </>
+            )}
+
+            {/* Arrival day picker — only when overnight */}
+            {overnight && cfg.overnightSupported && (
+              <div>
+                <label className={labelCls}>Arrival day</label>
+                <select className={inputCls} value={arrDayId} onChange={e => setArrDayId(e.target.value)}>
+                  <option value="">— none —</option>
+                  {tripDays.map(d => (
+                    <option key={d.id} value={d.id}>{formatDayLabel(d)}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
-          {/* Type-specific extras — config-driven */}
-          {cfg.showDistance && (
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Distance (km)</label>
-              <input
-                className={inputCls}
-                type="number"
-                value={distanceKm}
-                onChange={e => setDistanceKm(e.target.value)}
-                placeholder="e.g. 450"
-              />
-            </div>
-          )}
-          {cfg.showTolls && (
-            <label className="flex items-center gap-3 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={tolls}
-                onChange={e => setTolls(e.target.checked)}
-                className="w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
-              />
-              <span className="text-sm font-medium text-slate-700">Toll roads on this route</span>
-            </label>
-          )}
-          {cfg.showFrequency && (
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Frequency</label>
-              <input
-                className={inputCls}
-                value={frequency}
-                onChange={e => setFrequency(e.target.value)}
-                placeholder="e.g. every 2 hours, 3× daily"
-              />
+          {/* ═══ Section: Details ═══ */}
+          {(cfg.showCarrier || cfg.showReference || type === 'flight' || TRAVEL_CLASS_OPTIONS[type]) && (
+            <div className={sectionCls}>
+              {/* Carrier + Reference */}
+              {(cfg.showCarrier || cfg.showReference) && (
+                <div className={`grid gap-3 ${cfg.showCarrier && cfg.showReference ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                  {cfg.showCarrier && (
+                    <div>
+                      <label className={labelCls}>{cfg.carrierLabel ?? 'Carrier'}</label>
+                      <input
+                        className={inputCls}
+                        value={carrier}
+                        onChange={e => setCarrier(e.target.value)}
+                        placeholder={cfg.carrierPlaceholder ?? ''}
+                      />
+                    </div>
+                  )}
+                  {cfg.showReference && (
+                    <div>
+                      <label className={labelCls}>{cfg.referenceLabel ?? 'Reference'}</label>
+                      <input
+                        className={inputCls}
+                        value={reference}
+                        onChange={e => setReference(e.target.value)}
+                        placeholder={cfg.referencePlaceholder ?? ''}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Seat class — flights */}
+              {type === 'flight' && (
+                <div>
+                  <label className={labelCls}>Seat class</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(['economy', 'premium economy', 'business', 'first'] as const).map((cls) => (
+                      <button
+                        key={cls}
+                        type="button"
+                        onClick={() => setSeatClass(cls)}
+                        className={`px-3 py-1.5 text-xs font-medium rounded-lg border capitalize transition-colors ${
+                          seatClass === cls
+                            ? 'text-white border-transparent'
+                            : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                        }`}
+                        style={seatClass === cls ? { backgroundColor: activeColor } : undefined}
+                      >
+                        {cls}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Travel class — train, bus, ferry */}
+              {TRAVEL_CLASS_OPTIONS[type] && (
+                <div>
+                  <label className={labelCls}>Travel class</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {TRAVEL_CLASS_OPTIONS[type]!.map((cls) => {
+                      const active = (travelClass || TRAVEL_CLASS_OPTIONS[type]![0]) === cls;
+                      return (
+                        <button
+                          key={cls}
+                          type="button"
+                          onClick={() => setTravelClass(cls)}
+                          className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+                            active
+                              ? 'text-white border-transparent'
+                              : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                          }`}
+                          style={active ? { backgroundColor: activeColor } : undefined}
+                        >
+                          {cls}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
-          {/* Seat class — flights only */}
-          {type === 'flight' && (
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-2">Seat class</label>
-              <div className="flex flex-wrap gap-2">
-                {(['economy', 'premium economy', 'business', 'first'] as const).map((cls) => (
-                  <button
-                    key={cls}
-                    type="button"
-                    onClick={() => setSeatClass(cls)}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-lg border capitalize transition-colors ${
-                      seatClass === cls
-                        ? 'bg-sky-600 text-white border-sky-600'
-                        : 'bg-white text-slate-700 border-slate-200 hover:border-sky-300'
-                    }`}
-                  >
-                    {cls}
-                  </button>
-                ))}
+          {/* ═══ Section: Cost & extras ═══ */}
+          <div className={sectionCls}>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>Cost</label>
+                <input className={inputCls} type="number" step="0.01" value={cost} onChange={e => setCost(e.target.value)} placeholder="0.00" />
+              </div>
+              <div>
+                <label className={labelCls}>Currency</label>
+                <input className={inputCls} value={currency} onChange={e => setCurrency(e.target.value)} placeholder="USD" maxLength={10} />
               </div>
             </div>
-          )}
 
-          {/* Travel class — train, bus, ferry */}
-          {TRAVEL_CLASS_OPTIONS[type] && (
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-2">Travel class</label>
-              <div className="flex flex-wrap gap-2">
-                {TRAVEL_CLASS_OPTIONS[type]!.map((cls) => {
-                  const active = (travelClass || TRAVEL_CLASS_OPTIONS[type]![0]) === cls;
-                  return (
-                    <button
-                      key={cls}
-                      type="button"
-                      onClick={() => setTravelClass(cls)}
-                      className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
-                        active
-                          ? 'bg-sky-600 text-white border-sky-600'
-                          : 'bg-white text-slate-700 border-slate-200 hover:border-sky-300'
-                      }`}
-                    >
-                      {cls}
-                    </button>
-                  );
-                })}
+            {cfg.showDistance && (
+              <div>
+                <label className={labelCls}>Distance (km)</label>
+                <input className={inputCls} type="number" value={distanceKm} onChange={e => setDistanceKm(e.target.value)} placeholder="e.g. 450" />
               </div>
-            </div>
-          )}
+            )}
+            {cfg.showTolls && (
+              <label className="flex items-center gap-3 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={tolls}
+                  onChange={e => setTolls(e.target.checked)}
+                  className="w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                />
+                <span className="text-sm font-medium text-slate-700">Toll roads on this route</span>
+              </label>
+            )}
+            {cfg.showFrequency && (
+              <div>
+                <label className={labelCls}>Frequency</label>
+                <input className={inputCls} value={frequency} onChange={e => setFrequency(e.target.value)} placeholder="e.g. every 2 hours, 3× daily" />
+              </div>
+            )}
 
-          {/* Booked toggle */}
-          <label className="flex items-center gap-3 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={booked}
-              onChange={e => setBooked(e.target.checked)}
-              className="w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
-            />
-            <span className="text-sm font-medium text-slate-700">Booked / confirmed</span>
-          </label>
+            {cfg.showBooked && (
+              <label className="flex items-center gap-3 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={booked}
+                  onChange={e => setBooked(e.target.checked)}
+                  className="w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                />
+                <span className="text-sm font-medium text-slate-700">Booked / confirmed</span>
+              </label>
+            )}
+          </div>
 
           {/* Notes */}
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Notes</label>
-            <textarea className={inputCls} value={notes} onChange={e => setNotes(e.target.value)} rows={2} />
+            <label className={labelCls}>Notes</label>
+            <textarea className={inputCls} value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="Optional notes…" />
           </div>
 
-          <div className="flex gap-3 pt-2">
+          {/* ── Footer actions ── */}
+          <div className="flex items-center gap-3 pt-2">
+            {onDelete && (
+              <button
+                type="button"
+                onClick={onDelete}
+                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                title="Delete transport"
+              >
+                <Trash2 className="w-4.5 h-4.5" />
+              </button>
+            )}
+            <div className="flex-1" />
+            <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
+              Cancel
+            </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 px-4 py-2 font-semibold bg-sky-600 text-white rounded-xl hover:bg-sky-700 disabled:opacity-50 transition-colors"
+              className="px-5 py-2 text-sm font-semibold text-white rounded-xl shadow-sm hover:shadow-md disabled:opacity-50 transition-all"
+              style={{ backgroundColor: activeColor }}
             >
               {initialData ? 'Save changes' : 'Add transport'}
             </button>
-            <button type="button" onClick={onClose} className="px-4 py-2 font-medium text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
-              Cancel
-            </button>
           </div>
-
-          {onDelete && (
-            <button
-              type="button"
-              onClick={onDelete}
-              className="w-full py-2 text-sm text-red-500 hover:text-red-700 transition-colors"
-            >
-              Delete transport
-            </button>
-          )}
         </form>
       </div>
     </div>

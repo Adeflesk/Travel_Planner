@@ -8,6 +8,7 @@ import { MapPin } from 'lucide-react';
 import type { DayActivity, Destination, TripDay, TripTransport } from '@/lib/types';
 import type { TripContext } from '@/lib/trip-context';
 import { useGeocode } from '@/lib/useGeocode';
+import { TRANSPORT_COLOR } from '@/lib/transport-config';
 
 const MAPBOX_TOKEN = (process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? '').trim();
 // Mapbox Raster Tiles via Styles API — billed per tile request, not per map load.
@@ -31,6 +32,10 @@ export interface DayMapProps {
   tripContext?: TripContext | null;
   /** Called when user clicks an activity marker */
   onActivityClick?: (activityId: number) => void;
+  /** ID of the item being hovered in the timeline (activity id string or "transport-{id}") */
+  hoveredItemId?: string | null;
+  /** Called when a map marker is hovered */
+  onMarkerHover?: (id: string | null) => void;
 }
 
 interface LatLng {
@@ -134,17 +139,36 @@ function FitBounds({ points }: { points: LatLng[] }) {
   return null;
 }
 
+/** Smoothly pans to a coordinate when the hovered item changes. */
+function FlyToHovered({ target }: { target: LatLng | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!target) return;
+    const lat = Number(target.lat);
+    const lng = Number(target.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+    try {
+      map.flyTo([lat, lng], Math.max(map.getZoom(), 14), { duration: 0.6 });
+    } catch {
+      // Silently ignore invalid LatLng from Leaflet
+    }
+  }, [map, target]);
+  return null;
+}
+
 /** Renders a single activity marker, falling back to geocoding if no stored coords. */
 function ActivityMarker({
   activity,
   index,
-  highlightedId,
+  isHighlighted,
   onActivityClick,
+  onHover,
 }: {
   activity: DayActivity;
   index: number;
-  highlightedId?: number;
+  isHighlighted?: boolean;
   onActivityClick?: (id: number) => void;
+  onHover?: (id: string | null) => void;
 }) {
   // Use stored coords; only geocode if missing
   const needsGeocode = activity.latitude == null || activity.longitude == null;
@@ -155,7 +179,7 @@ function ActivityMarker({
 
   if (lat == null || lng == null) return null;
 
-  const icon = activityIcon(index, highlightedId === activity.id);
+  const icon = activityIcon(index, isHighlighted);
   const timeLabel = activity.end_time
     ? `${activity.start_time}–${activity.end_time}`
     : activity.start_time;
@@ -164,7 +188,11 @@ function ActivityMarker({
     <Marker
       position={[lat, lng]}
       icon={icon}
-      eventHandlers={{ click: () => onActivityClick?.(activity.id) }}
+      eventHandlers={{
+        click: () => onActivityClick?.(activity.id),
+        mouseover: () => onHover?.(String(activity.id)),
+        mouseout: () => onHover?.(null),
+      }}
     >
       <Popup>
         <div className="text-sm min-w-[140px]">
@@ -193,6 +221,8 @@ export default function DayMap({
   transports,
   tripContext,
   onActivityClick,
+  hoveredItemId,
+  onMarkerHover,
 }: DayMapProps) {
   // Destination pin — use stored coords; geocode name as fallback
   const linkedDestination = destinations.find((d) => d.id === day.destination_id);
@@ -234,6 +264,27 @@ export default function DayMap({
   // A linked destination is pending geocoding — don't fall back to home base yet
   const destPendingGeocode = !!linkedDestination && !destCoords;
   const hasAnyCoords = destCoords != null || hasActivityCoords || dayTransports.length > 0;
+
+  // Compute flyTo target from hoveredItemId
+  const flyToTarget: LatLng | null = useMemo(() => {
+    if (!hoveredItemId) return null;
+    if (hoveredItemId.startsWith('transport-')) {
+      const tId = parseInt(hoveredItemId.replace('transport-', ''), 10);
+      if (Number.isNaN(tId)) return null;
+      const t = dayTransports.find(tr => tr.id === tId);
+      if (t?.origin_latitude != null && t.origin_longitude != null) {
+        return { lat: t.origin_latitude, lng: t.origin_longitude };
+      }
+    } else {
+      const aId = parseInt(hoveredItemId, 10);
+      if (Number.isNaN(aId)) return null;
+      const a = sortedActivities.find(act => act.id === aId);
+      if (a?.latitude != null && a.longitude != null) {
+        return { lat: a.latitude, lng: a.longitude };
+      }
+    }
+    return null;
+  }, [hoveredItemId, dayTransports, sortedActivities]);
 
   // No coordinates anywhere — illustrated empty state (suppress while geocoding pending)
   if (!hasAnyCoords && !hasHomeBase && !destPendingGeocode) {
@@ -301,51 +352,73 @@ export default function DayMap({
             key={activity.id}
             activity={activity}
             index={i + 1}
+            isHighlighted={hoveredItemId === String(activity.id)}
             onActivityClick={onActivityClick}
+            onHover={onMarkerHover}
           />
         ))}
 
         {/* Activity route polyline */}
-        <ActivityRoutePolyline activities={sortedActivities} />
+        <ActivityRoutePolyline activities={sortedActivities} hoveredItemId={hoveredItemId} />
 
         {/* Transport routes + markers */}
-        {dayTransports.map((t) => (
-          <React.Fragment key={t.id}>
-            <Polyline
-              positions={[
-                [t.origin_latitude!, t.origin_longitude!],
-                [t.destination_latitude!, t.destination_longitude!],
-              ]}
-              pathOptions={{ color: '#f59e0b', weight: 2, dashArray: '6 4', opacity: 0.8 }}
-            />
-            <Marker
-              position={[t.origin_latitude!, t.origin_longitude!]}
-              icon={transportIcon(t.transport_type)}
-            >
-              <Popup>
-                <div className="text-sm min-w-[140px]">
-                  <div className="font-semibold">{t.origin}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">Departure</div>
-                  {t.departure_time && <div className="text-xs text-gray-400 mt-0.5">{t.departure_time}</div>}
-                  {t.carrier && <div className="text-xs text-blue-600 mt-0.5">{t.carrier}</div>}
-                </div>
-              </Popup>
-            </Marker>
-            <Marker
-              position={[t.destination_latitude!, t.destination_longitude!]}
-              icon={transportIcon(t.transport_type)}
-            >
-              <Popup>
-                <div className="text-sm min-w-[140px]">
-                  <div className="font-semibold">{t.destination}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">Arrival</div>
-                  {t.arrival_time && <div className="text-xs text-gray-400 mt-0.5">{t.arrival_time}</div>}
-                  {t.carrier && <div className="text-xs text-blue-600 mt-0.5">{t.carrier}</div>}
-                </div>
-              </Popup>
-            </Marker>
-          </React.Fragment>
-        ))}
+        {dayTransports.map((t) => {
+          const tHovered = hoveredItemId === `transport-${t.id}`;
+          const tColor = TRANSPORT_COLOR[t.transport_type] ?? TRANSPORT_COLOR.other;
+          return (
+            <React.Fragment key={t.id}>
+              <Polyline
+                positions={[
+                  [t.origin_latitude!, t.origin_longitude!],
+                  [t.destination_latitude!, t.destination_longitude!],
+                ]}
+                pathOptions={{
+                  color: tHovered ? tColor : '#f59e0b',
+                  weight: tHovered ? 3.5 : 2,
+                  dashArray: '6 4',
+                  opacity: tHovered ? 1 : 0.8,
+                }}
+              />
+              <Marker
+                position={[t.origin_latitude!, t.origin_longitude!]}
+                icon={transportIcon(t.transport_type)}
+                eventHandlers={{
+                  mouseover: () => onMarkerHover?.(`transport-${t.id}`),
+                  mouseout: () => onMarkerHover?.(null),
+                }}
+              >
+                <Popup>
+                  <div className="text-sm min-w-[140px]">
+                    <div className="font-semibold">{t.origin}</div>
+                    <div className="text-xs text-gray-500 mt-0.5">Departure</div>
+                    {t.departure_time && <div className="text-xs text-gray-400 mt-0.5">{t.departure_time}</div>}
+                    {t.carrier && <div className="text-xs text-blue-600 mt-0.5">{t.carrier}</div>}
+                  </div>
+                </Popup>
+              </Marker>
+              <Marker
+                position={[t.destination_latitude!, t.destination_longitude!]}
+                icon={transportIcon(t.transport_type)}
+                eventHandlers={{
+                  mouseover: () => onMarkerHover?.(`transport-${t.id}`),
+                  mouseout: () => onMarkerHover?.(null),
+                }}
+              >
+                <Popup>
+                  <div className="text-sm min-w-[140px]">
+                    <div className="font-semibold">{t.destination}</div>
+                    <div className="text-xs text-gray-500 mt-0.5">Arrival</div>
+                    {t.arrival_time && <div className="text-xs text-gray-400 mt-0.5">{t.arrival_time}</div>}
+                    {t.carrier && <div className="text-xs text-blue-600 mt-0.5">{t.carrier}</div>}
+                  </div>
+                </Popup>
+              </Marker>
+            </React.Fragment>
+          );
+        })}
+
+        {/* Fly to hovered item */}
+        <FlyToHovered target={flyToTarget} />
 
         {/* Auto-fit bounds */}
         <BoundsController
@@ -369,22 +442,62 @@ export default function DayMap({
 }
 
 // ---------------------------------------------------------------------------
-// Route polyline — reads stored coords from activities only
-// (geocoded fallback handled inside ActivityMarker; we don't duplicate here)
+// Animated route polyline — draws progressively, highlights active segment
 // ---------------------------------------------------------------------------
 
-function ActivityRoutePolyline({ activities }: { activities: DayActivity[] }) {
+function ActivityRoutePolyline({
+  activities,
+  hoveredItemId,
+}: {
+  activities: DayActivity[];
+  hoveredItemId?: string | null;
+}) {
+  const map = useMap();
+  const polylineRef = React.useRef<L.Polyline | null>(null);
+
   const points = activities
     .filter((a) => a.latitude != null && a.longitude != null)
-    .map((a) => [a.latitude!, a.longitude!] as [number, number]);
+    .map((a) => ({ id: a.id, pos: [a.latitude!, a.longitude!] as [number, number] }));
+
+  // Animate the polyline drawing on mount via dashOffset
+  useEffect(() => {
+    const raw = polylineRef.current?.getElement();
+    if (!raw || points.length < 2) return;
+    const el = raw as SVGPathElement;
+    const len = el.getTotalLength?.();
+    if (!len) return;
+    el.style.strokeDasharray = `${len}`;
+    el.style.strokeDashoffset = `${len}`;
+    el.style.transition = 'stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1)';
+    // Trigger after a frame so the transition runs
+    requestAnimationFrame(() => {
+      el.style.strokeDashoffset = '0';
+    });
+  }, [points.length, map]);
 
   if (points.length < 2) return null;
 
+  // Find index of hovered activity to highlight its segment
+  const hoveredIdx = hoveredItemId
+    ? points.findIndex((p) => String(p.id) === hoveredItemId)
+    : -1;
+
   return (
-    <Polyline
-      positions={points}
-      pathOptions={{ color: '#16a34a', weight: 2.5, dashArray: '8 5', opacity: 0.9 }}
-    />
+    <>
+      {/* Base route line */}
+      <Polyline
+        ref={polylineRef as React.Ref<L.Polyline>}
+        positions={points.map((p) => p.pos)}
+        pathOptions={{ color: '#16a34a', weight: 2.5, dashArray: '8 5', opacity: 0.6 }}
+      />
+      {/* Highlighted segment overlay */}
+      {hoveredIdx > 0 && (
+        <Polyline
+          positions={[points[hoveredIdx - 1].pos, points[hoveredIdx].pos]}
+          pathOptions={{ color: '#16a34a', weight: 4, opacity: 1 }}
+        />
+      )}
+    </>
   );
 }
 
