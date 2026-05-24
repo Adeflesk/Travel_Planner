@@ -64,7 +64,7 @@ export const DayBuilder = ({ day, tripId, onRefresh }: DayBuilderProps) => {
     const [isTransportSubmitting, setIsTransportSubmitting] = useState(false);
 
     // Accommodation badge for this day
-    const { getBadgeType } = useTripAccommodations(tripId);
+    const { accommodations, getBadgeType } = useTripAccommodations(tripId);
     const accommodationBadge = getBadgeType(day.date);
 
     // Map state
@@ -191,6 +191,8 @@ export const DayBuilder = ({ day, tripId, onRefresh }: DayBuilderProps) => {
                         onEditActivity={openEditForm}
                         transportItems={transportItems}
                         currentDayId={day.id}
+                        currentDayDate={day.date}
+                        accommodations={accommodations}
                         onEditTransport={openTransportEdit}
                         highlightedActivityId={highlightedActivityId}
                         highlightedItemId={hoveredItemId}
