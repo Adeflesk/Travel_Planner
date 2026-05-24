@@ -290,6 +290,8 @@ export interface Accommodation {
   address?: string;
   check_in_date: string;
   check_out_date: string;
+  check_in_time?: string;
+  check_out_time?: string;
   cost?: number;
   currency?: string;
   confirmation_number?: string;
@@ -309,6 +311,8 @@ export interface AccommodationCreate {
   address?: string;
   check_in_date: string;
   check_out_date: string;
+  check_in_time?: string;
+  check_out_time?: string;
   cost?: number;
   currency?: string;
   confirmation_number?: string;
