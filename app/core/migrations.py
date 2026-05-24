@@ -334,6 +334,17 @@ def run_migrations(engine: Engine) -> None:
         if add_column_if_not_exists(engine, "expenses", col_name, col_type, default):
             applied_migrations.append(f"expenses.{col_name}")
 
+    # Accommodation time columns
+    accommodation_time_columns = [
+        ("check_in_time", "VARCHAR(5)", "NULL"),
+        ("check_out_time", "VARCHAR(5)", "NULL"),
+    ]
+    for col_name, col_type, default in accommodation_time_columns:
+        if add_column_if_not_exists(
+            engine, "accommodations", col_name, col_type, default
+        ):
+            applied_migrations.append(f"accommodations.{col_name}")
+
     # Email reminder columns
     accommodation_reminder_columns = [
         ("cancel_reminder_sent", "BOOLEAN", "FALSE"),
