@@ -1,6 +1,7 @@
-import { DayActivity, TripTransport } from '@/lib/types';
+import { DayActivity, TripTransport, Accommodation } from '@/lib/types';
 import { ActivityBlock } from './ActivityBlock';
 import { TransportBlock } from './TransportBlock';
+import { AccommodationBlock } from '@/components/accommodations';
 import { TRANSPORT_ICON, TRANSPORT_COLOR } from '@/lib/transport-config';
 
 interface DayTimelineProps {
@@ -9,6 +10,8 @@ interface DayTimelineProps {
     onEditActivity: (activity: DayActivity) => void;
     transportItems?: TripTransport[];
     currentDayId?: number;
+    currentDayDate?: string;
+    accommodations?: Accommodation[];
     onEditTransport?: (t: TripTransport) => void;
     highlightedActivityId?: number;
     /** ID of the item being hovered from the map side (activity id or "transport-{id}") */
@@ -25,11 +28,20 @@ export const DayTimeline = ({
     onEditActivity,
     transportItems = [],
     currentDayId,
+    currentDayDate,
+    accommodations = [],
     onEditTransport,
     highlightedActivityId,
     highlightedItemId,
     onItemHover,
 }: DayTimelineProps) => {
+    const checkInAccommodations = currentDayDate
+        ? accommodations.filter(a => a.check_in_date === currentDayDate && a.check_in_time)
+        : [];
+    const checkOutAccommodations = currentDayDate
+        ? accommodations.filter(a => a.check_out_date === currentDayDate && a.check_out_time)
+        : [];
+
     return (
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden p-6 relative">
             <div className="relative border-l border-slate-200 ml-10 pb-10">
@@ -53,7 +65,7 @@ export const DayTimeline = ({
                     })}
                 </div>
 
-                {/* Render activities and transport dynamically */}
+                {/* Render activities, transport, and accommodation blocks */}
                 <div className="relative w-full h-272"> {/* 17 hours * 4rem */}
                     {scheduled.map(activity => (
                         <ActivityBlock
@@ -78,6 +90,20 @@ export const DayTimeline = ({
                             />
                         );
                     })}
+                    {checkInAccommodations.map(a => (
+                        <AccommodationBlock
+                            key={`checkin-${a.id}`}
+                            accommodation={a}
+                            type="check-in"
+                        />
+                    ))}
+                    {checkOutAccommodations.map(a => (
+                        <AccommodationBlock
+                            key={`checkout-${a.id}`}
+                            accommodation={a}
+                            type="check-out"
+                        />
+                    ))}
                 </div>
             </div>
 
