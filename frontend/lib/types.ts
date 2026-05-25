@@ -43,12 +43,13 @@ export interface DashboardData {
     preferred_currency: string;
   };
   action_items: Array<{
-    type: 'booking' | 'packing' | 'budget' | 'deadline';
+    type: 'booking' | 'packing' | 'budget' | 'deadline' | 'pre_trip_task' | 'activity_deadline';
     title: string;
     trip_name: string;
     trip_id: number;
     urgency: 'low' | 'medium' | 'high';
     detail: string;
+    day_id?: number | null;
   }>;
   recent_trips: Array<{
     id: number;
@@ -147,6 +148,7 @@ export interface TripTransport {
   destination_timezone?: string | null;
   extra?: Record<string, unknown>;
   options?: TransportOption[];
+  waypoints?: string | null;
 }
 
 export interface TripTransportCreate {
@@ -172,6 +174,7 @@ export interface TripTransportCreate {
   origin_timezone?: string | null;
   destination_timezone?: string | null;
   extra?: Record<string, unknown>;
+  waypoints?: string | null;
 }
 
 export type TripTransportUpdate = Partial<TripTransportCreate>;
@@ -326,6 +329,36 @@ export interface AccommodationCreate {
 }
 
 export type AccommodationUpdate = Partial<AccommodationCreate>;
+
+// Pre-Trip Task Types
+export type PreTripTaskStatus = 'pending' | 'booked' | 'paid';
+
+export interface PreTripTask {
+  id: number;
+  trip_id: number;
+  title: string;
+  description?: string | null;
+  status: PreTripTaskStatus;
+  book_by_date?: string | null;
+  url?: string | null;
+  cost?: number | null;
+  currency?: string | null;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface PreTripTaskCreate {
+  title: string;
+  description?: string;
+  status?: PreTripTaskStatus;
+  book_by_date?: string;
+  url?: string;
+  cost?: number;
+  currency?: string;
+  sort_order?: number;
+}
+
+export type PreTripTaskUpdate = Partial<PreTripTaskCreate>;
 
 // Auth Types
 export interface User {
@@ -508,6 +541,11 @@ export interface PracticalityResponse {
   segments: SegmentPracticality[];
 }
 
+export interface DayAlert {
+  text: string;
+  severity: 'warning' | 'info' | 'tip';
+}
+
 export interface TripDay {
   id: number;
   trip_id: number;
@@ -519,6 +557,7 @@ export interface TripDay {
   destination_id?: number | null;
   activities?: DayActivity[];
   transports?: TripTransport[];
+  alerts?: DayAlert[] | null;
 }
 
 export interface DayActivity {
@@ -539,6 +578,7 @@ export interface DayActivity {
   is_completed: boolean;
   latitude?: number;
   longitude?: number;
+  book_by_date?: string | null;
 }
 
 export interface DayActivityCreate extends Partial<DayActivity> {
@@ -554,6 +594,7 @@ export interface TripDayCreate {
   location?: string;
   notes?: string;
   destination_id?: number | null;
+  alerts?: DayAlert[] | null;
 }
 
 export interface UserSettings {

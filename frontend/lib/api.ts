@@ -30,6 +30,9 @@ import {
   Accommodation,
   AccommodationCreate,
   AccommodationUpdate,
+  PreTripTask,
+  PreTripTaskCreate,
+  PreTripTaskUpdate,
 } from './types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -440,6 +443,18 @@ export const authApi = {
 export const timezoneApi = {
   lookup: (lat: number, lng: number) =>
     api.get<{ timezone: string | null }>(`/timezone?lat=${lat}&lng=${lng}`),
+};
+
+// Pre-Trip Task API
+export const preTripApi = {
+  list: (tripId: number) =>
+    api.get<PreTripTask[]>(`/trips/${tripId}/pre-trip-tasks`),
+  create: (tripId: number, data: PreTripTaskCreate) =>
+    api.post<PreTripTask>(`/trips/${tripId}/pre-trip-tasks`, data),
+  update: (taskId: number, data: PreTripTaskUpdate) =>
+    api.patch<PreTripTask>(`/pre-trip-tasks/${taskId}`, data),
+  remove: (taskId: number) =>
+    api.delete(`/pre-trip-tasks/${taskId}`),
 };
 
 export default api;

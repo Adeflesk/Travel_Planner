@@ -15,6 +15,8 @@ const typeMeta = {
   packing: { icon: Package, label: 'Packing' },
   budget: { icon: AlertTriangle, label: 'Budget' },
   deadline: { icon: ClipboardList, label: 'Deadline' },
+  pre_trip_task: { icon: ClipboardList, label: 'Pre-Trip Task' },
+  activity_deadline: { icon: ClipboardCheck, label: 'Activity Deadline' },
 };
 
 const urgencyVariant = {
