@@ -23,6 +23,7 @@ import { Badge } from '@/components/ui/Badge';
 import { TripOverviewDashboard } from '@/components/trips/TripOverviewDashboard';
 import { TripSettings } from '@/components/trips/TripSettings';
 import { BudgetCard } from '@/components/budget';
+import { PreTripTaskList } from '@/components/pre-trip-tasks';
 
 function TripDetailContent() {
   const { isAuthenticated } = useAuth();
@@ -165,6 +166,13 @@ function TripDetailContent() {
               trip.is_owner !== false ? () => setShowSettings(true) : undefined
             }
           />
+
+          {/* Before you go — always visible, above tabs */}
+          {trip.is_owner !== false && (
+            <div className="mt-6">
+              <PreTripTaskList tripId={trip.id} />
+            </div>
+          )}
 
           {/* Tab navigation */}
           <div className="mt-6" data-testid="main-content">
