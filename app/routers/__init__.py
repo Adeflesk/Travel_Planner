@@ -24,6 +24,7 @@ from .accommodations import router as accommodations_router
 from .exchange_rates import router as exchange_rates_router
 from .timezone import router as timezone_router
 from .rate_history import router as rate_history_router
+from .pre_trip_tasks import router as pre_trip_tasks_router
 
 __all__ = [
     "health_router",
@@ -44,4 +45,5 @@ __all__ = [
     "exchange_rates_router",
     "timezone_router",
     "rate_history_router",
+    "pre_trip_tasks_router",
 ]

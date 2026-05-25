@@ -73,3 +73,6 @@ class Trip(Base):
     accommodations = relationship(
         "Accommodation", back_populates="trip", cascade="all, delete-orphan"
     )
+    pre_trip_tasks = relationship(
+        "PreTripTask", back_populates="trip", cascade="all, delete-orphan"
+    )
