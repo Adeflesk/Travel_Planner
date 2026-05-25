@@ -32,6 +32,15 @@ const CATEGORY_ICONS: Record<string, string> = {
     other: '📌',
 };
 
+function isApproachingDeadline(bookByDate: string | null | undefined): boolean {
+    if (!bookByDate) return false;
+    const deadline = new Date(bookByDate + 'T00:00:00');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diffDays = Math.floor((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    return diffDays >= 0 && diffDays <= 30;
+}
+
 export const ActivityBlock = ({ activity, onClick, highlighted, onHover }: ActivityBlockProps) => {
     const [startHour, startMin] = (activity.start_time ?? '00:00').split(':').map(Number);
     const totalStartMins = startHour * 60 + startMin;
@@ -81,6 +90,11 @@ export const ActivityBlock = ({ activity, onClick, highlighted, onHover }: Activ
                         style={{ backgroundColor: borderHex + '20', color: borderHex }}
                     >
                         ✓
+                    </span>
+                )}
+                {!activity.booked && isApproachingDeadline(activity.book_by_date) && (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center shrink-0 uppercase tracking-widest leading-none ml-1 self-start mt-0.5 bg-amber-50 text-amber-600">
+                        Book by {activity.book_by_date}
                     </span>
                 )}
             </div>

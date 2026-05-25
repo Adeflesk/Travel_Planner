@@ -25,19 +25,25 @@ export const ActivityForm = ({ activity, dayId, onSave, onClose, onDelete }: Act
             booked: activity?.booked || false,
             latitude: activity?.latitude ?? undefined,
             longitude: activity?.longitude ?? undefined,
+            book_by_date: activity?.book_by_date || '',
         }
     });
 
     const locationValue = watch('location') ?? '';
+    const bookedValue = watch('booked');
     const [loading, setLoading] = useState(false);
 
     const onSubmit = async (data: Partial<DayActivity>) => {
         setLoading(true);
         try {
+            const payload: Partial<DayActivity> = { ...data };
+            if (payload.booked) {
+                (payload as Record<string, unknown>).book_by_date = null;
+            }
             if (activity?.id) {
-                await onSave({ ...data, id: activity.id, day_id: dayId });
+                await onSave({ ...payload, id: activity.id, day_id: dayId });
             } else {
-                await onSave({ ...data, day_id: dayId });
+                await onSave({ ...payload, day_id: dayId });
             }
             onClose();
         } catch (e) {
@@ -117,6 +123,20 @@ export const ActivityForm = ({ activity, dayId, onSave, onClose, onDelete }: Act
                         <label htmlFor="activity-booked" className="text-sm font-semibold text-slate-700 cursor-pointer">Already booked / reserved?</label>
                         <input id="activity-booked" type="checkbox" {...register('booked')} className="w-5 h-5 text-sky-500 rounded border-slate-300" />
                     </div>
+
+                    {!bookedValue && (
+                        <div>
+                            <label htmlFor="activity-book-by-date" className="block text-sm font-semibold text-slate-700 mb-1">
+                                Book by date
+                            </label>
+                            <input
+                                id="activity-book-by-date"
+                                type="date"
+                                {...register('book_by_date')}
+                                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm"
+                            />
+                        </div>
+                    )}
 
                     <div className="flex items-center justify-between pt-4 border-t border-slate-100">
                         {activity?.id && onDelete ? (
