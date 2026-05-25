@@ -65,6 +65,7 @@ export function TransportForm({
   const [booked, setBooked] = useState(initialData?.booked ?? false);
   const [overnight, setOvernight] = useState(initialData?.overnight ?? false);
   const [notes, setNotes] = useState(initialData?.notes ?? '');
+  const [waypoints, setWaypoints] = useState(initialData?.waypoints ?? '');
   // Type-specific extras (stored in `extra` JSON field)
   const [distanceKm, setDistanceKm] = useState(
     (initialData?.extra?.distance_km as string) ?? ''
@@ -143,6 +144,7 @@ export function TransportForm({
       booked,
       overnight,
       notes: notes || undefined,
+      waypoints: type === 'drive' && waypoints ? waypoints : undefined,
       origin_latitude: originCoords?.lat,
       origin_longitude: originCoords?.lng,
       destination_latitude: destCoords?.lat,
@@ -265,6 +267,20 @@ export function TransportForm({
                 />
               </div>
             </div>
+
+            {/* Waypoints — drive only */}
+            {type === 'drive' && (
+              <div>
+                <label className={labelCls}>Intermediate stops (one per line)</label>
+                <textarea
+                  className={`${inputCls} resize-none`}
+                  rows={3}
+                  value={waypoints}
+                  onChange={e => setWaypoints(e.target.value)}
+                  placeholder={'Hoover Dam\nOatman, AZ\nSeligman, AZ'}
+                />
+              </div>
+            )}
           </div>
 
           {/* ═══ Section: Schedule ═══ */}

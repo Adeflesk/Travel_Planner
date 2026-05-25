@@ -62,6 +62,15 @@ export const TransportBlock = ({ transport, currentDayId, onClick, highlighted, 
                         </p>
                     </div>
                 </div>
+                {transport.transport_type === 'drive' && transport.waypoints && (
+                    <div className="px-2.5 pb-1.5 -mt-1">
+                        {transport.waypoints.split('\n').filter(Boolean).map((stop, i) => (
+                            <p key={i} className="text-[11px] text-slate-400 ml-5 leading-tight">
+                                ↳ {stop.trim()}
+                            </p>
+                        ))}
+                    </div>
+                )}
             </div>
         );
     }
