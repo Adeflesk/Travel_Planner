@@ -34,7 +34,9 @@ class DashboardStats(BaseModel):
     preferred_currency: str = "USD"
 
 
-ActionItemType = Literal["booking", "packing", "budget", "deadline"]
+ActionItemType = Literal[
+    "booking", "packing", "budget", "deadline", "pre_trip_task", "activity_deadline"
+]
 ActionItemUrgency = Literal["low", "medium", "high"]
 
 
@@ -45,6 +47,7 @@ class DashboardActionItem(BaseModel):
     trip_id: int
     urgency: ActionItemUrgency
     detail: str
+    day_id: Optional[int] = None
 
 
 class DashboardRecentTrip(BaseModel):
