@@ -42,6 +42,7 @@ class TripTransport(Base):
     extra = Column(
         JSON
     )  # type-specific metadata (flight_number, distance_km, frequency)
+    waypoints = Column(Text, nullable=True)
 
     trip = relationship("Trip", back_populates="transports")
     departure_day = relationship(
