@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { useTimeline } from './useTimeline';
+import { useTripAccommodations } from '@/components/accommodations/useTripAccommodations';
+import { AccommodationDayBadge } from '@/components/accommodations/AccommodationDayBadge';
 import { TripDay, TripTransport, TransportType } from '@/lib/types';
 import { format } from 'date-fns';
 import { parseSafeDate } from '@/lib/datetime-utils';
@@ -66,9 +68,10 @@ interface DaySectionProps {
   day: TripDay;
   transportItems: TripTransport[];
   tripId: number;
+  accommodationBadge?: { type: 'check-in' | 'staying' | 'check-out'; name: string } | null;
 }
 
-function DaySection({ day, transportItems, tripId }: DaySectionProps) {
+function DaySection({ day, transportItems, tripId, accommodationBadge }: DaySectionProps) {
   const activities = day.activities ?? [];
   const hasContent = activities.length > 0 || transportItems.length > 0;
 
@@ -119,6 +122,12 @@ function DaySection({ day, transportItems, tripId }: DaySectionProps) {
         </Link>
       </div>
 
+      {accommodationBadge && (
+        <div className="mb-2 pl-2">
+          <AccommodationDayBadge type={accommodationBadge.type} name={accommodationBadge.name} />
+        </div>
+      )}
+
       {!hasContent && (
         <p className="text-sm text-slate-400 italic pl-2 mb-3">Nothing planned · Open day to add items</p>
       )}
@@ -146,6 +155,7 @@ interface TripTimelineProps {
 
 export default function TripTimeline({ tripId }: TripTimelineProps) {
   const { days, loading, getTransportForDay, getUnscheduledTransport } = useTimeline(tripId);
+  const { getBadgeType } = useTripAccommodations(tripId);
 
   if (loading) {
     return (
@@ -197,6 +207,10 @@ export default function TripTimeline({ tripId }: TripTimelineProps) {
               day={day}
               transportItems={getTransportForDay(day.id)}
               tripId={tripId}
+              accommodationBadge={(() => {
+                const b = getBadgeType(day.date);
+                return b ? { type: b.type, name: b.accommodation.name } : null;
+              })()}
             />
           </div>
         ))}

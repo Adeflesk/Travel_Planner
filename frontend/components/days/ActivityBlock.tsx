@@ -16,7 +16,7 @@ const CATEGORY_BORDER_HEX: Record<string, string> = {
     visiting: '#EC4899',      // pink-500
     activity: '#0EA5E9',      // sky-500
     transport: '#F59E0B',     // amber-500
-    accommodation: '#10B981', // emerald-500
+    shopping: '#10B981',     // emerald-500
     other: '#94A3B8',         // slate-400
 };
 
@@ -28,7 +28,7 @@ const CATEGORY_ICONS: Record<string, string> = {
     visiting: '🏡',
     activity: '🧗',
     transport: '🚆',
-    accommodation: '🏨',
+    shopping: '🛍️',
     other: '📌',
 };
 

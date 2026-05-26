@@ -79,7 +79,7 @@ export const ActivityForm = ({ activity, dayId, onSave, onClose, onDelete }: Act
                                 <option value="visiting">Visiting</option>
                                 <option value="activity">Activity</option>
                                 <option value="transport">Transport</option>
-                                <option value="accommodation">Accommodation</option>
+                                <option value="shopping">Shopping</option>
                                 <option value="other">Other</option>
                             </select>
                         </div>
