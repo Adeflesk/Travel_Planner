@@ -51,6 +51,7 @@ from app.routers import (  # noqa: E402
     exchange_rates_router,
     timezone_router,
     rate_history_router,
+    pre_trip_tasks_router,
 )
 from app import models  # noqa: E402
 from database import engine  # noqa: E402
@@ -189,6 +190,7 @@ def create_app() -> FastAPI:
     app.include_router(exchange_rates_router)
     app.include_router(timezone_router)
     app.include_router(rate_history_router)
+    app.include_router(pre_trip_tasks_router)
 
     return app
 

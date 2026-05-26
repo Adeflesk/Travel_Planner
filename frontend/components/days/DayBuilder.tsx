@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import { TripDay, TripTransport, TripTransportCreate, TripTransportUpdate, Destination } from '@/lib/types';
+import { TripDay, TripTransport, TripTransportCreate, TripTransportUpdate, Destination, DayAlert } from '@/lib/types';
 import { X, Map, ChevronDown, ChevronUp } from 'lucide-react';
 import {
     ActivityForm,
@@ -11,7 +11,7 @@ import {
 } from './';
 import { Button } from '@/components/ui/Button';
 import { TransportForm, TransportItem, useTransport } from '@/components/transport';
-import { tripApi, destinationApi } from '@/lib/api';
+import { tripApi, destinationApi, dayApi } from '@/lib/api';
 import { useTripContext } from '@/lib/trip-context';
 import { useTripAccommodations, AccommodationDayBadge } from '@/components/accommodations';
 
@@ -129,6 +129,15 @@ export const DayBuilder = ({ day, tripId, onRefresh }: DayBuilderProps) => {
         setIsTransportFormOpen(true);
     };
 
+    const handleUpdateAlerts = async (newAlerts: DayAlert[]) => {
+        try {
+            await dayApi.updateDay(day.id, { alerts: newAlerts });
+            onRefresh();
+        } catch (e) {
+            console.error('Failed to update alerts', e);
+        }
+    };
+
     return (
         <div className="pb-24">
             {/* Two-column grid on lg+: timeline left, sticky map right */}
@@ -197,6 +206,8 @@ export const DayBuilder = ({ day, tripId, onRefresh }: DayBuilderProps) => {
                         highlightedActivityId={highlightedActivityId}
                         highlightedItemId={hoveredItemId}
                         onItemHover={setHoveredItemId}
+                        alerts={day.alerts}
+                        onUpdateAlerts={handleUpdateAlerts}
                     />
 
                     {/* Transport cards below timeline */}

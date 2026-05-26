@@ -1,7 +1,12 @@
 import datetime
-from typing import List, Optional
+from typing import List, Literal, Optional
 from pydantic import BaseModel, ConfigDict
 from .day_activity import DayActivityResponse
+
+
+class DayAlert(BaseModel):
+    text: str
+    severity: Literal["warning", "info", "tip"]
 
 
 class TripDayBase(BaseModel):
@@ -12,6 +17,7 @@ class TripDayBase(BaseModel):
     notes: Optional[str] = None
     sort_order: int = 0
     destination_id: Optional[int] = None
+    alerts: Optional[List[DayAlert]] = None
 
 
 class TripDayCreate(TripDayBase):
@@ -25,6 +31,7 @@ class TripDayUpdate(BaseModel):
     notes: Optional[str] = None
     sort_order: Optional[int] = None
     destination_id: Optional[int] = None
+    alerts: Optional[List[DayAlert]] = None
 
 
 class TripDayResponse(TripDayBase):

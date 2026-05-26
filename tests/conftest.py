@@ -121,6 +121,8 @@ def db_setup(db_engine, testing_session_local, setup_database):
         "user_settings",
         "trip_shares",
         "packing_items",
+        "pre_trip_tasks",  # new
+        "accommodations",  # was missing
         "day_activities",
         "transport_options",
         "activity_expenses",

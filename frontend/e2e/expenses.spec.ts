@@ -125,8 +125,8 @@ test.describe('Expense Management', () => {
     // Wait for expense to load with increased timeout
     await expect(authenticatedPage.getByText('Taxi Ride')).toBeVisible({ timeout: 15000 });
 
-    // Click edit button using a more reliable selector
-    await authenticatedPage.locator('.space-y-2 button').filter({ has: authenticatedPage.locator('svg') }).first().click();
+    // Click edit button
+    await authenticatedPage.getByRole('button', { name: 'Edit expense' }).first().click();
 
     // Verify edit mode
     await expect(authenticatedPage.getByRole('heading', { name: 'Edit Expense' })).toBeVisible();
@@ -158,8 +158,8 @@ test.describe('Expense Management', () => {
     // Wait for expense to load with increased timeout
     await expect(authenticatedPage.getByText('Museum Ticket')).toBeVisible({ timeout: 15000 });
 
-    // Click edit button using a more reliable selector
-    await authenticatedPage.locator('.space-y-2 button').filter({ has: authenticatedPage.locator('svg') }).first().click();
+    // Click edit button
+    await authenticatedPage.getByRole('button', { name: 'Edit expense' }).first().click();
 
     // Verify edit mode
     await expect(authenticatedPage.getByRole('heading', { name: 'Edit Expense' })).toBeVisible();
@@ -190,8 +190,8 @@ test.describe('Expense Management', () => {
     // Handle the confirm dialog
     authenticatedPage.on('dialog', (dialog) => dialog.accept());
 
-    // Click delete button using a more reliable selector (second button in the row)
-    await authenticatedPage.locator('.space-y-2 button').filter({ has: authenticatedPage.locator('svg') }).nth(1).click();
+    // Click delete button
+    await authenticatedPage.getByRole('button', { name: 'Delete expense' }).first().click();
 
     // Verify expense is removed
     await expect(authenticatedPage.getByText('Coffee Shop')).not.toBeVisible({ timeout: 5000 });

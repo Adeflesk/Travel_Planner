@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, Date, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 from .base import Base
 
@@ -27,6 +27,7 @@ class DayActivity(Base):
     is_completed = Column(Boolean, nullable=False, default=False)
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
+    book_by_date = Column(Date, nullable=True)
 
     day = relationship("TripDay", back_populates="activities")
     destination = relationship("Destination", back_populates="day_activities")

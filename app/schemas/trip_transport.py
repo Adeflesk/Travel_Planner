@@ -47,6 +47,7 @@ class TripTransportBase(BaseModel):
     origin_timezone: str | None = None
     destination_timezone: str | None = None
     extra: dict[str, Any] | None = None
+    waypoints: str | None = None
 
 
 class TripTransportCreate(TripTransportBase):
@@ -76,6 +77,7 @@ class TripTransportUpdate(BaseModel):
     origin_timezone: str | None = None
     destination_timezone: str | None = None
     extra: dict[str, Any] | None = None
+    waypoints: str | None = None
 
 
 class TripTransportRead(TripTransportBase):

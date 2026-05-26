@@ -21,3 +21,4 @@ from .day_activity import *  # noqa: F401, F403
 from .trip_transport import *  # noqa: F401, F403
 from .transport_option import *  # noqa: F401, F403
 from .accommodation import *  # noqa: F401, F403
+from .pre_trip_task import *  # noqa: F401, F403

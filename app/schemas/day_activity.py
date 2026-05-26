@@ -1,3 +1,4 @@
+import datetime
 from typing import Optional
 from pydantic import BaseModel, ConfigDict, model_validator
 
@@ -17,6 +18,7 @@ class DayActivityBase(BaseModel):
     is_completed: bool = False
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    book_by_date: datetime.date | None = None
 
 
 class DayActivityCreate(DayActivityBase):
@@ -46,6 +48,7 @@ class DayActivityUpdate(BaseModel):
     destination_id: Optional[int] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    book_by_date: datetime.date | None = None
 
 
 class DayActivityResponse(DayActivityBase):

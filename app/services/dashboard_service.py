@@ -169,6 +169,64 @@ def _get_action_items_for_trip(
             )
         )
 
+    # Pre-trip tasks: pending tasks with approaching book_by_date (within 30 days)
+    task_window = today + timedelta(days=30)
+    pending_tasks = (
+        db.query(models.PreTripTask)
+        .filter(
+            models.PreTripTask.trip_id == trip.id,
+            models.PreTripTask.status == "pending",
+            models.PreTripTask.book_by_date.isnot(None),
+            models.PreTripTask.book_by_date >= today,
+            models.PreTripTask.book_by_date <= task_window,
+        )
+        .order_by(models.PreTripTask.book_by_date)
+        .all()
+    )
+    for task in pending_tasks:
+        days_until = (task.book_by_date - today).days
+        urgency = _urgency_from_days(days_until)
+        items.append(
+            schemas.DashboardActionItem(
+                type="pre_trip_task",
+                title=task.title,
+                trip_name=trip.name,
+                trip_id=trip.id,
+                urgency=urgency,
+                detail=f"Book by {task.book_by_date.isoformat()}",
+            )
+        )
+
+    # Activity deadlines: unbooked activities with approaching book_by_date (within 30 days)
+    activity_window = today + timedelta(days=30)
+    deadline_activities = (
+        db.query(models.DayActivity)
+        .join(models.TripDay, models.DayActivity.day_id == models.TripDay.id)
+        .filter(
+            models.TripDay.trip_id == trip.id,
+            models.DayActivity.booked.is_(False),
+            models.DayActivity.book_by_date.isnot(None),
+            models.DayActivity.book_by_date >= today,
+            models.DayActivity.book_by_date <= activity_window,
+        )
+        .order_by(models.DayActivity.book_by_date)
+        .all()
+    )
+    for activity in deadline_activities:
+        days_until = (activity.book_by_date - today).days
+        urgency = _urgency_from_days(days_until)
+        items.append(
+            schemas.DashboardActionItem(
+                type="activity_deadline",
+                title=activity.title,
+                trip_name=trip.name,
+                trip_id=trip.id,
+                urgency=urgency,
+                detail=f"Book by {activity.book_by_date.isoformat()}",
+                day_id=activity.day_id,
+            )
+        )
+
     return items
 
 

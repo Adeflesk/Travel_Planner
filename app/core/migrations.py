@@ -247,6 +247,49 @@ def create_expense_link_tables(engine: Engine) -> None:
         logger.error(f"Failed to create expense link tables: {type(e).__name__}: {e}")
 
 
+def create_pre_trip_tasks_table(engine: Engine) -> None:
+    """Create pre_trip_tasks table if it doesn't exist."""
+    dialect = engine.dialect.name
+    if dialect == "postgresql":
+        create_sql = """
+            CREATE TABLE IF NOT EXISTS pre_trip_tasks (
+                id SERIAL PRIMARY KEY,
+                trip_id INTEGER NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+                title VARCHAR(500) NOT NULL,
+                description TEXT,
+                status VARCHAR(20) NOT NULL DEFAULT 'pending',
+                book_by_date DATE,
+                url TEXT,
+                cost FLOAT,
+                currency VARCHAR(10),
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+        """
+    else:
+        create_sql = """
+            CREATE TABLE IF NOT EXISTS pre_trip_tasks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                trip_id INTEGER NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+                title VARCHAR(500) NOT NULL,
+                description TEXT,
+                status VARCHAR(20) NOT NULL DEFAULT 'pending',
+                book_by_date DATE,
+                url TEXT,
+                cost REAL,
+                currency VARCHAR(10),
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """
+    try:
+        with engine.begin() as conn:
+            conn.execute(text(create_sql))
+        logger.info("Ensured pre_trip_tasks table exists")
+    except Exception as e:
+        logger.error(f"Failed to create pre_trip_tasks table: {type(e).__name__}: {e}")
+
+
 def run_migrations(engine: Engine) -> None:
     """Run all pending migrations."""
     logger.info("Running database migrations...")
@@ -364,6 +407,34 @@ def run_migrations(engine: Engine) -> None:
             engine, "trip_transports", col_name, col_type, default
         ):
             applied_migrations.append(f"trip_transports.{col_name}")
+
+    # Road trip features: new columns
+    road_trip_day_activity_columns = [
+        ("book_by_date", "DATE", "NULL"),
+    ]
+    for col_name, col_type, default in road_trip_day_activity_columns:
+        if add_column_if_not_exists(
+            engine, "day_activities", col_name, col_type, default
+        ):
+            applied_migrations.append(f"day_activities.{col_name}")
+
+    road_trip_day_columns = [
+        ("alerts", "TEXT", "NULL"),
+    ]
+    for col_name, col_type, default in road_trip_day_columns:
+        if add_column_if_not_exists(engine, "trip_days", col_name, col_type, default):
+            applied_migrations.append(f"trip_days.{col_name}")
+
+    road_trip_transport_columns = [
+        ("waypoints", "TEXT", "NULL"),
+    ]
+    for col_name, col_type, default in road_trip_transport_columns:
+        if add_column_if_not_exists(
+            engine, "trip_transports", col_name, col_type, default
+        ):
+            applied_migrations.append(f"trip_transports.{col_name}")
+
+    create_pre_trip_tasks_table(engine)
 
     migrations_run = len(applied_migrations)
     if migrations_run > 0:

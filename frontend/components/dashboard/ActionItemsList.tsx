@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { AlertTriangle, ClipboardCheck, ClipboardList, Package, Ticket } from 'lucide-react';
+import { AlertTriangle, Calendar, ClipboardCheck, ClipboardList, Clock, Package, Ticket } from 'lucide-react';
 import { DashboardData } from '@/lib/types';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
@@ -15,6 +15,8 @@ const typeMeta = {
   packing: { icon: Package, label: 'Packing' },
   budget: { icon: AlertTriangle, label: 'Budget' },
   deadline: { icon: ClipboardList, label: 'Deadline' },
+  pre_trip_task:     { icon: Calendar, label: 'Pre-trip' },
+  activity_deadline: { icon: Clock,    label: 'Deadline' },
 };
 
 const urgencyVariant = {
@@ -22,6 +24,13 @@ const urgencyVariant = {
   medium: 'warning',
   high: 'danger',
 } as const;
+
+function getItemHref(item: DashboardData['action_items'][0]): string {
+  if (item.type === 'activity_deadline' && item.day_id) {
+    return `/trips/${item.trip_id}/days/${item.day_id}`;
+  }
+  return `/trips/${item.trip_id}`;
+}
 
 export function ActionItemsList({ items }: ActionItemsListProps) {
   return (
@@ -52,7 +61,7 @@ export function ActionItemsList({ items }: ActionItemsListProps) {
             return (
               <Link
                 key={`${item.trip_id}-${item.type}-${index}`}
-                href={`/trips/${item.trip_id}`}
+                href={getItemHref(item)}
                 className="flex items-start gap-3 rounded-lg border border-slate-200 p-3 hover:border-slate-300 hover:bg-slate-50 transition-colors"
               >
                 <div className="mt-1 text-primary-500">
