@@ -128,6 +128,7 @@ def db_setup(db_engine, testing_session_local, setup_database):
         "activity_expenses",
         "transport_expenses",
         "stop_expenses",
+        "transport_stops",
         "trip_transports",
         "expenses",
         "destinations",

@@ -290,6 +290,53 @@ def create_pre_trip_tasks_table(engine: Engine) -> None:
         logger.error(f"Failed to create pre_trip_tasks table: {type(e).__name__}: {e}")
 
 
+def create_transport_stops_table(engine: Engine) -> None:
+    """Create transport_stops table if it doesn't exist."""
+    dialect = engine.dialect.name
+    if dialect == "postgresql":
+        create_sql = """
+            CREATE TABLE IF NOT EXISTS transport_stops (
+                id SERIAL PRIMARY KEY,
+                transport_id INTEGER NOT NULL
+                    REFERENCES trip_transports(id) ON DELETE CASCADE,
+                name VARCHAR(200) NOT NULL,
+                category VARCHAR(20),
+                duration_minutes INTEGER,
+                drive_minutes_from_previous INTEGER,
+                locked_arrival_time VARCHAR(5),
+                timezone VARCHAR(50),
+                latitude FLOAT,
+                longitude FLOAT,
+                requires_daylight BOOLEAN NOT NULL DEFAULT FALSE,
+                sort_order INTEGER NOT NULL DEFAULT 0
+            )
+        """
+    else:
+        create_sql = """
+            CREATE TABLE IF NOT EXISTS transport_stops (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                transport_id INTEGER NOT NULL
+                    REFERENCES trip_transports(id) ON DELETE CASCADE,
+                name VARCHAR(200) NOT NULL,
+                category VARCHAR(20),
+                duration_minutes INTEGER,
+                drive_minutes_from_previous INTEGER,
+                locked_arrival_time VARCHAR(5),
+                timezone VARCHAR(50),
+                latitude FLOAT,
+                longitude FLOAT,
+                requires_daylight INTEGER NOT NULL DEFAULT 0,
+                sort_order INTEGER NOT NULL DEFAULT 0
+            )
+        """
+    try:
+        with engine.begin() as conn:
+            conn.execute(text(create_sql))
+        logger.info("Ensured transport_stops table exists")
+    except Exception as e:
+        logger.error(f"Failed to create transport_stops table: {type(e).__name__}: {e}")
+
+
 def run_migrations(engine: Engine) -> None:
     """Run all pending migrations."""
     logger.info("Running database migrations...")
@@ -451,6 +498,8 @@ def run_migrations(engine: Engine) -> None:
     create_password_reset_tokens_table(engine)
 
     create_expense_link_tables(engine)
+
+    create_transport_stops_table(engine)
 
     # Create/Update trip_summary view
     create_trip_summary_view(engine)

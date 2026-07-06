@@ -22,3 +22,4 @@ from .trip_transport import *  # noqa: F401, F403
 from .transport_option import *  # noqa: F401, F403
 from .accommodation import *  # noqa: F401, F403
 from .pre_trip_task import *  # noqa: F401, F403
+from .transport_stop import *  # noqa: F401, F403
