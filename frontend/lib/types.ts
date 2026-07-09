@@ -151,6 +151,66 @@ export interface TripTransport {
   waypoints?: string | null;
 }
 
+// Transport Stop types
+export type StopCategory = 'viewpoint' | 'lunch' | 'fuel' | 'trailhead' | 'photo' | 'rest' | 'other';
+
+export interface TransportStop {
+  id: number;
+  transport_id: number;
+  name: string;
+  category?: StopCategory | null;
+  duration_minutes?: number | null;
+  drive_minutes_from_previous?: number | null;
+  locked_arrival_time?: string | null;  // "HH:MM"
+  timezone?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  requires_daylight: boolean;
+  sort_order: number;
+}
+
+export interface TransportStopCreate {
+  name: string;
+  category?: StopCategory | null;
+  duration_minutes?: number | null;
+  drive_minutes_from_previous?: number | null;
+  locked_arrival_time?: string | null;
+  timezone?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  requires_daylight?: boolean;
+  sort_order?: number;
+}
+
+export type TransportStopUpdate = Partial<TransportStopCreate>;
+
+// Schedule types
+export interface ScheduleWarning {
+  code: string;
+  stop_id?: number | null;
+  message: string;
+}
+
+export interface ScheduleItem {
+  id: number;
+  title: string;
+  arrival_local: string;
+  departure_local: string;
+  timezone: string;
+  duration_minutes: number;
+  drive_minutes_from_previous: number;
+  slack_before_minutes: number;
+  overrun_minutes: number;
+}
+
+export interface ScheduleResponse {
+  items: ScheduleItem[];
+  warnings: ScheduleWarning[];
+  day_start?: string | null;
+  day_end?: string | null;
+  sunset?: string | null;
+}
+
 export interface TripTransportCreate {
   transport_type: TransportType;
   origin: string;

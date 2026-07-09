@@ -7,12 +7,21 @@ All CRUD for DayActivity (day-linked and/or destination-linked).
 import datetime
 from decimal import Decimal
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app import models, schemas
 from app.core.deps import get_current_user
 from app.services.geocoding import geocode
+from app.services.schedule_service import (
+    compute_schedule,
+    activities_to_schedule_items,
+)
+from app.schemas.transport_stop import (
+    ScheduleItemOut,
+    ScheduleResponse,
+    ScheduleWarningOut,
+)
 from database import get_db
 
 router = APIRouter(tags=["activities"])
@@ -368,3 +377,92 @@ def delete_activity(
     _check_trip_access(activity, db, current_user, require_owner=True)
     db.delete(activity)
     db.commit()
+
+
+# ---------------------------------------------------------------------------
+# Schedule (computed, never persisted) — Phase 2
+# ---------------------------------------------------------------------------
+
+
+@router.get(
+    "/trip-days/{day_id}/schedule",
+    response_model=ScheduleResponse,
+)
+def get_day_schedule(
+    day_id: int,
+    departure_time: str = Query(..., description="HH:MM departure time"),
+    day_date: str = Query(..., description="YYYY-MM-DD date"),
+    day_end_target: str | None = Query(None, description="HH:MM target end"),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Cascade-schedule activities for a day, reusing the same algorithm
+    as the transport-stop scheduler."""
+    day = db.query(models.TripDay).filter(models.TripDay.id == day_id).first()
+    if not day:
+        raise HTTPException(status_code=404, detail="Day not found")
+    _require_trip_access(day.trip_id, db, current_user)
+
+    orm_activities = (
+        db.query(models.DayActivity)
+        .filter(models.DayActivity.day_id == day_id)
+        .order_by(models.DayActivity.sort_order)
+        .all()
+    )
+
+    schedule_items = activities_to_schedule_items(orm_activities)
+
+    # Default timezone: first activity's tz → trip tz → UTC
+    default_tz = "UTC"
+    if schedule_items and schedule_items[0].timezone:
+        default_tz = schedule_items[0].timezone
+    else:
+        trip = db.query(models.Trip).filter(models.Trip.id == day.trip_id).first()
+        if trip and trip.timezone:
+            default_tz = trip.timezone
+
+    # Sunset coords: use last activity with coords
+    sunset_coords = None
+    for a in reversed(orm_activities):
+        if a.latitude is not None and a.longitude is not None:
+            sunset_coords = (a.latitude, a.longitude)
+            break
+
+    parsed_date = datetime.date.fromisoformat(day_date)
+
+    result = compute_schedule(
+        stops=schedule_items,
+        departure_time=departure_time,
+        day_date=parsed_date,
+        default_timezone=default_tz,
+        day_end_target=day_end_target,
+        sunset_coords=sunset_coords,
+    )
+
+    return ScheduleResponse(
+        items=[
+            ScheduleItemOut(
+                id=item.id,
+                title=item.title,
+                arrival_local=item.arrival_local,
+                departure_local=item.departure_local,
+                timezone=item.timezone,
+                duration_minutes=item.duration_minutes,
+                drive_minutes_from_previous=item.drive_minutes_from_previous,
+                slack_before_minutes=item.slack_before_minutes,
+                overrun_minutes=item.overrun_minutes,
+            )
+            for item in result.items
+        ],
+        warnings=[
+            ScheduleWarningOut(
+                code=w.code,
+                stop_id=w.stop_id,
+                message=w.message,
+            )
+            for w in result.warnings
+        ],
+        day_start=result.day_start.isoformat() if result.day_start else None,
+        day_end=result.day_end.isoformat() if result.day_end else None,
+        sunset=result.sunset.isoformat() if result.sunset else None,
+    )

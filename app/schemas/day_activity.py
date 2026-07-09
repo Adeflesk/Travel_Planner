@@ -19,6 +19,10 @@ class DayActivityBase(BaseModel):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     book_by_date: datetime.date | None = None
+    # Phase 2: cascade-schedule support
+    duration_minutes: Optional[int] = None
+    time_locked: bool = False
+    timezone: Optional[str] = None
 
 
 class DayActivityCreate(DayActivityBase):
@@ -49,6 +53,10 @@ class DayActivityUpdate(BaseModel):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     book_by_date: datetime.date | None = None
+    # Phase 2: cascade-schedule support
+    duration_minutes: Optional[int] = None
+    time_locked: Optional[bool] = None
+    timezone: Optional[str] = None
 
 
 class DayActivityResponse(DayActivityBase):

@@ -328,3 +328,33 @@ def stops_to_schedule_items(stops) -> list[ScheduleInput]:
         )
         for s in stops
     ]
+
+
+# ---------------------------------------------------------------------------
+# Adapter: ORM activities → ScheduleInput (Phase 2)
+# ---------------------------------------------------------------------------
+
+
+def activities_to_schedule_items(activities) -> list[ScheduleInput]:
+    """Convert a list of ``DayActivity`` ORM objects to ``ScheduleInput``s.
+
+    Activities don't have ``drive_minutes_from_previous`` (they're in one
+    location), so it's always 0.  ``start_time`` becomes the locked anchor
+    only when ``time_locked`` is True.
+    """
+    return [
+        ScheduleInput(
+            id=a.id,
+            title=a.title,
+            duration_minutes=a.duration_minutes,
+            drive_minutes_from_previous=0,
+            locked_arrival_time=a.start_time
+            if getattr(a, "time_locked", False)
+            else None,
+            timezone=getattr(a, "timezone", None),
+            latitude=a.latitude,
+            longitude=a.longitude,
+            requires_daylight=False,
+        )
+        for a in activities
+    ]

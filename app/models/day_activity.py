@@ -28,6 +28,12 @@ class DayActivity(Base):
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
     book_by_date = Column(Date, nullable=True)
+    # Phase 2: cascade-schedule support (mirrors TransportStop fields)
+    duration_minutes = Column(Integer, nullable=True)  # how long the activity takes
+    time_locked = Column(
+        Boolean, nullable=False, default=False
+    )  # start_time is a hard anchor
+    timezone = Column(String(50), nullable=True)  # IANA timezone for this activity
 
     day = relationship("TripDay", back_populates="activities")
     destination = relationship("Destination", back_populates="day_activities")

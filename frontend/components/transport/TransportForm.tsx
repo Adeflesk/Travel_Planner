@@ -8,6 +8,8 @@ import { TRANSPORT_CONFIG, TRANSPORT_ICON, TRANSPORT_COLOR, TRANSPORT_LABEL } fr
 import { TransportLocationSearch } from './TransportLocationSearch';
 import type { TransportLocation } from './TransportLocationSearch';
 import { calculateFlightDuration, formatDuration } from '@/lib/timezone-utils';
+import { useTransportStops } from '@/lib/hooks/useTransportStops';
+import { TransportStopList, ScheduleTimeline } from './stops';
 
 interface TransportFormProps {
   tripDays: TripDay[];
@@ -270,15 +272,27 @@ export function TransportForm({
 
             {/* Waypoints — drive only */}
             {type === 'drive' && (
-              <div>
-                <label className={labelCls}>Intermediate stops (one per line)</label>
-                <textarea
-                  className={`${inputCls} resize-none`}
-                  rows={3}
-                  value={waypoints}
-                  onChange={e => setWaypoints(e.target.value)}
-                  placeholder={'Hoover Dam\nOatman, AZ\nSeligman, AZ'}
-                />
+              <div className="space-y-4 md:col-span-2">
+                {!initialData ? (
+                  <div>
+                    <label className={labelCls}>Intermediate stops (one per line)</label>
+                    <textarea
+                      className={`${inputCls} resize-none`}
+                      rows={3}
+                      value={waypoints}
+                      onChange={e => setWaypoints(e.target.value)}
+                      placeholder={'Hoover Dam\nOatman, AZ\nSeligman, AZ'}
+                    />
+                    <p className="text-xs text-slate-400 mt-1">Once added, you can edit duration, drive times, and locks for each stop.</p>
+                  </div>
+                ) : (
+                  <DriveStopsAndScheduleSection
+                    transport={initialData}
+                    departureTime={depTime}
+                    tripDays={tripDays}
+                    departureDayId={depDayId}
+                  />
+                )}
               </div>
             )}
           </div>
@@ -576,3 +590,44 @@ export function TransportForm({
     </div>
   );
 }
+
+interface DriveStopsAndScheduleSectionProps {
+  transport: TripTransport;
+  departureTime: string;
+  tripDays: TripDay[];
+  departureDayId: string;
+}
+
+const DriveStopsAndScheduleSection = ({ transport, departureTime, tripDays, departureDayId }: DriveStopsAndScheduleSectionProps) => {
+  const depDay = tripDays.find(d => d.id === parseInt(departureDayId, 10));
+  const dayDate = depDay?.date;
+
+  const {
+    stops,
+    schedule,
+    loading,
+    createStop,
+    updateStop,
+    deleteStop,
+    reorderStops,
+  } = useTransportStops(transport.id, departureTime || '08:00', dayDate);
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4 border-t border-slate-100">
+      <div className="space-y-4">
+        <TransportStopList
+          stops={stops}
+          onCreate={createStop}
+          onUpdate={updateStop}
+          onDelete={deleteStop}
+          onReorder={reorderStops}
+        />
+      </div>
+      <div className="space-y-4">
+        <h4 className="font-semibold text-slate-800 text-sm">Cascade Schedule & Warnings</h4>
+        <ScheduleTimeline schedule={schedule} loading={loading} />
+      </div>
+    </div>
+  );
+};
+

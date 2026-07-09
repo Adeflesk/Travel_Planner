@@ -62,14 +62,8 @@ export const TransportBlock = ({ transport, currentDayId, onClick, highlighted, 
                         </p>
                     </div>
                 </div>
-                {transport.transport_type === 'drive' && transport.waypoints && (
-                    <div className="px-2.5 pb-1.5 -mt-1">
-                        {transport.waypoints.split('\n').filter(Boolean).map((stop, i) => (
-                            <p key={i} className="text-[11px] text-slate-400 ml-5 leading-tight">
-                                ↳ {stop.trim()}
-                            </p>
-                        ))}
-                    </div>
+                {transport.transport_type === 'drive' && (
+                    <DriveStopsList transport={transport} />
                 )}
             </div>
         );
@@ -89,3 +83,37 @@ export const TransportBlock = ({ transport, currentDayId, onClick, highlighted, 
         </div>
     );
 };
+
+import { useTransportStops } from '@/lib/hooks/useTransportStops';
+
+const DriveStopsList = ({ transport }: { transport: TripTransport }) => {
+    const { stops } = useTransportStops(transport.id);
+
+    if (stops.length === 0) {
+        if (transport.waypoints) {
+            // Fallback to legacy waypoints display if stops haven't been backfilled/created yet
+            return (
+                <div className="px-2.5 pb-1.5 -mt-1">
+                    {transport.waypoints.split('\n').filter(Boolean).map((stop, i) => (
+                        <p key={i} className="text-[11px] text-slate-400 ml-5 leading-tight">
+                            ↳ {stop.trim()}
+                        </p>
+                    ))}
+                </div>
+            );
+        }
+        return null;
+    }
+
+    return (
+        <div className="px-2.5 pb-1.5 -mt-1 space-y-0.5 max-h-24 overflow-y-auto">
+            {stops.map((stop) => (
+                <p key={stop.id} className="text-[11px] text-slate-500 ml-5 leading-tight truncate">
+                    ↳ <span className="font-semibold">{stop.name}</span>
+                    {stop.locked_arrival_time ? ` (${stop.locked_arrival_time})` : ''}
+                </p>
+            ))}
+        </div>
+    );
+};
+

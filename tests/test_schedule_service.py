@@ -11,6 +11,7 @@ from unittest.mock import patch
 from app.services.schedule_service import (
     ScheduleInput,
     compute_schedule,
+    activities_to_schedule_items,
     DEFAULT_DURATION,
 )
 
@@ -415,3 +416,91 @@ def test_grand_canyon_to_moab_full_day():
     # No overrun warnings expected
     overrun_warnings = [w for w in r.warnings if w.code == "overrun"]
     assert len(overrun_warnings) == 0
+
+
+# ---------------------------------------------------------------------------
+# 14. activities_to_schedule_items adapter (Phase 2)
+# ---------------------------------------------------------------------------
+
+
+class _FakeActivity:
+    """Minimal stand-in for a DayActivity ORM object — no DB needed."""
+
+    def __init__(self, **kwargs):
+        self.id = kwargs.get("id", 1)
+        self.title = kwargs.get("title", "Activity")
+        self.start_time = kwargs.get("start_time")
+        self.duration_minutes = kwargs.get("duration_minutes")
+        self.time_locked = kwargs.get("time_locked", False)
+        self.timezone = kwargs.get("timezone")
+        self.latitude = kwargs.get("latitude")
+        self.longitude = kwargs.get("longitude")
+
+
+def test_adapter_maps_basic_activity():
+    """Adapter produces a ScheduleInput with correct fields."""
+    a = _FakeActivity(
+        id=10, title="Museum", duration_minutes=90, timezone="Europe/London"
+    )
+    items = activities_to_schedule_items([a])
+    assert len(items) == 1
+    si = items[0]
+    assert si.id == 10
+    assert si.title == "Museum"
+    assert si.duration_minutes == 90
+    assert si.drive_minutes_from_previous == 0  # activities have no drive time
+    assert si.locked_arrival_time is None
+    assert si.timezone == "Europe/London"
+
+
+def test_adapter_locked_activity():
+    """When time_locked=True, start_time becomes the locked anchor."""
+    a = _FakeActivity(id=20, title="Show", start_time="14:00", time_locked=True)
+    items = activities_to_schedule_items([a])
+    assert items[0].locked_arrival_time == "14:00"
+
+
+def test_adapter_unlocked_ignores_start_time():
+    """When time_locked=False, start_time is NOT used as a locked anchor."""
+    a = _FakeActivity(id=30, title="Lunch", start_time="12:00", time_locked=False)
+    items = activities_to_schedule_items([a])
+    assert items[0].locked_arrival_time is None
+
+
+def test_adapter_missing_duration():
+    """Missing duration_minutes maps through as None (scheduler defaults to 30)."""
+    a = _FakeActivity(id=40, title="Quick stop")
+    items = activities_to_schedule_items([a])
+    assert items[0].duration_minutes is None
+
+
+def test_adapter_empty_list():
+    """Empty list in, empty list out."""
+    assert activities_to_schedule_items([]) == []
+
+
+def test_adapter_schedule_integration():
+    """Activities adapter + compute_schedule produces correct times."""
+    activities = [
+        _FakeActivity(id=1, title="Breakfast", duration_minutes=30),
+        _FakeActivity(
+            id=2,
+            title="Tour",
+            duration_minutes=90,
+            start_time="10:00",
+            time_locked=True,
+        ),
+        _FakeActivity(id=3, title="Lunch", duration_minutes=45),
+    ]
+    items = activities_to_schedule_items(activities)
+    r = compute_schedule(items, "08:00", DAY, "America/Phoenix")
+    assert len(r.items) == 3
+    # Breakfast: 08:00 + 0 drive + 30 dur = 08:30 depart
+    assert r.items[0].arrival_local == "08:00"
+    assert r.items[0].departure_local == "08:30"
+    # Tour: locked at 10:00, arrives at 08:30, slack = 90 min
+    assert r.items[1].arrival_local == "10:00"
+    assert r.items[1].slack_before_minutes == 90
+    # Lunch: 10:00 + 90 dur = 11:30 arrive, +45 dur = 12:15 depart
+    assert r.items[2].arrival_local == "11:30"
+    assert r.items[2].departure_local == "12:15"

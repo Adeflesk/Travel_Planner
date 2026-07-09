@@ -465,6 +465,18 @@ def run_migrations(engine: Engine) -> None:
         ):
             applied_migrations.append(f"day_activities.{col_name}")
 
+    # Phase 2: cascade-schedule columns for day_activities
+    day_activity_schedule_columns = [
+        ("duration_minutes", "INTEGER", "NULL"),
+        ("time_locked", "BOOLEAN", "FALSE"),
+        ("timezone", "VARCHAR(50)", "NULL"),
+    ]
+    for col_name, col_type, default in day_activity_schedule_columns:
+        if add_column_if_not_exists(
+            engine, "day_activities", col_name, col_type, default
+        ):
+            applied_migrations.append(f"day_activities.{col_name}")
+
     road_trip_day_columns = [
         ("alerts", "TEXT", "NULL"),
     ]
@@ -500,6 +512,11 @@ def run_migrations(engine: Engine) -> None:
     create_expense_link_tables(engine)
 
     create_transport_stops_table(engine)
+
+    # Backfill legacy waypoints text → TransportStop rows (idempotent)
+    from migrations.backfill_waypoints import backfill_waypoints
+
+    backfill_waypoints(engine)
 
     # Create/Update trip_summary view
     create_trip_summary_view(engine)

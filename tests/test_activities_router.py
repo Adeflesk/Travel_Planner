@@ -235,3 +235,107 @@ def test_update_activity_geocodes_new_location(client, test_user, db_session):
     data = resp.json()
     assert data["latitude"] == 51.5074
     mock_geo.assert_called_once_with("London")
+
+
+# ---------------------------------------------------------------------------
+# Schedule endpoint (Phase 2)
+# ---------------------------------------------------------------------------
+
+
+def test_day_schedule_basic(client, test_user, db_session):
+    """GET /trip-days/{day_id}/schedule returns cascade-computed times."""
+    trip, _dest = _make_trip_with_dest(db_session, test_user["user"].id)
+    day = _make_day(db_session, trip.id)
+
+    # Create two activities
+    client.post(
+        "/activities/",
+        json={
+            "title": "Breakfast",
+            "day_id": day.id,
+            "duration_minutes": 30,
+            "sort_order": 0,
+        },
+    )
+    client.post(
+        "/activities/",
+        json={
+            "title": "Museum",
+            "day_id": day.id,
+            "duration_minutes": 90,
+            "sort_order": 1,
+        },
+    )
+
+    resp = client.get(
+        f"/trip-days/{day.id}/schedule",
+        params={
+            "departure_time": "09:00",
+            "day_date": "2030-01-02",
+        },
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data["items"]) == 2
+    assert data["items"][0]["title"] == "Breakfast"
+    assert data["items"][0]["arrival_local"] == "09:00"
+    assert data["items"][0]["departure_local"] == "09:30"
+    assert data["items"][1]["title"] == "Museum"
+    assert data["items"][1]["arrival_local"] == "09:30"
+    assert data["items"][1]["departure_local"] == "11:00"
+
+
+def test_day_schedule_empty(client, test_user, db_session):
+    """Schedule for a day with no activities returns empty items."""
+    trip, _dest = _make_trip_with_dest(db_session, test_user["user"].id)
+    day = _make_day(db_session, trip.id)
+
+    resp = client.get(
+        f"/trip-days/{day.id}/schedule",
+        params={
+            "departure_time": "09:00",
+            "day_date": "2030-01-02",
+        },
+    )
+    assert resp.status_code == 200
+    assert resp.json()["items"] == []
+
+
+def test_day_schedule_with_locked_activity(client, test_user, db_session):
+    """Locked activity holds its time and shows slack."""
+    trip, _dest = _make_trip_with_dest(db_session, test_user["user"].id)
+    day = _make_day(db_session, trip.id)
+
+    client.post(
+        "/activities/",
+        json={
+            "title": "Free morning",
+            "day_id": day.id,
+            "duration_minutes": 30,
+            "sort_order": 0,
+        },
+    )
+    client.post(
+        "/activities/",
+        json={
+            "title": "Booked show",
+            "day_id": day.id,
+            "duration_minutes": 120,
+            "start_time": "14:00",
+            "time_locked": True,
+            "sort_order": 1,
+        },
+    )
+
+    resp = client.get(
+        f"/trip-days/{day.id}/schedule",
+        params={
+            "departure_time": "09:00",
+            "day_date": "2030-01-02",
+        },
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    # Booked show: locked at 14:00, plan arrives at 09:30 → slack = 270 min
+    assert data["items"][1]["arrival_local"] == "14:00"
+    assert data["items"][1]["slack_before_minutes"] == 270

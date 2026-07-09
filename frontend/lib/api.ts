@@ -33,6 +33,10 @@ import {
   PreTripTask,
   PreTripTaskCreate,
   PreTripTaskUpdate,
+  TransportStop,
+  TransportStopCreate,
+  TransportStopUpdate,
+  ScheduleResponse,
 } from './types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -293,6 +297,25 @@ export const transportApi = {
     return api.put<TripTransport>(`/transport/${id}`, cleanedData);
   },
   delete: (id: number) => api.delete(`/transport/${id}`),
+};
+
+// Transport Stop API
+export const transportStopApi = {
+  list: (transportId: number) =>
+    api.get<TransportStop[]>(`/transport/${transportId}/stops`),
+  create: (transportId: number, data: TransportStopCreate) =>
+    api.post<TransportStop>(`/transport/${transportId}/stops`, data),
+  update: (transportId: number, stopId: number, data: TransportStopUpdate) =>
+    api.put<TransportStop>(`/transport/${transportId}/stops/${stopId}`, data),
+  delete: (transportId: number, stopId: number) =>
+    api.delete(`/transport/${transportId}/stops/${stopId}`),
+  reorder: (transportId: number, stops: { id: number; sort_order: number }[]) =>
+    api.put<TransportStop[]>(`/transport/${transportId}/stops/reorder`, { stops }),
+  getSchedule: (transportId: number, params: {
+    departure_time: string;
+    day_date: string;
+    day_end_target?: string;
+  }) => api.get<ScheduleResponse>(`/transport/${transportId}/schedule`, { params }),
 };
 
 // Transport Option API
