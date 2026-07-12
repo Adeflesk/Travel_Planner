@@ -15,38 +15,13 @@ from decimal import Decimal
 
 from app import schemas, models
 from app.core.deps import get_current_user
+from app.core.trip_access import TripAccess, get_trip_with_access
 from database import get_db
 from app.services.budget_service import check_expense_impact
 from app.services.expense_service import get_expense_summary as svc_get_expense_summary
 from app.services.exchange_rate import convert
 
 router = APIRouter()
-
-
-def check_trip_access(
-    trip_id: int, db: Session, current_user: models.User, require_owner: bool = False
-) -> models.Trip:
-    """Check user has access to the trip."""
-    trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
-    if not trip:
-        raise HTTPException(status_code=404, detail="Trip not found")
-
-    if trip.user_id == current_user.id:
-        return trip
-
-    if not require_owner:
-        share = (
-            db.query(models.TripShare)
-            .filter(
-                models.TripShare.trip_id == trip_id,
-                models.TripShare.user_id == current_user.id,
-            )
-            .first()
-        )
-        if share:
-            return trip
-
-    raise HTTPException(status_code=404, detail="Trip not found")
 
 
 def _resolve_conversion(
@@ -97,7 +72,7 @@ def check_budget(
     current_user: models.User = Depends(get_current_user),
 ):
     """Check if adding an expense would exceed the trip budget."""
-    trip = check_trip_access(expense.trip_id, db, current_user)
+    trip = get_trip_with_access(expense.trip_id, db, current_user, "view")
     base_currency = trip.default_currency or "USD"
 
     _, base_amount = _resolve_conversion(
@@ -123,7 +98,7 @@ def create_expense(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    trip = check_trip_access(expense.trip_id, db, current_user, require_owner=True)
+    trip = get_trip_with_access(expense.trip_id, db, current_user, "edit")
     base_currency = trip.default_currency or "USD"
 
     exchange_rate, base_amount = _resolve_conversion(
@@ -150,14 +125,12 @@ def create_expense(
     tags=["expenses"],
 )
 def get_trip_expenses(
-    trip_id: int,
+    trip: models.Trip = Depends(TripAccess("view")),
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
 ):
-    check_trip_access(trip_id, db, current_user)
     expenses = (
         db.query(models.Expense)
-        .filter(models.Expense.trip_id == trip_id)
+        .filter(models.Expense.trip_id == trip.id)
         .order_by(models.Expense.date)
         .all()
     )
@@ -175,7 +148,7 @@ def update_expense(
     if not expense:
         raise HTTPException(status_code=404, detail="Expense not found")
 
-    trip = check_trip_access(expense.trip_id, db, current_user, require_owner=True)
+    trip = get_trip_with_access(expense.trip_id, db, current_user, "edit")
     base_currency = trip.default_currency or "USD"
 
     update_data = expense_update.model_dump(exclude_unset=True)
@@ -229,7 +202,7 @@ def delete_expense(
     if not expense:
         raise HTTPException(status_code=404, detail="Expense not found")
 
-    check_trip_access(expense.trip_id, db, current_user, require_owner=True)
+    get_trip_with_access(expense.trip_id, db, current_user, "edit")
 
     db.delete(expense)
     db.commit()
@@ -242,12 +215,10 @@ def delete_expense(
     tags=["expenses"],
 )
 def get_expense_summary(
-    trip_id: int,
+    trip: models.Trip = Depends(TripAccess("view")),
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
 ):
-    check_trip_access(trip_id, db, current_user)
-    result = svc_get_expense_summary(trip_id, db)
+    result = svc_get_expense_summary(trip.id, db)
     if result is None:
         raise HTTPException(status_code=404, detail="Trip not found")
     return result

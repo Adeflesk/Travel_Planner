@@ -141,10 +141,10 @@ def test_frontend_url_defaults_in_dev(monkeypatch):
 
 
 def test_get_trip_or_404_checks_permission_field():
-    """get_trip_or_404 should reference share.permission in its access check."""
-    from app.routers.trips import get_trip_or_404
+    """get_trip_with_access should reference share.permission in its access check."""
+    from app.core.trip_access import get_trip_with_access
 
-    source = inspect.getsource(get_trip_or_404)
+    source = inspect.getsource(get_trip_with_access)
     assert (
         "share.permission" in source or "permission" in source
-    ), "get_trip_or_404 does not check the permission field on TripShare"
+    ), "get_trip_with_access does not check the permission field on TripShare"

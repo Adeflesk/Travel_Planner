@@ -51,7 +51,7 @@ def test_create_expense(client, test_user, db_session):
 
 
 def test_create_expense_non_owner_forbidden(client, test_user, db_session):
-    """Test non-owner cannot create expense"""
+    """View-only shared user receives 403 (not 404) on mutation — existence is known."""
     db = db_session
 
     other, _ = create_user_and_token(db, "owner@example.com")
@@ -93,7 +93,7 @@ def test_create_expense_non_owner_forbidden(client, test_user, db_session):
         "destination_id": dest.id,
     }
     resp = client.post("/expenses/", json=payload)
-    assert resp.status_code == 404
+    assert resp.status_code == 403
 
 
 def test_get_destination_expenses(client, test_user, db_session):
@@ -204,7 +204,7 @@ def test_update_expense(client, test_user, db_session):
 
 
 def test_update_expense_non_owner_forbidden(client, test_user, db_session):
-    """Test non-owner cannot update expense"""
+    """View-only shared user receives 403 (not 404) on mutation — existence is known."""
     db = db_session
 
     other, _ = create_user_and_token(db, "owner@example.com")
@@ -250,7 +250,7 @@ def test_update_expense_non_owner_forbidden(client, test_user, db_session):
 
     payload = {"amount": "50.00"}
     resp = client.put(f"/expenses/{exp.id}", json=payload)
-    assert resp.status_code == 404
+    assert resp.status_code == 403
 
 
 def test_update_expense_not_found(client, test_user):
@@ -309,7 +309,7 @@ def test_delete_expense(client, test_user, db_session):
 
 
 def test_delete_expense_non_owner_forbidden(client, test_user, db_session):
-    """Test non-owner cannot delete expense"""
+    """View-only shared user receives 403 (not 404) on mutation — existence is known."""
     db = db_session
 
     other, _ = create_user_and_token(db, "owner@example.com")
@@ -354,7 +354,7 @@ def test_delete_expense_non_owner_forbidden(client, test_user, db_session):
     db.commit()
 
     resp = client.delete(f"/expenses/{exp.id}")
-    assert resp.status_code == 404
+    assert resp.status_code == 403
 
 
 def test_delete_expense_not_found(client, test_user):

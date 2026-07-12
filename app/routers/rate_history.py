@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from app.core.deps import get_current_user
 from app import models
-from app.routers.expenses import check_trip_access
+from app.core.trip_access import TripAccess
 from app.schemas.rate_snapshot import (
     CurrencyRateSummary,
     GlobalRateSummary,
@@ -53,20 +53,17 @@ def _build_currency_summary(
 
 @router.get("/trip/{trip_id}", response_model=TripRateSummary)
 def get_trip_rate_summary(
-    trip_id: int,
+    trip: models.Trip = Depends(TripAccess("view")),
     days: int = Query(default=30, ge=1, le=365),
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
 ):
     """
     Return exchange rate summary for all currencies used in a trip.
 
     Includes current live rate and historical snapshots for the last N days.
     """
-    trip = check_trip_access(trip_id, db, current_user)
-
     base = (trip.default_currency or "USD").upper()
-    target_currencies = get_currencies_used_in_trip(db, trip_id)
+    target_currencies = get_currencies_used_in_trip(db, trip.id)
 
     now = datetime.now(timezone.utc)
     from_date = now - timedelta(days=days)

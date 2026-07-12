@@ -111,8 +111,8 @@ def test_update_trip_non_owner_forbidden(client, db_session, test_user):
 
     update = {"name": "NewName"}
     resp = client.put(f"/trips/{trip.id}", json=update)
-    # require_owner=True in update -> should be treated as not found for non-owner
-    assert resp.status_code == 404
+    # view-only shared user receives 403 on update
+    assert resp.status_code == 403
 
 
 def test_share_trip_errors_and_create_and_delete(

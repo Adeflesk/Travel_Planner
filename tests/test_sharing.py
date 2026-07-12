@@ -238,7 +238,9 @@ class TestTripSharing:
             json={"email": "someone@example.com"},
             headers=other_user["headers"],
         )
-        assert response.status_code == 404  # Trip "not found" for sharing
+        assert (
+            response.status_code == 403
+        )  # Trip "forbidden" for sharing by view-only shared user
 
     def test_list_trip_shares(self, client, owner_user, other_user, trip):
         """Test listing shares for a trip."""
@@ -271,7 +273,7 @@ class TestTripSharing:
         response = client.get(
             f"/trips/{trip.id}/shares/", headers=other_user["headers"]
         )
-        assert response.status_code == 404
+        assert response.status_code == 403
 
     def test_remove_share(self, client, owner_user, other_user, trip):
         """Test removing a share."""
@@ -327,7 +329,7 @@ class TestTripSharing:
             json={"name": "Modified Trip"},
             headers=other_user["headers"],
         )
-        assert response.status_code == 404  # Not found (access denied)
+        assert response.status_code == 403  # Forbidden (access denied)
 
     def test_shared_user_cannot_delete_trip(self, client, owner_user, other_user, trip):
         """Test that a shared user cannot delete the trip."""
@@ -340,7 +342,7 @@ class TestTripSharing:
 
         # other_user tries to delete trip
         response = client.delete(f"/trips/{trip.id}", headers=other_user["headers"])
-        assert response.status_code == 404  # Not found (access denied)
+        assert response.status_code == 403  # Forbidden (access denied)
 
     def test_shared_trips_appear_in_list(self, client, owner_user, other_user, trip):
         """Test that shared trips appear in the user's trip list."""

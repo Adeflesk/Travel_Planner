@@ -29,7 +29,6 @@ from starlette.middleware.base import BaseHTTPMiddleware  # noqa: E402
 from starlette.requests import Request as StarletteRequest  # noqa: E402
 from starlette.responses import Response as StarletteResponse  # noqa: E402
 from slowapi.errors import RateLimitExceeded  # noqa: E402
-from sqlalchemy import text  # noqa: E402
 
 from app.core.rate_limit import limiter  # noqa: E402
 from app.core.migrations import run_migrations  # noqa: E402
@@ -79,44 +78,27 @@ _scheduler = BackgroundScheduler()
 def _run_reminders_job() -> None:
     """APScheduler job: open a DB session, run reminders, close it.
 
-    Uses a Postgres advisory lock so that only one gunicorn worker
-    actually executes the job — the others skip silently.  On SQLite
-    (local dev, single process) it runs unconditionally.
+    Wrapped in exclusive_job so that with gunicorn --workers N the
+    job's work executes exactly once per day, no matter how many
+    worker processes fire the cron trigger.
     """
-    from database import SessionLocal, engine
+    from database import SessionLocal
     from app.services.reminder_service import send_due_reminders
+    from app.core.job_lock import exclusive_job
 
-    db = SessionLocal()
-    lock_acquired = False
-    try:
-        # --- Advisory lock (Postgres only) ---
-        if engine.dialect.name == "postgresql":
-            # pg_try_advisory_lock returns true if acquired, false if
-            # another session already holds it.
-            lock_acquired = db.execute(
-                text("SELECT pg_try_advisory_lock(8675309)")
-            ).scalar()
-            if not lock_acquired:
-                import logging
+    with exclusive_job("daily_reminders") as claimed:
+        if not claimed:
+            return  # another worker won the claim — normal, not an error
+        db = SessionLocal()
+        try:
+            send_due_reminders(db)
+        except Exception as e:
+            import logging
 
-                logging.getLogger(__name__).debug(
-                    "Reminders job: another worker holds the lock — skipping"
-                )
-                return
-
-        send_due_reminders(db)
-    except Exception as e:
-        import logging
-
-        logging.getLogger(__name__).error("Reminder job failed: %s", e)
-    finally:
-        if lock_acquired:
-            try:
-                db.execute(text("SELECT pg_advisory_unlock(8675309)"))
-                db.commit()
-            except Exception:
-                pass
-        db.close()
+            logging.getLogger(__name__).error("Reminder job failed: %s", e)
+            raise  # let exclusive_job record success=False
+        finally:
+            db.close()
 
 
 @asynccontextmanager

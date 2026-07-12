@@ -13,36 +13,11 @@ from sqlalchemy.orm import Session
 
 from app import schemas, models
 from app.core.deps import get_current_user
+from app.core.trip_access import TripAccess, get_trip_with_access
 from database import get_db
 from app.services.packing_service import get_packing_summary as svc_get_packing_summary
 
 router = APIRouter()
-
-
-def check_trip_access(
-    trip_id: int, db: Session, current_user: models.User, require_owner: bool = False
-) -> models.Trip:
-    """Check user has access to the trip."""
-    trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
-    if not trip:
-        raise HTTPException(status_code=404, detail="Trip not found")
-
-    if trip.user_id == current_user.id:
-        return trip
-
-    if not require_owner:
-        share = (
-            db.query(models.TripShare)
-            .filter(
-                models.TripShare.trip_id == trip_id,
-                models.TripShare.user_id == current_user.id,
-            )
-            .first()
-        )
-        if share:
-            return trip
-
-    raise HTTPException(status_code=404, detail="Trip not found")
 
 
 @router.post(
@@ -56,7 +31,7 @@ def create_packing_item(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    check_trip_access(item.trip_id, db, current_user, require_owner=True)
+    get_trip_with_access(item.trip_id, db, current_user, "edit")
 
     db_item = models.PackingItem(**item.model_dump())
     db.add(db_item)
@@ -71,14 +46,12 @@ def create_packing_item(
     tags=["packing"],
 )
 def get_trip_packing_items(
-    trip_id: int,
+    trip: models.Trip = Depends(TripAccess("view")),
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
 ):
-    check_trip_access(trip_id, db, current_user)
     items = (
         db.query(models.PackingItem)
-        .filter(models.PackingItem.trip_id == trip_id)
+        .filter(models.PackingItem.trip_id == trip.id)
         .order_by(models.PackingItem.category)
         .all()
     )
@@ -98,7 +71,7 @@ def update_packing_item(
     if not item:
         raise HTTPException(status_code=404, detail="Packing item not found")
 
-    check_trip_access(item.trip_id, db, current_user, require_owner=True)
+    get_trip_with_access(item.trip_id, db, current_user, "edit")
 
     for key, value in item_update.model_dump(exclude_unset=True).items():
         setattr(item, key, value)
@@ -118,7 +91,7 @@ def delete_packing_item(
     if not item:
         raise HTTPException(status_code=404, detail="Packing item not found")
 
-    check_trip_access(item.trip_id, db, current_user, require_owner=True)
+    get_trip_with_access(item.trip_id, db, current_user, "edit")
 
     db.delete(item)
     db.commit()
@@ -131,12 +104,10 @@ def delete_packing_item(
     tags=["packing"],
 )
 def get_packing_summary(
-    trip_id: int,
+    trip: models.Trip = Depends(TripAccess("view")),
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
 ):
-    check_trip_access(trip_id, db, current_user)
-    result = svc_get_packing_summary(trip_id, db)
+    result = svc_get_packing_summary(trip.id, db)
     if result is None:
         raise HTTPException(status_code=404, detail="Trip not found")
     return result

@@ -68,7 +68,7 @@ def test_create_destination_non_owner_forbidden(client, test_user, db_session):
         "trip_id": trip.id,
     }
     resp = client.post("/destinations/", json=payload)
-    assert resp.status_code == 404
+    assert resp.status_code == 403
 
 
 def test_get_trip_destinations(client, test_user, db_session):
@@ -311,7 +311,7 @@ def test_update_destination_non_owner_forbidden(client, test_user, db_session):
 
     payload = {"name": "Milan (Fashion Capital)"}
     resp = client.put(f"/destinations/{dest.id}", json=payload)
-    assert resp.status_code == 404
+    assert resp.status_code == 403
 
 
 def test_update_destination_not_found(client, test_user):
@@ -394,7 +394,7 @@ def test_delete_destination_non_owner_forbidden(client, test_user, db_session):
     db.commit()
 
     resp = client.delete(f"/destinations/{dest.id}")
-    assert resp.status_code == 404
+    assert resp.status_code == 403
 
 
 def test_delete_destination_not_found(client, test_user):

@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 from app import models, schemas
 from app.core import email_config
 from app.core.deps import get_current_user
+from app.core.trip_access import TripAccess
 from app.services.activity_service import (
     get_destinations_with_activities as svc_get_destinations_with_activities,
     get_trip_progress as svc_get_trip_progress,
@@ -35,48 +36,6 @@ from database import get_db
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-
-
-def get_trip_or_404(
-    trip_id: int, db: Session, current_user: models.User, require_owner: bool = False
-) -> models.Trip:
-    """
-    Get a trip by ID, checking user access.
-
-    Args:
-        trip_id: The trip ID
-        db: Database session
-        current_user: The authenticated user
-        require_owner: If True, only owner can access (not shared users)
-
-    Returns:
-        The trip if found and accessible
-
-    Raises:
-        HTTPException 404: If trip not found or not accessible
-    """
-    trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
-    if not trip:
-        raise HTTPException(status_code=404, detail="Trip not found")
-
-    # Check if user is owner
-    if trip.user_id == current_user.id:
-        return trip
-
-    # Check if user has shared access (only for read operations)
-    if not require_owner:
-        share = (
-            db.query(models.TripShare)
-            .filter(
-                models.TripShare.trip_id == trip_id,
-                models.TripShare.user_id == current_user.id,
-            )
-            .first()
-        )
-        if share and share.permission in ("view", "edit"):
-            return trip
-
-    raise HTTPException(status_code=404, detail="Trip not found")
 
 
 @router.post("/trips/", response_model=schemas.Trip, status_code=201, tags=["trips"])
@@ -162,38 +121,25 @@ def get_trips(
     "/trips/{trip_id}", response_model=schemas.TripWithOwnership, tags=["trips"]
 )
 def get_trip(
-    trip_id: int,
-    db: Session = Depends(get_db),
+    trip: models.Trip = Depends(TripAccess("view")),
     current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     # Single query with JOIN to get trip and owner email (avoids N+1)
     result = (
         db.query(models.Trip, models.User.email)
         .join(models.User, models.Trip.user_id == models.User.id)
-        .filter(models.Trip.id == trip_id)
+        .filter(models.Trip.id == trip.id)
         .first()
     )
 
     if not result:
         raise HTTPException(status_code=404, detail="Trip not found")
 
-    trip, owner_email = result
-    is_owner = trip.user_id == current_user.id
+    trip_obj, owner_email = result
+    is_owner = trip_obj.user_id == current_user.id
 
-    # Check access if not owner
-    if not is_owner:
-        share = (
-            db.query(models.TripShare)
-            .filter(
-                models.TripShare.trip_id == trip_id,
-                models.TripShare.user_id == current_user.id,
-            )
-            .first()
-        )
-        if not share:
-            raise HTTPException(status_code=404, detail="Trip not found")
-
-    trip_dict = schemas.Trip.model_validate(trip).model_dump()
+    trip_dict = schemas.Trip.model_validate(trip_obj).model_dump()
     trip_dict["is_owner"] = is_owner
     trip_dict["shared_by"] = owner_email if not is_owner else None
 
@@ -202,13 +148,11 @@ def get_trip(
 
 @router.put("/trips/{trip_id}", response_model=schemas.Trip, tags=["trips"])
 def update_trip(
-    trip_id: int,
-    trip_update: schemas.TripUpdate,
+    trip: models.Trip = Depends(TripAccess("owner")),
+    trip_update: schemas.TripUpdate = None,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
 ):
-    trip = get_trip_or_404(trip_id, db, current_user, require_owner=True)
-
+    # Only owner can update the trip attributes
     for key, value in trip_update.model_dump(exclude_unset=True).items():
         setattr(trip, key, value)
 
@@ -219,11 +163,10 @@ def update_trip(
 
 @router.delete("/trips/{trip_id}", status_code=204, tags=["trips"])
 def delete_trip(
-    trip_id: int,
+    trip: models.Trip = Depends(TripAccess("owner")),
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
 ):
-    trip = get_trip_or_404(trip_id, db, current_user, require_owner=True)
+    # Only owner can delete the trip
     db.delete(trip)
     db.commit()
     return None
@@ -235,12 +178,10 @@ def delete_trip(
     tags=["trips"],
 )
 def get_expense_summary(
-    trip_id: int,
+    trip: models.Trip = Depends(TripAccess("view")),
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
 ):
-    get_trip_or_404(trip_id, db, current_user)  # Check access
-    result = svc_get_expense_summary(trip_id, db)
+    result = svc_get_expense_summary(trip.id, db)
     if result is None:
         raise HTTPException(status_code=404, detail="Trip not found")
     return result
@@ -252,14 +193,12 @@ def get_expense_summary(
     tags=["trips"],
 )
 def get_budget_status(
-    trip_id: int,
+    trip: models.Trip = Depends(TripAccess("view")),
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
 ):
     """Get budget status with progress, category breakdown, and alerts."""
-    trip = get_trip_or_404(trip_id, db, current_user)
     result = svc_get_budget_status(
-        trip_id,
+        trip.id,
         db,
         warning_threshold=trip.budget_warning_threshold or 75,
         danger_threshold=trip.budget_danger_threshold or 90,
@@ -271,16 +210,14 @@ def get_budget_status(
 
 @router.post("/trips/{trip_id}/rebase-currency/", tags=["trips"])
 def rebase_currency(
-    trip_id: int,
     payload: schemas.RebaseCurrencyRequest,
+    trip: models.Trip = Depends(TripAccess("owner")),
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
 ):
     """Batch-recalculate all expenses for a new base currency."""
-    trip = get_trip_or_404(trip_id, db, current_user, require_owner=True)
     new_currency = payload.new_currency
 
-    expenses = db.query(models.Expense).filter(models.Expense.trip_id == trip_id).all()
+    expenses = db.query(models.Expense).filter(models.Expense.trip_id == trip.id).all()
 
     updated = 0
     failed_ids = []
@@ -314,12 +251,10 @@ def rebase_currency(
     "/trips/{trip_id}/progress/", response_model=schemas.TripProgress, tags=["trips"]
 )
 def get_trip_progress(
-    trip_id: int,
+    trip: models.Trip = Depends(TripAccess("view")),
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
 ):
-    get_trip_or_404(trip_id, db, current_user)  # Check access
-    result = svc_get_trip_progress(trip_id, db)
+    result = svc_get_trip_progress(trip.id, db)
     if result is None:
         raise HTTPException(status_code=404, detail="Trip not found")
     return result
@@ -331,12 +266,10 @@ def get_trip_progress(
     tags=["trips"],
 )
 def get_destinations_with_activities(
-    trip_id: int,
+    trip: models.Trip = Depends(TripAccess("view")),
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
 ):
-    get_trip_or_404(trip_id, db, current_user)  # Check access
-    result = svc_get_destinations_with_activities(trip_id, db)
+    result = svc_get_destinations_with_activities(trip.id, db)
     if result is None:
         raise HTTPException(status_code=404, detail="Trip not found")
     return result
@@ -348,12 +281,10 @@ def get_destinations_with_activities(
     tags=["trips"],
 )
 def get_accommodation_expenses(
-    trip_id: int,
+    trip: models.Trip = Depends(TripAccess("view")),
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
 ):
-    get_trip_or_404(trip_id, db, current_user)  # Check access
-    result = svc_get_accommodation_expenses(trip_id, db)
+    result = svc_get_accommodation_expenses(trip.id, db)
     if result is None:
         raise HTTPException(status_code=404, detail="Trip not found")
     return result
@@ -365,13 +296,10 @@ def get_accommodation_expenses(
     tags=["trips"],
 )
 def get_trip_stats(
-    trip_id: int,
+    trip: models.Trip = Depends(TripAccess("view")),
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
 ):
     """Get comprehensive statistics for a trip."""
-    trip = get_trip_or_404(trip_id, db, current_user)
-
     # Calculate days until departure
     today = date.today()
     days_until_departure = None
@@ -384,7 +312,7 @@ def get_trip_stats(
     # Count destinations
     destination_count = (
         db.query(func.count(models.Destination.id))
-        .filter(models.Destination.trip_id == trip_id)
+        .filter(models.Destination.trip_id == trip.id)
         .scalar()
         or 0
     )
@@ -396,7 +324,7 @@ def get_trip_stats(
             func.coalesce(func.sum(models.TripTransport.cost), 0),
             func.sum(case((models.TripTransport.booked.is_(True), 1), else_=0)),
         )
-        .filter(models.TripTransport.trip_id == trip_id)
+        .filter(models.TripTransport.trip_id == trip.id)
         .first()
     )
     transport_count = transport_stats[0] or 0
@@ -407,7 +335,7 @@ def get_trip_stats(
     activity_count_via_day = (
         db.query(func.count(models.DayActivity.id))
         .join(models.TripDay, models.DayActivity.day_id == models.TripDay.id)
-        .filter(models.TripDay.trip_id == trip_id)
+        .filter(models.TripDay.trip_id == trip.id)
         .scalar()
         or 0
     )
@@ -417,7 +345,7 @@ def get_trip_stats(
             models.Destination,
             models.DayActivity.destination_id == models.Destination.id,
         )
-        .filter(models.Destination.trip_id == trip_id)
+        .filter(models.Destination.trip_id == trip.id)
         .filter(models.DayActivity.day_id.is_(None))
         .scalar()
         or 0
@@ -430,7 +358,7 @@ def get_trip_stats(
             func.count(models.Expense.id),
             func.coalesce(func.sum(models.Expense.amount), 0),
         )
-        .filter(models.Expense.trip_id == trip_id)
+        .filter(models.Expense.trip_id == trip.id)
         .first()
     )
     expense_count = expense_stats[0] or 0
@@ -442,7 +370,7 @@ def get_trip_stats(
             func.count(models.PackingItem.id),
             func.sum(case((models.PackingItem.is_packed.is_(True), 1), else_=0)),
         )
-        .filter(models.PackingItem.trip_id == trip_id)
+        .filter(models.PackingItem.trip_id == trip.id)
         .first()
     )
     total_packing_items = packing_stats[0] or 0
@@ -485,18 +413,15 @@ def get_trip_stats(
     tags=["trips"],
 )
 def get_trip_shares(
-    trip_id: int,
+    trip: models.Trip = Depends(TripAccess("owner")),
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
 ):
     """Get all shares for a trip (owner only)."""
-    get_trip_or_404(trip_id, db, current_user, require_owner=True)
-
     # Single query with JOIN to avoid N+1 problem
     shares_with_users = (
         db.query(models.TripShare, models.User.email)
         .join(models.User, models.TripShare.user_id == models.User.id)
-        .filter(models.TripShare.trip_id == trip_id)
+        .filter(models.TripShare.trip_id == trip.id)
         .all()
     )
 
@@ -513,14 +438,12 @@ def get_trip_shares(
     tags=["trips"],
 )
 def create_trip_share(
-    trip_id: int,
     share_data: schemas.TripShareCreate,
+    trip: models.Trip = Depends(TripAccess("owner")),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
     """Share a trip with another user (owner only)."""
-    trip = get_trip_or_404(trip_id, db, current_user, require_owner=True)
-
     # Find user by email
     user = db.query(models.User).filter(models.User.email == share_data.email).first()
     if not user:
@@ -534,7 +457,7 @@ def create_trip_share(
     existing = (
         db.query(models.TripShare)
         .filter(
-            models.TripShare.trip_id == trip_id, models.TripShare.user_id == user.id
+            models.TripShare.trip_id == trip.id, models.TripShare.user_id == user.id
         )
         .first()
     )
@@ -545,7 +468,7 @@ def create_trip_share(
 
     # Create share
     share = models.TripShare(
-        trip_id=trip_id,
+        trip_id=trip.id,
         user_id=user.id,
         permission="view",
     )
@@ -559,7 +482,7 @@ def create_trip_share(
             to_email=user.email,
             trip_name=trip.name,
             shared_by=current_user.email,
-            trip_url=f"{email_config.FRONTEND_URL}/trips/{trip_id}",
+            trip_url=f"{email_config.FRONTEND_URL}/trips/{trip.id}",
         )
     except Exception as e:
         logger.error("Failed to send trip share email to %s: %s", user.email, e)
@@ -569,17 +492,14 @@ def create_trip_share(
 
 @router.delete("/trips/{trip_id}/shares/{share_id}", status_code=204, tags=["trips"])
 def delete_trip_share(
-    trip_id: int,
     share_id: int,
+    trip: models.Trip = Depends(TripAccess("owner")),
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
 ):
     """Remove a share from a trip (owner only)."""
-    get_trip_or_404(trip_id, db, current_user, require_owner=True)
-
     share = (
         db.query(models.TripShare)
-        .filter(models.TripShare.id == share_id, models.TripShare.trip_id == trip_id)
+        .filter(models.TripShare.id == share_id, models.TripShare.trip_id == trip.id)
         .first()
     )
     if not share:

@@ -135,6 +135,7 @@ def db_setup(db_engine, testing_session_local, setup_database):
         "trip_days",
         "trips",
         "users",
+        "job_runs",
     ]
 
     db = testing_session_local()

@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app import models
 from app.core.deps import get_current_user
+from app.core.trip_access import get_trip_with_access
 from app.schemas.transport_option import (
     TransportOptionCreate,
     TransportOptionUpdate,
@@ -27,23 +28,9 @@ def _check_transport_access(
     )
     if not transport:
         raise HTTPException(status_code=404, detail="Transport not found")
-    trip = db.query(models.Trip).filter(models.Trip.id == transport.trip_id).first()
-    if not trip:
-        raise HTTPException(status_code=404, detail="Trip not found")
-    if trip.user_id == current_user.id:
-        return transport
-    if not require_owner:
-        share = (
-            db.query(models.TripShare)
-            .filter(
-                models.TripShare.trip_id == trip.id,
-                models.TripShare.user_id == current_user.id,
-            )
-            .first()
-        )
-        if share:
-            return transport
-    raise HTTPException(status_code=404, detail="Transport not found")
+    level = "edit" if require_owner else "view"
+    get_trip_with_access(transport.trip_id, db, current_user, level)
+    return transport
 
 
 def _get_option(

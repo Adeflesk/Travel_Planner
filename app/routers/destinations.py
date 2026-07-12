@@ -13,38 +13,13 @@ from sqlalchemy.orm import Session
 
 from app import schemas, models
 from app.core.deps import get_current_user
+from app.core.trip_access import TripAccess, get_trip_with_access
 from app.services import weather_service
 from app.services.exchange_rate import infer_base_currency
 from app.services.geocoding import geocode
 from database import get_db
 
 router = APIRouter()
-
-
-def get_trip_for_destination(
-    trip_id: int, db: Session, current_user: models.User, require_owner: bool = False
-) -> models.Trip:
-    """Check user has access to the trip."""
-    trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
-    if not trip:
-        raise HTTPException(status_code=404, detail="Trip not found")
-
-    if trip.user_id == current_user.id:
-        return trip
-
-    if not require_owner:
-        share = (
-            db.query(models.TripShare)
-            .filter(
-                models.TripShare.trip_id == trip_id,
-                models.TripShare.user_id == current_user.id,
-            )
-            .first()
-        )
-        if share:
-            return trip
-
-    raise HTTPException(status_code=404, detail="Trip not found")
 
 
 @router.post(
@@ -58,7 +33,7 @@ def create_destination(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    get_trip_for_destination(destination.trip_id, db, current_user, require_owner=True)
+    get_trip_with_access(destination.trip_id, db, current_user, "edit")
 
     db_destination = models.Destination(**destination.model_dump())
 
@@ -98,14 +73,12 @@ def create_destination(
     tags=["destinations"],
 )
 def get_trip_destinations(
-    trip_id: int,
+    trip: models.Trip = Depends(TripAccess("view")),
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
 ):
-    get_trip_for_destination(trip_id, db, current_user)
     destinations = (
         db.query(models.Destination)
-        .filter(models.Destination.trip_id == trip_id)
+        .filter(models.Destination.trip_id == trip.id)
         .order_by(models.Destination.order)
         .all()
     )
@@ -130,7 +103,7 @@ def get_destination(
     if not destination:
         raise HTTPException(status_code=404, detail="Destination not found")
 
-    get_trip_for_destination(destination.trip_id, db, current_user)
+    get_trip_with_access(destination.trip_id, db, current_user, "view")
     return destination
 
 
@@ -153,7 +126,7 @@ def update_destination(
     if not destination:
         raise HTTPException(status_code=404, detail="Destination not found")
 
-    get_trip_for_destination(destination.trip_id, db, current_user, require_owner=True)
+    get_trip_with_access(destination.trip_id, db, current_user, "edit")
 
     for key, value in destination_update.model_dump(exclude_unset=True).items():
         setattr(destination, key, value)
@@ -184,7 +157,7 @@ def delete_destination(
     if not destination:
         raise HTTPException(status_code=404, detail="Destination not found")
 
-    get_trip_for_destination(destination.trip_id, db, current_user, require_owner=True)
+    get_trip_with_access(destination.trip_id, db, current_user, "edit")
 
     db.delete(destination)
     db.commit()
@@ -217,7 +190,7 @@ def get_destination_weather(
         raise HTTPException(status_code=404, detail="Destination not found")
 
     # Check user has access to the trip
-    get_trip_for_destination(destination.trip_id, db, current_user)
+    get_trip_with_access(destination.trip_id, db, current_user, "view")
 
     # Build location string for weather API
     location_parts = [destination.name]
